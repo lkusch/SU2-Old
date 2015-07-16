@@ -478,7 +478,7 @@ void DiscAdjMeanFlowIteration(COutput *output, CIntegration ***integration_conta
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  if (ExtIter == 0){
+  if (ExtIter == 0 || config_container[ZONE_0]->GetOne_Shot()){
 
     /*--- Start the recording of all operations ---*/
 
@@ -511,7 +511,7 @@ void DiscAdjMeanFlowIteration(COutput *output, CIntegration ***integration_conta
       geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
     }
 
-    if (rank == MASTER_NODE){
+    if (rank == MASTER_NODE && !config_container[ZONE_0]->GetOne_Shot()){
       cout << "Begin direct solver to store computational graph (single iteration)." << endl;
     }
 
@@ -535,7 +535,7 @@ void DiscAdjMeanFlowIteration(COutput *output, CIntegration ***integration_conta
                       surface_movement, volume_grid_movement, FFDBox);
     }
 
-    if (rank == MASTER_NODE){
+    if (rank == MASTER_NODE && !config_container[ZONE_0]->GetOne_Shot()){
       if(flow){
         cout << "log10[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))
              <<", Drag: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetTotal_CDrag()
@@ -617,6 +617,8 @@ void DiscAdjMeanFlowIteration(COutput *output, CIntegration ***integration_conta
   /*--- Clear all adjoints to re-use the stored computational graph in the next iteration ---*/
 
   AD::ClearAdjoints();
+
+  if (config_container[ZONE_0]->GetOne_Shot()) AD::globalTape.reset();
 
   /*--- Set the convergence criteria ---*/
 

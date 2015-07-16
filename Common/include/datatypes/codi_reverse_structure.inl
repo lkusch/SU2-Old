@@ -42,23 +42,23 @@ namespace AD{
 
   /*--- Reference to the tape ---*/
 
-  extern codi::ChunkTape<double, int>& globalTape;
+  extern codi::ChunkTape<codi::RealForward, int>& globalTape;
 
 }
 
 
 namespace SU2_TYPE{
-  inline void SetPrimary(su2double& data, const double &val){data.setValue(val);}
+  inline void SetPrimary(su2double& data, const double &val){data.value().value()=val;}
 
-  inline double GetPrimary(const su2double& data){return data.getValue();}
+  inline double GetPrimary(const su2double& data){return data.getValue().getValue();}
 
-  inline void SetSecondary(su2double& data, const double &val){data.setGradient(val);}
+  inline void SetSecondary(su2double& data, const double &val){data.gradient().value() = val;}
 
-  inline double GetSecondary(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
+  inline double GetSecondary(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]).getValue();}
 
-  inline double GetDerivative(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
+  inline double GetDerivative(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]).getValue();}
 
-  inline void SetDerivative(su2double& data, const double &val){data.setGradient(val);}
+  inline void SetDerivative(su2double& data, const double &val){data.gradient().value() = val;}
 }
 namespace AD{
 
@@ -82,9 +82,9 @@ namespace AD{
   }
 }
 
-template<class A> struct Impl_getValue<codi::Expression<double, A> > {
+template<class A> struct Impl_getValue<codi::Expression<codi::RealForward, A> > {
   typedef double OUT;
-  static inline OUT getValue(const codi::Expression<double, A> &value) {
-    return value.cast().value();
+  static inline OUT getValue(const codi::Expression<codi::RealForward, A> &value) {
+    return value.cast().value().value();
   }
 };

@@ -1284,6 +1284,9 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /* DESCRIPTION: Direct differentiation mode */
   addEnumOption("DIRECT_DIFF", DirectDiff, DirectDiff_Var_Map, NO_DERIVATIVE);
 
+
+  addBoolOption("ONE_SHOT", OneShot, false);
+
   /*--- options that are used in the python optimization scripts. These have no effect on the c++ toolsuite ---*/
   /*!\par CONFIG_CATEGORY:Python Options\ingroup Config*/
 
@@ -3182,7 +3185,12 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
       default:
         break;
     }
+    if (OneShot){
+      Restart      = false;
+      Restart_Flow = false;
+    }
   }
+
 
   /*--- Check for 2nd order w/ limiting for JST and correct ---*/
   

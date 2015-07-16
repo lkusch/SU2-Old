@@ -4203,6 +4203,7 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config) {
     case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
       ConvHist_file[0] << begin << adj_coeff << adj_flow_resid;
       if ((turbulent) && (!frozen_turb)) ConvHist_file[0] << adj_turb_resid;
+      if (config->GetOne_Shot()) ConvHist_file[0] << flow_resid << flow_coeff;
       ConvHist_file[0] << end;
       if (freesurface) {
         ConvHist_file[0] << begin << adj_coeff << adj_flow_resid << adj_levelset_resid << end;
@@ -5225,8 +5226,14 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
             else cout << endl << " IntIter" << "  ExtIter";
             
             if (incompressible || freesurface) cout << "   Res[Psi_Press]" << "   Res[Psi_Velx]";
+            else if (config[val_iZone]->GetOne_Shot()) {
+              cout << "      Res[Rho]" << "   Res[Psi_Rho]";
+            }
             else cout << "   Res[Psi_Rho]" << "     Res[Psi_E]";
-            cout << "      Sens_Geo" << "     Sens_Mach" << endl;
+            if (config[val_iZone]->GetOne_Shot()){
+              cout <<  "   CDrag(Total)" << "      Sens_Geo" << endl;
+            }
+            else cout << "      Sens_Geo" << "     Sens_Mach" << endl;
             
             if (freesurface) {
               cout << "   Res[Psi_Press]" << "   Res[Psi_Dist]" << "    Sens_Geo" << "   Sens_Mach" << endl;
@@ -5510,15 +5517,22 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
         case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:
           
           if (!DualTime_Iteration) {
-            ConvHist_file[0] << begin << adjoint_coeff << adj_flow_resid << end;
+            ConvHist_file[0] << begin << adjoint_coeff << adj_flow_resid;
+            if (config[val_iZone]->GetOne_Shot()) ConvHist_file[0] << flow_resid << direct_coeff;
+            ConvHist_file[0] << end;
             ConvHist_file[0].flush();
           }
           
           cout.precision(6);
           cout.setf(ios::fixed, ios::floatfield);
           if (compressible) {
-            cout.width(15); cout << log10(residual_adjflow[0]);
-            cout.width(15); cout << log10(residual_adjflow[nDim+1]);
+            if (config[val_iZone]->GetOne_Shot()) {
+              cout.width(15); cout << log10(residual_flow[0]);
+              cout.width(15); cout << log10(residual_adjflow[0]);
+            } else {
+              cout.width(15); cout << log10(residual_adjflow[0]);
+              cout.width(15); cout << log10(residual_adjflow[nDim+1]);
+            }
           }
           if (incompressible || freesurface) {
             cout.width(17); cout << log10(residual_adjflow[0]);
@@ -5526,8 +5540,13 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
           }
           cout.precision(4);
           cout.setf(ios::scientific, ios::floatfield);
-          cout.width(14); cout << Total_Sens_Geo;
-          cout.width(14); cout << Total_Sens_Mach;
+          if (config[val_iZone]->GetOne_Shot()) {
+            cout.width(15); cout << min(10000.0, max(-10000.0, Total_CDrag));
+            cout.width(14); cout << Total_Sens_Geo;
+          } else {
+            cout.width(14); cout << Total_Sens_Geo;
+            cout.width(14); cout << Total_Sens_Mach;
+          }
           cout << endl;
           cout.unsetf(ios_base::floatfield);
           

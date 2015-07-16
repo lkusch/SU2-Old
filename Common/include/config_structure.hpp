@@ -739,6 +739,7 @@ private:
   bool ParMETIS;      /*!< \brief Boolean for activating ParMETIS mode (while testing). */
   unsigned short DirectDiff; /*!< \brief Direct Differentation mode. */
   bool DiscreteAdjoint; /*!< \brief AD-based discrete adjoint mode. */
+  bool OneShot;
   /*!< \brief param is a map from the option name (config file string) to a pointer to an option child class */
 //	map<string, CAnyOptionRef*> param;
 
@@ -5523,6 +5524,7 @@ public:
 	unsigned short GetRelaxation_Method_FSI(void);
 
 
+  bool GetOne_Shot(void);
 
 };
 
