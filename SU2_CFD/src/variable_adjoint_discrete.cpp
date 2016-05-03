@@ -45,11 +45,13 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
     DualTime_Derivative_n = new su2double[nVar];
   }
   Sensitivity = new su2double[nDim];
+  Sensitivity_Old = new su2double[nDim];
 
   unsigned short iVar,iDim;
 
   for (iDim = 0; iDim < nDim; iDim++){
     Sensitivity[iDim] = 0.0;
+    Sensitivity_Old[iDim]=0.0;
   }
 
   for (iVar = 0; iVar < nVar; iVar++){

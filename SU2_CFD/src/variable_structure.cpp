@@ -38,6 +38,11 @@ CVariable::CVariable(void) {
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+    Solution_Save=NULL;
+    //ROBUST
+      SolutionVec_Old = NULL;
+      SolutionVec=NULL;
+    //ROBUST
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -57,6 +62,11 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+    Solution_Save=NULL;
+    //ROBUST
+      SolutionVec_Old = NULL;
+      SolutionVec=NULL;
+    //ROBUST
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -90,6 +100,11 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+    Solution_Save=NULL;
+    //ROBUST
+      SolutionVec_Old = NULL;
+      SolutionVec=NULL;
+    //ROBUST
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -116,6 +131,7 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
 		Solution[iVar] = 0.0;
 
 	Solution_Old = new su2double [nVar];
+    Solution_Save = new su2double [nVar];
 	
 	Gradient = new su2double* [nVar];
 	for (iVar = 0; iVar < nVar; iVar++) {
@@ -123,6 +139,19 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
 		for (iDim = 0; iDim < nDim; iDim ++)
 			Gradient[iVar][iDim] = 0.0;
 	}
+
+    //ROBUST
+    SolutionVec_Old = new su2double* [4];
+    SolutionVec = new su2double* [4];
+    for (iDim = 0; iDim < 4; iDim ++){
+        SolutionVec_Old[iDim] = new su2double [nVar];
+        SolutionVec[iDim] = new su2double [nVar];
+        for (iVar = 0; iVar < nVar; iVar++){
+             SolutionVec_Old[iDim][iVar] = 0.0;
+             SolutionVec[iDim][iVar] = 0.0;
+        }
+    }
+    //ROBUST
 	
 	if (config->GetUnsteady_Simulation() != NO) {
 		Solution_time_n = new su2double [nVar];
@@ -136,6 +165,7 @@ CVariable::~CVariable(void) {
 
   if (Solution            != NULL) delete [] Solution;
 	if (Solution_Old        != NULL) delete [] Solution_Old;
+    if (Solution_Save        != NULL) delete [] Solution_Save;
 	if (Solution_time_n     != NULL) delete [] Solution_time_n;
 	if (Solution_time_n1    != NULL) delete [] Solution_time_n1;
 	if (Limiter             != NULL) delete [] Limiter;
@@ -152,6 +182,19 @@ CVariable::~CVariable(void) {
       delete Gradient[iVar];
     delete [] Gradient;
   }
+
+  //ROBUST
+  if (SolutionVec_Old != NULL) {
+    for (iVar = 0; iVar < 4; iVar++)
+      delete SolutionVec_Old[iVar];
+    delete [] SolutionVec_Old;
+  }
+  if (SolutionVec != NULL) {
+    for (iVar = 0; iVar < 4; iVar++)
+      delete SolutionVec[iVar];
+    delete [] SolutionVec;
+  }
+  //ROBUST
 
 }
 
@@ -194,6 +237,33 @@ void CVariable::Set_OldSolution(void) {
 	for (unsigned short iVar = 0; iVar < nVar; iVar++)
 		Solution_Old[iVar] = Solution[iVar];
   
+}
+
+void CVariable::SetSolutionVec(unsigned short numQuad) {
+
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        SolutionVec[numQuad][iVar] = Solution[iVar];
+
+}
+
+void CVariable::SetSolutionVecOld(unsigned short numQuad) {
+
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+       // SolutionVec_Old[numQuad][iVar] = Solution[iVar];
+        SolutionVec_Old[numQuad][iVar] = SolutionVec[numQuad][iVar];
+}
+
+void CVariable::Set_SaveSolution(void) {
+    for (unsigned short iVar = 0; iVar < nVar; iVar++){
+        Solution_Save[iVar] = Solution[iVar];
+    }
+}
+
+void CVariable::Set_OldGradient(void) {
+
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        Solution_Old[iVar] = Solution[iVar];
+
 }
 
 void CVariable::AddSolution(unsigned short val_var, su2double val_solution) {

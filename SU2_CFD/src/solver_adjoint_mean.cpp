@@ -211,8 +211,9 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
     Sens_AoA[iMarker]  = 0.0;
     Sens_Press[iMarker] = 0.0;
     Sens_Temp[iMarker]  = 0.0;
-    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++)
+    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
       CSensitivity[iMarker][iVertex] = 0.0;
+    }
   }
   
   /*--- Adjoint flow at the inifinity, initialization stuff ---*/
@@ -5179,8 +5180,9 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
     Sens_AoA[iMarker]   = 0.0;
     Sens_Press[iMarker] = 0.0;
     Sens_Temp[iMarker]  = 0.0;
-    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++)
+    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
       CSensitivity[iMarker][iVertex] = 0.0;
+    }
   }
   
   /*--- Initialize the adjoint variables to zero (infinity state) ---*/
@@ -5900,10 +5902,10 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
           
           CSensitivity[iMarker][iVertex] = (sigma_partial - temp_sens) * Area * scale * factor;
             
-          /*--- Change the sign of the sensitivity if the normal has been flipped --*/
+          /*--sign of the sensitivity if the normal has been flipped --*/
 
           if (geometry->node[iPoint]->GetFlip_Orientation())
-            CSensitivity[iMarker][iVertex] = -CSensitivity[iMarker][iVertex];
+            CSensitivity[iMarker][iVertex]= -CSensitivity[iMarker][iVertex];
           
           /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
           

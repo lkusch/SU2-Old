@@ -52,6 +52,7 @@ inline void CSolver::Set_MPI_Primitive_Limiter(CGeometry *geometry, CConfig *con
 //inline void CSolver::Set_MPI_Secondary_Limiter(CGeometry *geometry, CConfig *config) { }
 
 inline void CSolver::SetNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh) { }
+inline void CSolver::SetNewNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh) { }
 
 inline unsigned short CSolver::GetIterLinSolver(void) { return IterLinSolver; }
 
@@ -175,6 +176,7 @@ inline su2double CSolver::GetExhaust_MassFlow(unsigned short val_marker) { retur
 inline su2double CSolver::GetInflow_Pressure(unsigned short val_marker) { return 0; }
 
 inline su2double CSolver::GetInflow_Mach(unsigned short val_marker) { return 0; }
+inline void CSolver::SetInflow_Mach(CGeometry *geometry, CConfig *config, unsigned short iMesh, su2double mach, bool initial, unsigned short numQuad) { }
 
 inline su2double CSolver::GetCSideForce_Inv(unsigned short val_marker) { return 0; }
 
@@ -590,6 +592,13 @@ inline su2double* CSolver::GetPoint_Max_Coord(unsigned short val_var) { return P
 inline void CSolver::Set_OldSolution(CGeometry *geometry) {
 	for (unsigned long iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++) 
 		node[iPoint]->Set_OldSolution(); // The loop should be over nPoints 
+                                     //  to guarantee that the boundaries are
+                                     //  well updated
+}
+
+inline void CSolver::Set_OldGradient(CGeometry *geometry) {
+    for (unsigned long iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++)
+        node[iPoint]->Set_OldGradient(); // The loop should be over nPoints
                                      //  to guarantee that the boundaries are
                                      //  well updated
 }
@@ -1037,13 +1046,122 @@ inline void CSolver::SetAdjointOutput(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetAdjointInput(CGeometry *geometry, CConfig *config){}
 
+inline void CSolver::SetAdjointInputHelp(CGeometry *geometry, CConfig *config){}
+
 inline void CSolver::RegisterObj_Func(CConfig *config){}
+
+inline void CSolver::RegisterConstraint_Func(CConfig *config){}
+inline void CSolver::RegisterConstraint_Mom(CConfig *config){}
 
 inline void CSolver::SetSurface_Sensitivity(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetSensitivity(CGeometry *geometry, CConfig *config){}
 
-inline void CSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config){}
+inline void CSolver::DesignUpdate(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::WriteDesignVariable(){}
+
+inline void CSolver::DesignMinus(){}
+
+inline void CSolver::DesignStep(su2double values){}
+
+inline su2double CSolver::QuadraticApproximation(su2double steplen){}
+
+inline void CSolver::CalculatePhi(su2double steplen, su2double& Phi, su2double& dPhi){}
+
+inline void CSolver::ChangeDirection(){}
+
+inline bool CSolver::CheckDescentDirection(su2double steplen){}
+
+inline su2double CSolver::CubicApproximation(su2double steplen){}
+
+inline void CSolver::ApplyDesignVar(){}
+
+inline void CSolver::DesignUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, su2double steplen){}
+
+inline su2double CSolver::DesignUpdateBounds(CGeometry *geometry, CConfig *config, unsigned short ExtIter, su2double steplen){}
+
+inline bool CSolver::CheckFirstWolfe(su2double steplen){}
+
+//inline void CSolver::BFGSUpdate(CGeometry *geometry, CConfig *config, unsigned short ExtIter){}
+
+inline void CSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter){}
+
+inline void CSolver::SetSensitivityFD(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config, double initVal){}
+
+inline void CSolver::SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config, double initVal){}
+
+inline su2double CSolver::GetConstraintFunc_Value(){}
+
+inline void CSolver::StoreConstraint(){}
+
+//inline void CSolver::SetInflow_Mach(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short iMesh, su2double mach){}
+
+inline void CSolver::UpdateMultiplier(CConfig* config){}
+
+inline double CSolver::GetMultiplier(){}
+
+inline void CSolver::SetMultiplier(CConfig *config, double value){}
+
+inline void CSolver::StoreOldSolution(){}
+
+inline void CSolver::LoadOldSolution(){}
+
+inline void CSolver::StoreSolutionVec(unsigned short numQuad){}
+
+inline void CSolver::LoadSolutionVec(unsigned short numQuad){}
+
+inline void CSolver::StoreSolutionVecOld(unsigned short numQuad){}
+
+inline void CSolver::LoadSolutionVecOld(unsigned short numQuad){}
+
+inline void CSolver::LoadOldAdjoint(){}
+
+inline void CSolver::StoreSaveSolution(){}
+
+inline void CSolver::LoadSaveSolution(){}
+
+inline void CSolver::SaveSurfaceSensitivity(CGeometry *geometry){}
+
+inline void CSolver::ResetExpValues(CGeometry *geometry){}
+inline void CSolver::SumExpValues(CGeometry *geometry, unsigned short numQuad){}
+inline void CSolver::DistributeExpValues(CGeometry *geometry){}
+inline su2double CSolver::GetMachP(unsigned short numQuad){}
+
+inline void CSolver::AssembleLagrangian(CConfig *config){}
+
+inline void CSolver::ResetSensitivity(CGeometry *geometry){}
+
+inline void CSolver::UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor){}
+
+inline void CSolver::OverwriteSensitivity(CGeometry *geometry){}
+
+inline void CSolver::OverwriteSensitivityProjected(CGeometry *geometry){}
+
+inline void CSolver::SetProjectedSensitivity(unsigned long iDV, su2double value){}
+
+inline void CSolver::OverwriteGradientProjected(CGeometry *geometry){}
+
+inline void CSolver::SetProjectedGradient(unsigned long iDV, su2double value){}
+
+inline su2double CSolver::getDVValue(unsigned long iDV){}
+
+inline su2double CSolver::getDesignVar(unsigned long iDV){}
+
+inline void CSolver::StoreOldLagrangeSensitivity(CGeometry *geometry){}
+
+inline void CSolver::LoadSurfaceSensitivity(CGeometry *geometry){}
+inline su2double CSolver::SensitivityNorm(CGeometry *geometry){}
+
+inline void CSolver::OutputWritten(CGeometry *geometry){}
+
+inline void CSolver::UpdateStateVariable(CConfig *config){}
+
+inline void CSolver::SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::SetAdjointOutputZero(CGeometry *geometry, CConfig *config){}
 
 inline su2double CDiscAdjSolver::GetTotal_Sens_Geo() { return Total_Sens_Geo; }
 

@@ -645,6 +645,49 @@ inline su2double CConfig::GetDeform_ElasticityMod(void) { return Deform_Elastici
 
 inline su2double CConfig::GetDeform_PoissonRatio(void) { return Deform_PoissonRatio; }
 
+inline su2double CConfig::GetOneShotAlpha(void){ return OneShotAlpha;}
+inline su2double CConfig::GetOneShotBeta(void){ return OneShotBeta;}
+inline unsigned long CConfig::GetOneShotStart(void){return OneShotStart;}
+inline bool CConfig::GetOSStepAdaptive(void){ return OneShotStepAdaptive;}
+inline su2double CConfig::GetOSStepSize(void){ return OneShotStepSize;}
+inline bool CConfig::GetOneShotConstraint(void){ return OneShotConstraint;}
+inline bool CConfig::GetBoundsExact(void){ return BoundsExact;}
+inline bool CConfig::GetEqualConstraint(void){ return EqualConstraint;}
+inline su2double CConfig::GetConstraintFactor(void){ return ConstraintFactor;}
+inline su2double CConfig::GetConstraintStart(void){ return ConstraintStart;}
+inline bool CConfig::GetIdentityHessian(void){ return IdentityHessian;}
+inline bool CConfig::GetMultiplierNorm(void){ return MultiplierNorm;}
+inline unsigned long CConfig::GetSearchCounterMax(void){ return SearchCounterMax;}
+inline bool CConfig::GetLineSearch(void){ return LineSearch;}
+inline bool CConfig::GetCheckVk(void){ return CheckVk;}
+inline bool CConfig::GetArmijo(void){ return Armijo;}
+
+inline bool CConfig::GetPosConstraint(void){ return posconstraint;}
+inline bool CConfig::GetPosUpdate(void){ return posupdate;}
+
+inline su2double CConfig::GetScaleObj(void){return ScaleObjective;}
+inline su2double CConfig::GetScaleConstr(void){return ScaleConstraint;}
+inline su2double CConfig::GetTargetLift(void){return TargetLift;}
+inline su2double CConfig::GetFDStep(void){return FDStep;}
+inline bool CConfig::GetFactorIncrease(void){return FactorIncrease;}
+
+inline bool CConfig::GetLBFGS(void){return LBFGS;}
+inline bool CConfig::GetHInit(void){return HInit;}
+inline unsigned long CConfig::GetLBFGSNum(void){ return LBFGSNum;}
+
+inline bool CConfig::GetDampedBFGS(void){return DampedBFGS;}
+inline bool CConfig::GetDampedBFGSPow(void){return DampedBFGSPow;}
+inline su2double CConfig::GetDampedMin(void){return DampedMin;}
+inline su2double CConfig::GetDampedMax(void){return DampedMax;}
+inline su2double CConfig::GetHScale(void){return HScale;}
+
+
+inline bool CConfig::NormalizeNewY(void){return NormNewY;}
+inline bool CConfig::NormalizeHB(void){return NormHB;}
+inline su2double CConfig::GetDampedGamma(void){return DampedGamma;}
+
+inline bool CConfig::GetCheckDescent(void){return CheckDescent;}
+
 inline unsigned short CConfig::GetDeform_Stiffness_Type(void) { return Deform_Stiffness_Type; }
 
 inline bool CConfig::GetVisualize_Deformation(void) { return Visualize_Deformation; }

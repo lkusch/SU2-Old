@@ -202,8 +202,9 @@ CAdjTNE2EulerSolver::CAdjTNE2EulerSolver(CGeometry *geometry, CConfig *config, u
 		Sens_AoA[iMarker]   = 0.0;
 		Sens_Press[iMarker] = 0.0;
 		Sens_Temp[iMarker]  = 0.0;
-		for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++)
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
 			CSensitivity[iMarker][iVertex] = 0.0;
+        }
 	}
   
 	/*--- Adjoint flow at the inifinity, initialization stuff ---*/
@@ -332,7 +333,7 @@ CAdjTNE2EulerSolver::~CAdjTNE2EulerSolver(void) {
 	if (Sens_Mach   != NULL) delete [] Sens_Mach;
 	if (Sens_AoA    != NULL) delete [] Sens_AoA;
 	if (Sens_Geo    != NULL) delete [] Sens_Geo;
-	if (Sens_Press  != NULL) delete [] Sens_Press;
+    if (Sens_Press  != NULL) delete [] Sens_Press;
 	if (Sens_Temp   != NULL) delete [] Sens_Temp;
 	if (iPoint_UndLapl != NULL) delete [] iPoint_UndLapl;
 	if (jPoint_UndLapl != NULL) delete [] jPoint_UndLapl;

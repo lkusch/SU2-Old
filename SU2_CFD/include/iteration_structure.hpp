@@ -42,6 +42,9 @@
 #include "../../Common/include/grid_movement_structure.hpp"
 #include "../../Common/include/config_structure.hpp"
 
+#include "../include/definition_structure.hpp"
+#include "../include/iteration_structure.hpp"
+
 using namespace std;
 
 /*! 
@@ -60,6 +63,14 @@ using namespace std;
 void MeanFlowIteration(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container, 
 											 CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container, 
 											 CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
+
+void projectOneShot(CGeometry ***geometry_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **mesh_movement,CSolver ****solver_container);
+void projectGradient(CGeometry ***geometry_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **mesh_movement,CSolver ****solver_container);
+
+void deformOneShot(COutput *output, CGeometry ***geometry_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CSolver ****solver_container);
 
 /*!
  * \brief ________________________.
@@ -221,7 +232,18 @@ void AdjTNE2Iteration(COutput *output, CIntegration ***integration_container,
 void DiscAdjMeanFlowIteration(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                        CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                        CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
-
+void DiscAdjMeanFlowIterationConstraint(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
+void DiscAdjMeanFlowIterationRobust(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
+void DiscAdjMeanFlowIterationPiggyBack(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
+void OneShotStep(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short whilecounter);
 /*!
  * \brief Imposes a gust via the grid velocities.
  * \author S. Padron

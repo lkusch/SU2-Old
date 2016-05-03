@@ -437,6 +437,19 @@ private:
   unsigned short Deform_Linear_Solver; /*!< Numerical method to deform the grid */
   unsigned short FFD_Continuity; /*!< Surface continuity at the intersection with the FFD */
   su2double Deform_ElasticityMod, Deform_PoissonRatio; /*!< young's modulus and poisson ratio for volume deformation stiffness model */
+  su2double OneShotAlpha, OneShotBeta, OneShotStepSize, ConstraintFactor, ConstraintStart;
+  unsigned long OneShotStart, SearchCounterMax;
+  bool OneShotStepAdaptive, OneShotConstraint, EqualConstraint, IdentityHessian, MultiplierNorm, LineSearch, CheckVk, Armijo, BoundsExact;
+  bool posconstraint, posupdate;
+  bool FactorIncrease;
+  su2double ScaleObjective, ScaleConstraint, FDStep, TargetLift;
+  bool HInit, LBFGS;
+  unsigned long LBFGSNum;
+  bool DampedBFGS, DampedBFGSPow;
+  su2double DampedMin, DampedMax, HScale;
+  bool NormNewY, NormHB;
+  su2double DampedGamma;
+  bool CheckDescent;
   bool Visualize_Deformation;	/*!< \brief Flag to visualize the deformation in MDC. */
 	su2double Mach;		/*!< \brief Mach number. */
 	su2double Reynolds;	/*!< \brief Reynolds number. */
@@ -2892,6 +2905,47 @@ public:
    */
   su2double GetDeform_PoissonRatio(void);
 
+  su2double GetOneShotAlpha(void);
+  su2double GetOneShotBeta(void);
+  unsigned long GetOneShotStart(void);
+  bool GetOSStepAdaptive(void);
+  su2double GetOSStepSize(void);
+  bool GetOneShotConstraint(void);
+  bool GetBoundsExact(void);
+  bool GetEqualConstraint(void);
+  su2double GetConstraintFactor(void);
+  su2double GetConstraintStart(void);
+  bool GetIdentityHessian(void);
+  bool GetMultiplierNorm(void);
+  bool GetLineSearch(void);
+  unsigned long GetSearchCounterMax(void);
+  bool GetCheckVk(void);
+  bool GetArmijo(void);
+
+  bool GetPosConstraint(void);
+  bool GetPosUpdate(void);
+
+  su2double GetScaleObj(void);
+  su2double GetScaleConstr(void);
+  su2double GetTargetLift(void);
+  su2double GetFDStep(void);
+  bool GetFactorIncrease(void);
+
+  unsigned long GetLBFGSNum(void);
+  bool GetLBFGS(void);
+  bool GetHInit(void);
+
+  bool GetDampedBFGS(void);
+  bool GetDampedBFGSPow(void);
+  su2double GetDampedMin(void);
+  su2double GetDampedMax(void);
+  su2double GetHScale(void);
+
+  bool NormalizeNewY(void);
+  bool NormalizeHB(void);
+  su2double GetDampedGamma(void);
+
+  bool GetCheckDescent(void);
   /*!
 	 * \brief Get the type of stiffness to impose for FEA mesh deformation.
 	 * \return type of stiffness to impose for FEA mesh deformation.

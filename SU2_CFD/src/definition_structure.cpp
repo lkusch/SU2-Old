@@ -482,6 +482,16 @@ void Solver_Preprocessing(CSolver ***solver_container, CGeometry **geometry,
   }
 }
 
+void Solver_PreprocessingTest(CSolver ***solver_container, CGeometry **geometry,
+                          CConfig *config, su2double mach, bool initial, unsigned short numQuad) {
+
+  unsigned short iMGlevel;
+
+  for (iMGlevel = 0; iMGlevel <= config->GetnMGLevels(); iMGlevel++) {
+      solver_container[iMGlevel][FLOW_SOL]->SetInflow_Mach(geometry[iMGlevel], config, iMGlevel, mach, initial, numQuad);
+  }
+}
+
 void Integration_Preprocessing(CIntegration **integration_container,
                                CGeometry **geometry, CConfig *config,
                                unsigned short iZone) {

@@ -55,7 +55,12 @@ class CVariable {
 protected:
 
 	su2double *Solution,		/*!< \brief Solution of the problem. */
-	*Solution_Old;			/*!< \brief Old solution of the problem R-K. */
+    *Solution_Old,			/*!< \brief Old solution of the problem R-K. */
+    *Solution_Save;
+    //ROBUST
+    su2double **SolutionVec_Old;
+    su2double **SolutionVec;
+    //ROBUST
   bool Non_Physical;			/*!< \brief Non-physical points in the solution (force first order). */
 	su2double *Solution_time_n,	/*!< \brief Solution of the problem at time n for dual-time stepping technique. */
 	*Solution_time_n1;			/*!< \brief Solution of the problem at time n-1 for dual-time stepping technique. */
@@ -151,12 +156,14 @@ public:
 	 * \return Pointer to the old solution vector.
 	 */
 	su2double GetSolution_Old(unsigned short val_var);
+    su2double GetSolution_Save(unsigned short val_var);
 
 	/*!
 	 * \brief Set the value of the old solution.
 	 * \param[in] val_solution_old - Pointer to the residual vector.
 	 */
 	void SetSolution_Old(su2double *val_solution_old);
+    void SetSolution_Save(su2double *val_solution_old);
 
 	/*!
 	 * \overload
@@ -164,11 +171,17 @@ public:
 	 * \param[in] val_solution_old - Value of the old solution for the index <i>val_var</i>.
 	 */	
 	void SetSolution_Old(unsigned short val_var, su2double val_solution_old);
+    void SetSolution_Save(unsigned short val_var, su2double val_solution_old);
 
 	/*!
 	 * \brief Set old variables to the value of the current variables.
 	 */
 	void Set_OldSolution(void);
+    void Set_SaveSolution(void);
+    void Set_OldGradient(void);
+
+    void SetSolutionVec(unsigned short numQuad);
+    void SetSolutionVecOld(unsigned short numQuad);
 
 	/*!
 	 * \brief Set variables to the value of the old variables.
@@ -266,6 +279,10 @@ public:
 	 * \return Pointer to the old solution vector.
 	 */
 	su2double *GetSolution_Old(void);
+    su2double *GetSolution_Save(void);
+
+    su2double *GetSolutionVec(bool quad, unsigned short numQuad);
+    su2double *GetSolutionVecOld(bool quad, unsigned short numQuad);
 
 	/*!
 	 * \brief Get the solution at time n.
@@ -1520,6 +1537,8 @@ public:
 	/*!
 	 * \brief A virtual member.
 	 */
+    virtual void SetInitialSolution(su2double val_density, su2double *val_velocity, su2double val_energy, unsigned short val_nDim,
+                                             unsigned short val_nvar, CConfig *config);
 	virtual void SetGradient_PrimitiveZero(unsigned short val_primvar);
 
 	/*!
@@ -2047,12 +2066,16 @@ public:
    */
   virtual void SetSensitivity(unsigned short iDim, su2double val);
 
+  virtual void SetSensitivityOld(unsigned short iDim, su2double val);
+
   /*!
    * \brief Get the Sensitivity at the node
    * \param[in] iDim - spacial component
    * \return value of the Sensitivity
    */
   virtual su2double GetSensitivity(unsigned short iDim);
+
+  virtual su2double GetSensitivityOld(unsigned short iDim);
 
   virtual void SetDual_Time_Derivative(unsigned short iVar, su2double der);
 
@@ -2651,6 +2674,8 @@ public:
 	 * \brief Set to zero the gradient of the primitive variables.
 	 */
 	void SetGradient_PrimitiveZero(unsigned short val_primvar);
+    void SetInitialSolution(su2double val_density, su2double *val_velocity, su2double val_energy, unsigned short val_nDim,
+                                       unsigned short val_nvar, CConfig *config);
 
 	/*!
 	 * \brief Add <i>val_value</i> to the gradient of the primitive variables.
@@ -4748,6 +4773,7 @@ public:
 class CDiscAdjVariable : public CVariable {
 private:
     su2double* Sensitivity; /* Vector holding the derivative of target functional with respect to the coordinates at this node*/
+    su2double* Sensitivity_Old;
     su2double* DualTime_Derivative;
     su2double* DualTime_Derivative_n;
 
@@ -4778,12 +4804,16 @@ public:
      */
     void SetSensitivity(unsigned short iDim, su2double val);
 
+    void SetSensitivityOld(unsigned short iDim, su2double val);
+
     /*!
      * \brief Get the Sensitivity at the node
      * \param[in] iDim - spacial component
      * \return value of the Sensitivity
      */
     su2double GetSensitivity(unsigned short iDim);
+
+    su2double GetSensitivityOld(unsigned short iDim);
 
     void SetDual_Time_Derivative(unsigned short iVar, su2double der);
 

@@ -1139,6 +1139,41 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addDoubleOption("DEFORM_ELASTICITY_MODULUS", Deform_ElasticityMod, 2E11);
   /* DESCRIPTION: Young's modulus and Poisson's ratio for constant stiffness FEA method of grid deformation*/
   addDoubleOption("DEFORM_POISSONS_RATIO", Deform_PoissonRatio, 0.3);
+  addDoubleOption("OS_ALPHA", OneShotAlpha, 200.5);
+  addDoubleOption("OS_BETA", OneShotBeta, 2.5);
+  addUnsignedLongOption("OS_START", OneShotStart, 100);
+  addBoolOption("OS_STEP_ADAPT", OneShotStepAdaptive, false);
+  addDoubleOption("OS_STEP_SIZE", OneShotStepSize, 1E-4);
+  addBoolOption("OS_CONSTRAINT", OneShotConstraint, false);
+  addBoolOption("EX_BOUNDS", BoundsExact, true);
+  addDoubleOption("CONS_FACTOR", ConstraintFactor, 0.2);
+  addDoubleOption("CONS_START", ConstraintStart, 1.0);
+  addBoolOption("EQUAL_CONS", EqualConstraint, false);
+  addBoolOption("BFGS_ID", IdentityHessian, false);
+  addBoolOption("FACTOR_NORM", MultiplierNorm, false);
+  addBoolOption("LINE_SEARCH", LineSearch, false);
+  addBoolOption("CHECK_VK", CheckVk, false);
+  addBoolOption("ARMIJO", Armijo, true);
+  addBoolOption("POSCONS", posconstraint, true);
+  addBoolOption("POSUPD",posupdate, true);
+  addBoolOption("CONS_FACTOR_INCREASE",FactorIncrease, false);
+  addDoubleOption("OBJSCALE", ScaleObjective, 1.0);
+  addDoubleOption("CONSTRSCALE", ScaleConstraint, 1.0);
+    addDoubleOption("TARGET_LIFT", TargetLift, 0.4);
+  addDoubleOption("FDSTEP", FDStep, 1E-13);
+  addUnsignedLongOption("LINE_SEARCH_COUNTER", SearchCounterMax, 10);
+  addBoolOption("LBFGS", LBFGS, false);
+  addUnsignedLongOption("LBFGS_NUM", LBFGSNum, 1);
+  addBoolOption("HINIT", HInit, false);
+   addBoolOption("DAMP_BFGS", DampedBFGS, false);
+   addBoolOption("DAMP_BFGS_POW", DampedBFGSPow, false);
+   addDoubleOption("DAMP_MIN", DampedMin, 1E-7);
+   addDoubleOption("DAMP_MAX", DampedMax, 1E3);
+   addDoubleOption("H_SCALE", HScale, 1);
+   addBoolOption("NORM_Y", NormNewY, false);
+   addBoolOption("NORM_HB", NormHB, true);
+   addDoubleOption("DAMP_GAMMA", DampedGamma, 0.1);
+   addBoolOption("CHECK_DESC", CheckDescent, false);
   /*  DESCRIPTION: Linear solver for the mesh deformation\n OPTIONS: see \link Linear_Solver_Map \endlink \n Default: FGMRES \ingroup Config*/
   addEnumOption("DEFORM_LINEAR_SOLVER", Deform_Linear_Solver, Linear_Solver_Map, FGMRES);
 

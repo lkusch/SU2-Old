@@ -360,6 +360,20 @@ CEulerVariable::~CEulerVariable(void) {
   
 }
 
+
+void CEulerVariable::SetInitialSolution(su2double val_density, su2double *val_velocity, su2double val_energy, unsigned short val_nDim,
+                                   unsigned short val_nvar, CConfig *config){
+    unsigned short iDim;
+    Solution[0] = val_density;
+    Solution_Old[0] = val_density;
+    for (iDim = 0; iDim < nDim; iDim++) {
+        Solution[iDim+1] = val_density*val_velocity[iDim];
+        Solution_Old[iDim+1] = val_density*val_velocity[iDim];
+    }
+    Solution[nVar-1] = val_density*val_energy;
+    Solution_Old[nVar-1] = val_density*val_energy;
+}
+
 void CEulerVariable::SetGradient_PrimitiveZero(unsigned short val_primvar) {
 	unsigned short iVar, iDim;
   

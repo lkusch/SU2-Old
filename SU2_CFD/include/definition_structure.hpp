@@ -69,7 +69,7 @@ unsigned short GetnDim(string val_mesh_filename, unsigned short val_format);
  * \param[in] iZone - Index of the zone.
  */
 void Solver_Preprocessing(CSolver ***solver_container, CGeometry **geometry, CConfig *config, unsigned short iZone);
-
+void Solver_PreprocessingTest(CSolver ***solver_container, CGeometry **geometry, CConfig *config, su2double mach, bool initial, unsigned short numQuad);
 /*! 
  * \brief Definition and allocation of all integration classes.
  * \param[in] integration_container - Container vector with all the integration methods.

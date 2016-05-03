@@ -196,6 +196,8 @@ public:
 	 * \param[in] config - Definition of the particular problem.
 	 */
   virtual void SetNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh);
+    virtual void SetNewNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh);
+    virtual void SetInflow_Mach(CGeometry *geometry, CConfig *config, unsigned short iMesh, su2double mach, bool initial, unsigned short numQuad);
   
 	/*!
 	 * \brief Compute the pressure at the infinity.
@@ -420,6 +422,7 @@ public:
 	 * \param[in] geometry - Geometrical definition of the problem.
 	 */
 	void Set_OldSolution(CGeometry *geometry);
+    void Set_OldGradient(CGeometry *geometry);
     
 	/*!
 	 * \brief A virtual member.
@@ -2283,11 +2286,42 @@ public:
    */
   virtual void SetAdjointInput(CGeometry *geometry,  CConfig *config);
 
+  virtual void SetAdjointInputHelp(CGeometry *geometry,  CConfig *config);
+
+  virtual void StoreOldSolution();
+
+  virtual void LoadOldSolution();
+
+  virtual void StoreSolutionVec(unsigned short numQuad);
+
+  virtual void LoadSolutionVec(unsigned short numQuad);
+
+  virtual void StoreSolutionVecOld(unsigned short numQuad);
+
+  virtual void LoadSolutionVecOld(unsigned short numQuad);
+
+  virtual void LoadOldAdjoint();
+
+  virtual void StoreSaveSolution();
+
+  virtual void LoadSaveSolution();
+
+  virtual void UpdateStateVariable(CConfig *config);
+
+  virtual void OutputWritten(CGeometry *geometry);
+
+  virtual void SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config);
+
+  virtual void SetAdjointOutputZero(CGeometry *geometry, CConfig *config);
+
   /*!
   * \brief A virtual member
   * \param[in] geometry - The geometrical definition of the problem.
   */
   virtual void RegisterObj_Func(CConfig *config);
+
+  virtual void RegisterConstraint_Func(CConfig *config);
+  virtual void RegisterConstraint_Mom(CConfig *config);
 
   /*!
    * \brief  A virtual member.
@@ -2303,13 +2337,91 @@ public:
    */
   virtual void SetSensitivity(CGeometry *geometry, CConfig *config);
 
-  virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+  virtual void DesignUpdate(CGeometry *geometry, CConfig *config);
+
+  virtual void WriteDesignVariable();
+
+  virtual void ApplyDesignVar();
+
+  virtual void DesignMinus();
+
+  virtual void DesignStep(su2double values);
+
+  virtual su2double QuadraticApproximation(su2double steplen);
+
+  virtual void CalculatePhi(su2double steplen, su2double& Phi, su2double& dPhi);
+
+  virtual void ChangeDirection();
+
+  virtual bool CheckDescentDirection(su2double steplen);
+
+  virtual su2double CubicApproximation(su2double steplen);
+
+  virtual void DesignUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, su2double steplen);
+
+  virtual su2double DesignUpdateBounds(CGeometry *geometry, CConfig *config, unsigned short ExtIter, su2double steplen);
+
+  virtual bool CheckFirstWolfe(su2double steplen);
+
+ // virtual void BFGSUpdate(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+
+  virtual void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+
+  virtual void SetSensitivityFD(CGeometry *geometry, CConfig *config);
+
+  virtual void ResetSensitivity(CGeometry *geometry);
+
+  virtual void SaveSurfaceSensitivity(CGeometry *geometry);
+
+  virtual void ResetExpValues(CGeometry *geometry);
+  virtual void SumExpValues(CGeometry *geometry, unsigned short numQuad);
+  virtual void DistributeExpValues(CGeometry *geometry);
+  virtual su2double GetMachP(unsigned short numQuad);
+
+  virtual void AssembleLagrangian(CConfig *config);
+
+  virtual void UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor);
+
+  virtual void OverwriteSensitivity(CGeometry *geometry);
+
+  virtual void OverwriteSensitivityProjected(CGeometry *geometry);
+
+  virtual void SetProjectedSensitivity(unsigned long iDV, su2double value);
+
+  virtual void OverwriteGradientProjected(CGeometry *geometry);
+
+  virtual void SetProjectedGradient(unsigned long iDV, su2double value);
+
+  virtual su2double getDVValue(unsigned long iDV);
+
+    virtual su2double getDesignVar(unsigned long iDV);
+
+  virtual void StoreOldLagrangeSensitivity(CGeometry *geometry);
+
+  virtual void LoadSurfaceSensitivity(CGeometry *geometry);
+
+  virtual su2double SensitivityNorm(CGeometry *geometry);
+
+  virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
+
+  virtual void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig* config, double initVal);
+
+  virtual su2double GetConstraintFunc_Value();
+
+  virtual void StoreConstraint();
+ // virtual void SetInflow_Mach(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short iMesh, su2double mach);
+
+  virtual double GetMultiplier();
+
+  virtual void SetMultiplier(CConfig *config, double value);
+
+  virtual void UpdateMultiplier(CConfig* config);
 
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] Set value of interest: 0 - Initial value, 1 - Current value.
-	 */
-	virtual void SetFSI_ConvValue(unsigned short val_index, su2double val_criteria);
+     */
+  virtual void SetFSI_ConvValue(unsigned short val_index, su2double val_criteria);
 
 	/*!
 	 * \brief A virtual member.
@@ -2457,6 +2569,13 @@ protected:
   Temperature_Inf,			/*!< \brief Energy at the infinity. */
 	Pressure_Inf,		/*!< \brief Pressure at the infinity. */
 	*Velocity_Inf;		/*!< \brief Flow Velocity vector at the infinity. */
+
+  su2double *MachVec,
+    *DensityVec,
+    *EnergyVec,
+  *TemperatureVec,
+    *PressureVec,
+    **VelocityVec;
 	
   su2double
   *CDrag_Inv,	/*!< \brief Drag coefficient (inviscid contribution) for each boundary. */
@@ -2670,6 +2789,7 @@ public:
 	 * \param[in] config - Definition of the particular problem.
 	 */
   void SetNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh);
+  void SetNewNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh);
   
 	/*!
 	 * \brief Compute the pressure at the infinity.
@@ -3351,6 +3471,7 @@ public:
 	 * \return Value of the fan face mach on the surface <i>val_marker</i>.
 	 */
 	su2double GetInflow_Mach(unsigned short val_marker);
+    void SetInflow_Mach(CGeometry *geometry, CConfig *config, unsigned short iMesh, su2double mach, bool initial, unsigned short numQuad);
     
 	/*!
 	 * \brief Provide the non dimensional sideforce coefficient (inviscid contribution).
@@ -8183,14 +8304,61 @@ private:
   *Sens_Geo,			/*!< \brief Shape sensitivity coefficient for each boundary. */
   *Sens_Press,			/*!< \brief Pressure sensitivity coefficient for each boundary. */
   *Sens_Temp,			/*!< \brief Temperature sensitivity coefficient for each boundary. */
-  **CSensitivity;	/*!< \brief Shape sensitivity coefficient for each boundary and vertex. */
+  **CSensitivity,	/*!< \brief Shape sensitivity coefficient for each boundary and vertex. */
+  **CSensitivityOld,
+  **ExpCSensitivityOld,
+  **rkStore,
+  **dukStore,
+  **LagrangeSens,
+  **ExpLagrangeSens,
+  //**LagrangeSensOld,
+  *UpdateSens,
+  *ProjectedSens, *ProjectedGradient,
+  *ProjectedSensOld,
+  *DesignVar,
+ // *DesignVarOld,
+  *DesignVarUpdate,
+  *DesignVarUpdateSave,
+  *DesignVarUpdateReal,
+  **Hess,
+  **Bess;
+  su2double *machp;
+  su2double *points;
+  su2double *weights;
+  su2double sigma;
+  su2double mu;
+//  *yCoordNew,
+//  *yCoordOld;
+ // su2double **LagrangeSensSep;
+  su2double normy;
+  su2double normyold;
+  su2double rho;
+  su2double Lagrangian_Value;
+  su2double ExpLagrangian_Value;
+  su2double Lagrangian_Value_Old;
   su2double Total_Sens_Mach;	/*!< \brief Total mach sensitivity coefficient for all the boundaries. */
   su2double Total_Sens_AoA;		/*!< \brief Total angle of attack sensitivity coefficient for all the boundaries. */
   su2double Total_Sens_Geo;		/*!< \brief Total shape sensitivity coefficient for all the boundaries. */
   su2double Total_Sens_Press;    /*!< \brief Total farfield sensitivity to pressure. */
   su2double Total_Sens_Temp;    /*!< \brief Total farfield sensitivity to temperature. */
   su2double ObjFunc_Value;        /*!< \brief Value of the objective function. */
+  su2double ExpObjFunc_Value;
+  su2double ConstraintFunc_Value;
+  su2double ConstraintMom_Value;
+  su2double Constraint_Save;
+  su2double ExpConstraint_Save;
+  su2double Constraint_Old;
+  unsigned long TotalIterations;
+  unsigned long BFGSCount;
+  double multiplier;
+  double multiplierhelp;
+  double multiplieroriginal;
+  double cons_factor;
   unsigned long nMarker;				/*!< \brief Total number of markers using the grid information. */
+  su2double PhiOld;
+  su2double GradPhiCubic;
+  su2double PhiCubic;
+  su2double StepOld;
 
 public:
 
@@ -8215,6 +8383,7 @@ public:
    * \param[in] Kind_Solver - The kind of direct solver.
    */
   CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver* solver, unsigned short Kind_Solver, unsigned short iMesh);
+//  void SetInflow_Mach(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short iMesh, su2double mach);
 
   /*!
    * \brief Performs the preprocessing of the adjoint AD-based solver.
@@ -8249,11 +8418,52 @@ public:
   */
   void SetAdjointInput(CGeometry *geometry, CConfig *config);
 
+  void SetAdjointInputHelp(CGeometry *geometry, CConfig *config);
+
+  void StoreOldSolution();
+
+  void LoadOldSolution();
+
+  void StoreSolutionVec(unsigned short numQuad);
+
+  void LoadSolutionVec(unsigned short numQuad);
+
+  void StoreSolutionVecOld(unsigned short numQuad);
+
+  void LoadSolutionVecOld(unsigned short numQuad);
+
+  void LoadOldAdjoint();
+
+  void StoreSaveSolution();
+
+  void LoadSaveSolution();
+
+  void UpdateStateVariable(CConfig *config);
+
+  void AssembleLagrangian(CConfig *config);
+
+  su2double GetConstraintFunc_Value();
+
+  void StoreConstraint();
+
+  double GetMultiplier();
+
+  void SetMultiplier(CConfig *config, double value);
+
+  void OutputWritten(CGeometry *geometry);
+
+  void SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config);
+
+  void SetAdjointOutputZero(CGeometry *geometry, CConfig *config);
+
   /*!
   * \brief Register the objective function as output.
   * \param[in] geometry - The geometrical definition of the problem.
   */
   void RegisterObj_Func(CConfig *config);
+
+  void RegisterConstraint_Func(CConfig *config);
+  void RegisterConstraint_Mom(CConfig *config);
 
   /*!
    * \brief Set the surface sensitivity.
@@ -8269,13 +8479,71 @@ public:
    */
   void SetSensitivity(CGeometry *geometry, CConfig *config);
 
+  void SetSensitivityFD(CGeometry *geometry, CConfig *config);
+
+  void DesignUpdate(CGeometry *geometry, CConfig *config);
+
+  void WriteDesignVariable();
+
+  void DesignMinus();
+
+  void DesignStep(su2double values);
+
+  su2double QuadraticApproximation(su2double steplen);
+
+  void CalculatePhi(su2double steplen, su2double& Phi, su2double& dPhi);
+
+  void ChangeDirection();
+
+  bool CheckDescentDirection(su2double steplen);
+
+  su2double CubicApproximation(su2double steplen);
+
+  void DesignUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, su2double steplen);
+
+  su2double DesignUpdateBounds(CGeometry *geometry, CConfig *config, unsigned short ExtIter, su2double steplen);
+
+  bool CheckFirstWolfe(su2double steplen);
+
+//  void BFGSUpdate(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+
+  void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+
+  void ResetSensitivity(CGeometry *geometry);
+
+  void SaveSurfaceSensitivity(CGeometry *geometry);
+
+  void ResetExpValues(CGeometry *geometry);
+  void SumExpValues(CGeometry *geometry, unsigned short numQuad);
+  void DistributeExpValues(CGeometry *geometry);
+  su2double GetMachP(unsigned short numQuad);
+
+  void OverwriteSensitivityProjected(CGeometry *geometry);
+
+  void SetProjectedSensitivity(unsigned long iDV, su2double value);
+
+  void OverwriteGradientProjected(CGeometry *geometry);
+
+  void SetProjectedGradient(unsigned long iDV, su2double value);
+
+  su2double getDVValue(unsigned long iDV);
+
+  void ApplyDesignVar();
+
+  void UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor);
+
+  su2double SensitivityNorm(CGeometry *geometry);
+
   /*!
    * \brief Set the objective function.
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
+  void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig* config, double initVal);
+
+  void UpdateMultiplier(CConfig* config);
 
   /*!
    * \brief Provide the total shape sensitivity coefficient.

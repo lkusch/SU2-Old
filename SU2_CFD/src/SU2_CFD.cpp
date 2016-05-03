@@ -240,8 +240,8 @@ int main(int argc, char *argv[]) {
      flows on dynamic meshes, including rigid mesh transformations, dynamically
      deforming meshes, and time-spectral preprocessing. ---*/
     
-    if (config_container[iZone]->GetGrid_Movement() ||
-        (config_container[iZone]->GetDirectDiff() == D_DESIGN)) {
+   /* if (config_container[iZone]->GetGrid_Movement() ||
+        (config_container[iZone]->GetDirectDiff() == D_DESIGN)) {*/
       if (rank == MASTER_NODE)
         cout << "Setting dynamic mesh structure." << endl;
       grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0]);
@@ -251,7 +251,7 @@ int main(int argc, char *argv[]) {
       if (config_container[iZone]->GetUnsteady_Simulation() == TIME_SPECTRAL)
         SetGrid_Movement(geometry_container[iZone], surface_movement[iZone], grid_movement[iZone],
                          FFDBox[iZone], solver_container[iZone], config_container[iZone], iZone, 0, 0);
-    }
+    //}
 
     if (config_container[iZone]->GetDirectDiff() == D_DESIGN){
       if (rank == MASTER_NODE)
@@ -428,10 +428,17 @@ int main(int argc, char *argv[]) {
         break;
 
       case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES:case DISC_ADJ_RANS:
-        DiscAdjMeanFlowIteration(output, integration_container, geometry_container,
+        /*if(config_container[0]->GetOneShotConstraint()==false)  DiscAdjMeanFlowIteration(output, integration_container, geometry_container,
                                  solver_container, numerics_container, config_container,
                                  surface_movement, grid_movement, FFDBox);
+        if(config_container[0]->GetOneShotConstraint()==true )  DiscAdjMeanFlowIterationConstraint(output, integration_container, geometry_container,
+                                                             solver_container, numerics_container, config_container,
+                                                             surface_movement, grid_movement, FFDBox);*/
+        DiscAdjMeanFlowIteration(output, integration_container, geometry_container,
+                                         solver_container, numerics_container, config_container,
+                                         surface_movement, grid_movement, FFDBox);
         break;
+
 
 
     }

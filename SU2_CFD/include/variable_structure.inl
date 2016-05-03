@@ -87,6 +87,8 @@ inline void CVariable::SetAuxVar(su2double val_auxvar) { AuxVar = val_auxvar; }
 
 inline void CVariable::SetSolution_Old(unsigned short val_var, su2double val_solution_old) { Solution_Old[val_var] = val_solution_old; }
 
+inline void CVariable::SetSolution_Save(unsigned short val_var, su2double val_solution_old) { Solution_Save[val_var] = val_solution_old; }
+
 inline void CVariable::SetLimiter(unsigned short val_var, su2double val_limiter) { Limiter[val_var] = val_limiter; }
 
 inline void CVariable::SetLimiterPrimitive(unsigned short val_species, unsigned short val_var, su2double val_limiter) { }
@@ -103,6 +105,11 @@ inline su2double *CVariable::GetSolution(void) { return Solution; }
 
 inline su2double *CVariable::GetSolution_Old(void) { return Solution_Old; }
 
+inline su2double *CVariable::GetSolutionVec(bool quad, unsigned short numQuad) { return SolutionVec[numQuad]; }
+inline su2double *CVariable::GetSolutionVecOld(bool quad, unsigned short numQuad) { return SolutionVec_Old[numQuad]; }
+
+inline su2double *CVariable::GetSolution_Save(void) { return Solution_Save; }
+
 inline su2double *CVariable::GetSolution_time_n(void) { return Solution_time_n; }
 
 inline su2double *CVariable::GetSolution_time_n1(void) { return Solution_time_n1; }
@@ -116,6 +123,8 @@ inline su2double CVariable::GetUndivided_Laplacian(unsigned short val_var) { ret
 inline su2double CVariable::GetSolution(unsigned short val_var) { return Solution[val_var]; }
 
 inline su2double CVariable::GetSolution_Old(unsigned short val_var) { return Solution_Old[val_var]; }
+
+inline su2double CVariable::GetSolution_Save(unsigned short val_var) { return Solution_Save[val_var]; }
 
 inline su2double *CVariable::GetResidual_Sum(void) { return Residual_Sum; }
 
@@ -446,6 +455,9 @@ inline bool CVariable::SetVorticity(bool val_limiter) { return false; }
 inline bool CVariable::SetStrainMag(bool val_limiter) { return false; }
 
 inline void CVariable::SetGradient_PrimitiveZero(unsigned short val_primvar) { }
+
+inline void CVariable::SetInitialSolution(su2double val_density, su2double *val_velocity, su2double val_energy, unsigned short val_nDim,
+                               unsigned short val_nvar, CConfig *config){ }
 
 inline void CVariable::AddGradient_Primitive(unsigned short val_var, unsigned short val_dim, su2double val_value) { }
 
@@ -1150,8 +1162,16 @@ inline su2double CDiscAdjVariable::GetDual_Time_Derivative_n(unsigned short iVar
 
 inline void CVariable::SetSensitivity(unsigned short iDim, su2double val){}
 
+inline void CVariable::SetSensitivityOld(unsigned short iDim, su2double val){}
+
 inline su2double CVariable::GetSensitivity(unsigned short iDim){}
+
+inline su2double CVariable::GetSensitivityOld(unsigned short iDim){}
 
 inline void CDiscAdjVariable::SetSensitivity(unsigned short iDim, su2double val){Sensitivity[iDim] = val;}
 
+inline void CDiscAdjVariable::SetSensitivityOld(unsigned short iDim, su2double val){Sensitivity_Old[iDim] = val;}
+
 inline su2double CDiscAdjVariable::GetSensitivity(unsigned short iDim){return Sensitivity[iDim];}
+
+inline su2double CDiscAdjVariable::GetSensitivityOld(unsigned short iDim){return Sensitivity_Old[iDim];}
