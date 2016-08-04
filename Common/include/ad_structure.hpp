@@ -48,6 +48,8 @@ namespace AD{
    */
   void Reset();
 
+  void ResetVectorPosition();
+
   /*!
    * \brief Reset the variable (set index to zero).
    * \param[in] data - the variable to be unregistered from the tape.
