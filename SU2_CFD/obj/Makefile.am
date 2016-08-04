@@ -127,7 +127,8 @@ su2_cfd_sources = \
   ../src/variable_direct_wave.cpp \
   ../src/variable_direct_elasticity.cpp \
   ../src/variable_structure.cpp \
-  ../src/variable_template.cpp
+  ../src/variable_template.cpp \
+  ../../SparseGrid/SG/normal.cpp
 
 su2_cfd_cxx_flags =
 su2_cfd_ldadd =
