@@ -40,6 +40,7 @@ CPrimalGrid::CPrimalGrid(void) {
 	Neighbor_Elements = NULL;
 	Coord_CG = NULL;
 	Coord_FaceElems_CG = NULL;
+    Density = new su2double[1];
   
 }
 

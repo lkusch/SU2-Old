@@ -78,7 +78,7 @@ inline void CIntegration::SingleGrid_Iteration(CGeometry ***geometry, CSolver **
 											  CConfig **config, unsigned short RunTime_EqSystem, unsigned long Iteration, unsigned short iZone) { }
 
 inline void CIntegration::Structural_Iteration(CGeometry ***geometry, CSolver ****solver_container, CNumerics *****numerics_container, 
-											  CConfig **config, unsigned short RunTime_EqSystem, unsigned long Iteration, unsigned short iZone) { }
+                                              CConfig **config, unsigned short RunTime_EqSystem, unsigned long Iteration, unsigned short iZone) { }
 
 
 inline void CIntegration::SetPotential_Solver(CGeometry ***geometry, CSolver ****solver_container, CNumerics *****numerics_container, 

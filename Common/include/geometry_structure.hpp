@@ -874,6 +874,7 @@ public:
    * \param[in] config
    */
   void RegisterCoordinates(CConfig *config);
+  void RegisterDensity(CConfig * config);
 
   /*!
    * \brief Update the multi-grid structure and the wall-distance.

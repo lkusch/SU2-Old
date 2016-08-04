@@ -614,12 +614,6 @@ inline su2double CConfig::GetDeform_ElasticityMod(void) { return Deform_Elastici
 
 inline su2double CConfig::GetDeform_PoissonRatio(void) { return Deform_PoissonRatio; }
 
-inline su2double CConfig::GetTopOptMinElasticity(void) {return TopOptMinElasticity;}
-
-inline su2double CConfig::GetTopOptPenalty(void){return TopOptPenalty;}
-
-inline su2double CConfig::GetTopOptVolumeFraction(void) {return TopOptVolumeFraction;}
-
 inline su2double CConfig::GetOneShotAlpha(void){ return OneShotAlpha;}
 inline su2double CConfig::GetOneShotBeta(void){ return OneShotBeta;}
 inline unsigned long CConfig::GetOneShotStart(void){return OneShotStart;}
@@ -627,10 +621,9 @@ inline bool CConfig::GetOSStepAdaptive(void){ return OneShotStepAdaptive;}
 inline su2double CConfig::GetOSStepSize(void){ return OneShotStepSize;}
 inline bool CConfig::GetOneShotConstraint(void){ return OneShotConstraint;}
 inline bool CConfig::GetBoundsExact(void){ return BoundsExact;}
-inline unsigned short CConfig::GetEqualConstraint(unsigned short valu){ return EqualConstraint[valu];}
-inline su2double CConfig::GetConstraintFactor(unsigned short valu){ return ConstraintFactor[valu];}
+inline bool CConfig::GetEqualConstraint(void){ return EqualConstraint;}
+inline su2double CConfig::GetConstraintFactor(void){ return ConstraintFactor;}
 inline su2double CConfig::GetConstraintStart(void){ return ConstraintStart;}
-inline unsigned long CConfig::GetConstraintNum(void){return ConstraintNum;}
 inline bool CConfig::GetIdentityHessian(void){ return IdentityHessian;}
 inline bool CConfig::GetMultiplierNorm(void){ return MultiplierNorm;}
 inline unsigned long CConfig::GetSearchCounterMax(void){ return SearchCounterMax;}
@@ -1254,6 +1247,8 @@ inline unsigned short CConfig::GetDirectDiff(){ return DirectDiff;}
 
 inline bool CConfig::GetDiscrete_Adjoint() {return DiscreteAdjoint;}
 
-inline bool CConfig::GetAD_Mode(void) {return AD_Mode;}
-
+<<<<<<< HEAD
 inline bool CConfig::GetOne_Shot() {return OneShot;}
+=======
+inline bool CConfig::GetAD_Mode(void) {return AD_Mode;}
+>>>>>>> github/develop

@@ -109,6 +109,14 @@ namespace SU2_TYPE{
    */
   void SetDerivative(su2double &data, const double &val);
 
+/*  double GetForwardDerivative(const su2double &data);
+
+  void SetForwardDerivative(su2double &data, const double &val);
+
+  double GetMixedDerivative(const su2double &data);
+
+  void SetMixedDerivative(su2double &data, const double &val);*/
+
   /*!
    * \brief Casts the primitive value to int (uses GetValue, already implemented for each type).
    * \param[in] data - The non-primitive datatype.

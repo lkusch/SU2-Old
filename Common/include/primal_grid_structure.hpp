@@ -62,6 +62,7 @@ protected:
                                  correspond with a boundary element is stored. */
 	bool Divide;                  /*!< \brief Marker used to know if we are going to divide this element
                                  in the adaptation proccess. */
+    su2double *Density;
   
 public:
 	
@@ -135,6 +136,9 @@ public:
 	 * \return <code>TRUE</code> if the element must be divided; otherwise <code>FALSE</code>.
 	 */
 	bool GetDivide(void);
+
+    su2double *GetDensity(void);
+    void SetDensity(su2double dens);
 	
 	/*!
 	 * \brief A virtual member.

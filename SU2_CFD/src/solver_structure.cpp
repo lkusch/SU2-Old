@@ -1626,7 +1626,7 @@ void CSolver::Restart_OldGeometry(CGeometry *geometry, CConfig *config) {
 	restart_file_n.open(filename_n.data(), ios::in);
 	if (restart_file_n.fail()) {
 		if (rank == MASTER_NODE)
-			cout << "There is no flow restart file!! " << filename_n.data() << "."<< endl;
+            cout << "There is no flow restart file!! " << filename_n.data() << "."<< endl;
 		exit(EXIT_FAILURE);
 	}
 
@@ -1730,7 +1730,7 @@ void CSolver::Restart_OldGeometry(CGeometry *geometry, CConfig *config) {
 		restart_file_n.open(filename_n1.data(), ios::in);
 		if (restart_file_n.fail()) {
 			if (rank == MASTER_NODE)
-				cout << "There is no flow restart file!! " << filename_n1.data() << "."<< endl;
+                cout << "There is no flow restart file!! " << filename_n1.data() << "."<< endl;
 			exit(EXIT_FAILURE);
 		}
 

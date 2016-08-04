@@ -36,5 +36,6 @@
 #ifdef CODI_INDEX_TAPE
 typedef codi::RealReverseIndex su2double;
 #else
-typedef codi::RealReverse su2double;
+typedef codi::RealReverseOverForward su2double;
+//typedef codi::RealReverse su2double;
 #endif

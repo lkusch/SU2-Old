@@ -2976,6 +2976,25 @@ void CSurfaceMovement::SetSurface_Deformation(CGeometry *geometry, CConfig *conf
         }
       }
       Surface_File.close();
+      /*
+      double *Normal = new double[geometry->GetnDim()];
+      double lenNormal;
+      for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+        if (config->GetMarker_All_DV(iMarker) == YES) {
+          for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+            geometry->vertex[iMarker][iVertex]->GetNormal(Normal);
+            lenNormal=0;
+            for (unsigned short iDim = 0; iDim < geometry->GetnDim(); iDim++) {
+                lenNormal+=(Normal)[iDim]*(Normal)[iDim];
+            }
+            for (unsigned short iDim = 0; iDim < geometry->GetnDim(); iDim++) {
+                Surface_File << "\t" << Normal[iDim]/sqrt(lenNormal);
+            }
+          }
+        }
+      }
+      */
+
       
       /*--- A surface file exists, so read in the coordinates ---*/
       

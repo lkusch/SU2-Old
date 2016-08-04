@@ -485,6 +485,12 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
   /*--- If dynamic, we also need to communicate the old solution ---*/
   
   if(dynamic) Set_MPI_Solution_Old(geometry, config);
+
+  /*--- values for topology optimization ---*/
+
+  Emin=config->GetTopOptMinElasticity();
+  penal=config->GetTopOptPenalty();
+  MinimumCompliance = 0.0;
   
 }
 
@@ -1111,6 +1117,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix(CGeometry *geometry, CSolver **s
   unsigned short iNode, iDim, nNodes = 0;
   unsigned long indexNode[8]={0,0,0,0,0,0,0,0};
   su2double val_Coord;
+  su2double E = config->GetElasticyMod();
   int EL_KIND = 0;
   
   su2double *Kab = NULL;
@@ -1151,7 +1158,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix(CGeometry *geometry, CSolver **s
         
         for (iVar = 0; iVar < nVar; iVar++){
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_ij[iVar][jVar] = Kab[iVar*nVar+jVar];
+            Jacobian_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(E - Emin))*Kab[iVar*nVar+jVar];
           }
         }
         
@@ -1948,6 +1955,101 @@ void CFEM_ElasticitySolver::Postprocessing(CGeometry *geometry, CSolver **solver
   
 }
 
+void CFEM_ElasticitySolver::BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                                   unsigned short val_marker) {
+    unsigned long iPoint, iVertex, jPoint;
+    su2double ElasMod = config->GetElasticyMod();
+    unsigned short component;
+
+    bool dynamic = (config->GetDynamic_Analysis() == DYNAMIC);
+
+    for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
+
+      /*--- Get node index ---*/
+
+      iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+
+      /*--- Get fixed component of the roller ---*/
+      component = config->GetComp_Roller(config->GetMarker_All_TagBound(val_marker));
+
+      if (geometry->node[iPoint]->GetDomain()) {
+
+        node[iPoint]->SetSolution(component, 0.0);
+
+        if (dynamic){
+          node[iPoint]->SetSolution_Vel(component, 0.0);
+          node[iPoint]->SetSolution_Accel(component, 0.0);
+        }
+
+
+        /*--- Initialize the reaction vector ---*/
+        LinSysReact.SetBlock(iPoint, component, 0.0);
+
+        LinSysRes.SetBlock(iPoint, component, 0.0);
+
+        /*--- STRONG ENFORCEMENT OF THE DISPLACEMENT BOUNDARY CONDITION ---*/
+
+        /*--- Delete the columns for a particular node ---*/
+
+        for (jPoint = 0; jPoint < nPoint; jPoint++){
+          if (jPoint==iPoint) {
+            Jacobian.SetEntry(jPoint,iPoint,component,component,ElasMod);
+          }
+          else {
+            Jacobian.SetEntry(jPoint,iPoint,component,component,0.0);
+          }
+        }
+
+        /*--- Delete the rows for a particular node ---*/
+        for (jPoint = 0; jPoint < nPoint; jPoint++){
+          if (iPoint!=jPoint) {
+            Jacobian.SetEntry(iPoint,jPoint,component,component,0.0);
+          }
+        }
+
+        /*--- If the problem is dynamic ---*/
+        /*--- Enforce that in the previous time step all nodes had 0 U, U', U'' ---*/
+
+        if(dynamic){
+
+          node[iPoint]->SetSolution_time_n(component, 0.0);
+          node[iPoint]->SetSolution_Vel_time_n(component, 0.0);
+          node[iPoint]->SetSolution_Accel_time_n(component, 0.0);
+
+        }
+
+      }
+
+    }
+
+
+}
+
+void CFEM_ElasticitySolver::BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                            unsigned short val_marker) {
+
+  unsigned long iPoint, iVertex;
+  bool dynamic = (config->GetDynamic_Analysis() == DYNAMIC);
+  unsigned short component;
+  for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
+
+    /*--- Get node index ---*/
+
+    iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
+
+    component = config->GetComp_Roller(config->GetMarker_All_TagBound(val_marker));
+
+    node[iPoint]->SetSolution(component, 0.0);
+
+    if (dynamic){
+      node[iPoint]->SetSolution_Vel(component, 0.0);
+      node[iPoint]->SetSolution_Accel(component, 0.0);
+    }
+
+  }
+
+}
+
 void CFEM_ElasticitySolver::BC_Normal_Displacement(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                                    unsigned short val_marker) { }
 
@@ -2697,7 +2799,7 @@ void CFEM_ElasticitySolver::GeneralizedAlpha_UpdateLoads(CGeometry *geometry, CS
 }
 
 void CFEM_ElasticitySolver::Solve_System(CGeometry *geometry, CSolver **solver_container, CConfig *config){
-  
+
   unsigned long IterLinSol = 0, iPoint, total_index;
   unsigned short iVar;
   
@@ -2706,6 +2808,7 @@ void CFEM_ElasticitySolver::Solve_System(CGeometry *geometry, CSolver **solver_c
   for (iPoint = nPointDomain; iPoint < nPoint; iPoint++) {
     
     for (iVar = 0; iVar < nVar; iVar++) {
+
       total_index = iPoint*nVar + iVar;
       LinSysRes[total_index] = 0.0;
       LinSysSol[total_index] = 0.0;
@@ -2717,6 +2820,12 @@ void CFEM_ElasticitySolver::Solve_System(CGeometry *geometry, CSolver **solver_c
   IterLinSol = femSystem.Solve(Jacobian, LinSysRes, LinSysSol, geometry, config);
   
   /*--- The the number of iterations of the linear solver ---*/
+
+  /*for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+    for (iVar = 0; iVar < nVar; iVar++) {
+        std::cout<<geometry->node[iPoint]->GetCoord()[0]<<" "<<geometry->node[iPoint]->GetCoord()[1]<<" "<<LinSysSol[iPoint*nVar]<<" "<<LinSysSol[iPoint*nVar+1]<<std::endl;
+    }
+  }*/
   
   SetIterLinSolver(IterLinSol);
   
@@ -3598,5 +3707,44 @@ void CFEM_ElasticitySolver::Update_StructSolution(CGeometry **fea_geometry,
   
   Set_MPI_Solution_DispOnly(fea_geometry[MESH_0], fea_config);
   
+}
+
+void CFEM_ElasticitySolver::Compute_MinimumCompliance(CGeometry *fea_geometry,
+                                                  CConfig *fea_config, CSolver **fea_solution){
+  
+    unsigned short iVar,jVar;
+    unsigned long iPoint,jPoint;
+    
+    for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+     // std::cout<<fea_geometry->node[iPoint]->GetCoord()[0]<<" "<<fea_geometry->node[iPoint]->GetCoord()[1]<<" "<<LinSysSol[iPoint*nVar]<<" "<<LinSysSol[iPoint*nVar+1]<<std::endl;
+      
+      for (iVar = 0; iVar < nVar; iVar++) {
+          
+          for (jPoint = 0; jPoint < nPointDomain; jPoint++) {
+            
+            for (jVar = 0; jVar < nVar; jVar++) {
+        
+                MinimumCompliance+=LinSysSol[iPoint*nVar+iVar]*Jacobian.GetEntry(iPoint,jPoint,iVar,jVar)*LinSysSol[jPoint*nVar+jVar];
+
+    
+            }
+          }
+  
+      }
+
+    }
+    std::cout<<std::setprecision(12)<<"MinimumCompliance: "<<MinimumCompliance<<std::endl;
+}
+
+void CFEM_ElasticitySolver::Initialize_Density(CGeometry *fea_geometry,
+                                                  CConfig *fea_config){
+
+    unsigned long iElem;
+
+    for (iElem = 0; iElem < fea_geometry->GetnElem(); iElem++) {
+        fea_geometry->elem[iElem]->SetDensity(fea_config->GetTopOptVolumeFraction());
+    }
+    fea_geometry->elem[0]->SetDensity(0.501);
+
 }
 

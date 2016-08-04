@@ -113,6 +113,8 @@ inline void CVariable::SetAuxVar(su2double val_auxvar) { AuxVar = val_auxvar; }
 
 inline void CVariable::SetSolution_Old(unsigned short val_var, su2double val_solution_old) { Solution_Old[val_var] = val_solution_old; }
 
+inline void CVariable::SetSolution_Store(unsigned short val_var, su2double val_solution_old) { Solution_Store[val_var] = val_solution_old; }
+
 inline void CVariable::SetSolution_Save(unsigned short val_var, su2double val_solution_old) { Solution_Save[val_var] = val_solution_old; }
 
 inline void CVariable::SetLimiter(unsigned short val_var, su2double val_limiter) { Limiter[val_var] = val_limiter; }
@@ -130,6 +132,8 @@ inline void CVariable::SetAuxVarGradient(unsigned short iDim, su2double val_grad
 inline su2double *CVariable::GetSolution(void) { return Solution; }
 
 inline su2double *CVariable::GetSolution_Old(void) { return Solution_Old; }
+
+inline su2double *CVariable::GetSolution_Store(void) { return Solution_Store; }
 
 inline su2double *CVariable::GetSolutionVec(bool quad, unsigned short numQuad) { return SolutionVec[numQuad]; }
 inline su2double *CVariable::GetSolutionVecOld(bool quad, unsigned short numQuad) { return SolutionVec_Old[numQuad]; }
@@ -149,6 +153,8 @@ inline su2double CVariable::GetUndivided_Laplacian(unsigned short val_var) { ret
 inline su2double CVariable::GetSolution(unsigned short val_var) { return Solution[val_var]; }
 
 inline su2double CVariable::GetSolution_Old(unsigned short val_var) { return Solution_Old[val_var]; }
+
+inline su2double CVariable::GetSolution_Store(unsigned short val_var) { return Solution_Store[val_var]; }
 
 inline su2double CVariable::GetSolution_Save(unsigned short val_var) { return Solution_Save[val_var]; }
 
@@ -1075,6 +1081,11 @@ inline void CVariable::RegisterSolution_time_n1(){
 inline void CVariable::SetAdjointSolution(su2double *adj_sol){
     for (unsigned short iVar = 0; iVar < nVar; iVar++)
         SU2_TYPE::SetDerivative(Solution[iVar], SU2_TYPE::GetValue(adj_sol[iVar]));
+}
+
+inline void CVariable::SetForwardSolution(su2double *adj_sol){
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        SU2_TYPE::SetForwardDerivative(Solution[iVar], SU2_TYPE::GetValue(adj_sol[iVar]));
 }
 
 

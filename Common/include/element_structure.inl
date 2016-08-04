@@ -45,6 +45,8 @@ inline void CElement::SetCurr_Coord(su2double val_CoordCurr, unsigned short iNod
 
 inline void CElement::SetElement_Pressure(su2double val_ElPressure) {el_Pressure = val_ElPressure;}
 
+inline void CElement::SetElement_Density(su2double val_ElDensity) {el_Density = val_ElDensity;}
+
 inline su2double CElement::GetRef_Coord(unsigned short iNode, unsigned short iDim) { return RefCoord[iNode][iDim];}
 
 inline su2double CElement::GetCurr_Coord(unsigned short iNode, unsigned short iDim) { return CurrentCoord[iNode][iDim];}
@@ -60,6 +62,8 @@ inline su2double CElement::GetJ_X_P(unsigned short iGauss) {return GaussPointP[i
 inline su2double CElement::GetJ_x_P(unsigned short iGauss) {return GaussPointP[iGauss]->GetJ_x();}
 
 inline su2double CElement::GetElement_Pressure(void) {return el_Pressure;}
+
+inline su2double CElement::GetElement_Density(void) {return el_Density;}
 
 inline su2double CElement::Get_Mab(unsigned short nodeA, unsigned short nodeB) { return Mab[nodeA][nodeB]; }
 

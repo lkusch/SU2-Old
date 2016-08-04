@@ -53,6 +53,10 @@ inline void CPrimalGrid::SetDivide (bool val_divide) {	Divide = val_divide; }
 
 inline bool CPrimalGrid::GetDivide (void) { return Divide; }
 
+inline su2double* CPrimalGrid::GetDensity (void) {return Density;}
+
+inline void CPrimalGrid::SetDensity (su2double dens) {  Density[0] = dens; }
+
 inline void CPrimalGrid::SetNode(unsigned short val_node, unsigned long val_point) { }
 
 inline unsigned short CVertexMPI::GetnNodes(void) { return nNodes; }

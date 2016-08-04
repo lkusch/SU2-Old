@@ -134,7 +134,7 @@ void CConfig::SetPointersNull(void) {
   Marker_EngineBleed = NULL;      Marker_Supersonic_Outlet = NULL;
   Marker_EngineExhaust = NULL;    Marker_Displacement = NULL;       Marker_Load = NULL;
   Marker_Load_Dir = NULL;         Marker_Load_Sine = NULL;          Marker_Clamped = NULL;
-  Marker_FlowLoad = NULL;         Marker_Neumann = NULL;
+  Marker_FlowLoad = NULL;         Marker_Neumann = NULL;            Marker_Roller=NULL;
   Marker_All_TagBound = NULL;     Marker_CfgFile_TagBound = NULL;   Marker_All_KindBC = NULL;
   Marker_CfgFile_KindBC = NULL;   Marker_All_SendRecv = NULL;       Marker_All_PerBound = NULL;
   Marker_FSIinterface = NULL;     Marker_All_FSIinterface=NULL; Marker_Riemann = NULL;
@@ -151,7 +151,7 @@ void CConfig::SetPointersNull(void) {
   Heat_Flux = NULL;               Displ_Value = NULL;               Load_Value = NULL;
   FlowLoad_Value = NULL;          Periodic_RotCenter = NULL;        Periodic_RotAngles = NULL;
   Periodic_Translation = NULL;    Periodic_Center = NULL;           Periodic_Rotation = NULL;
-  Periodic_Translate = NULL;
+  Periodic_Translate = NULL;      Comp_Roller=NULL;
 
   Load_Dir = NULL;	          Load_Dir_Value = NULL;          Load_Dir_Multiplier = NULL;
   Load_Sine_Dir = NULL;	      Load_Sine_Amplitude = NULL;     Load_Sine_Frequency = NULL;
@@ -193,6 +193,8 @@ void CConfig::SetPointersNull(void) {
   
   ExtIter = 0;
   IntIter = 0;
+
+  ConstraintFactor=NULL;
   
 }
 
@@ -496,6 +498,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addExhaustOption("MARKER_ENGINE_EXHAUST", nMarker_EngineExhaust, Marker_EngineExhaust, Exhaust_Temperature_Target, Exhaust_Pressure_Target);
   /* DESCRIPTION: Clamped boundary marker(s) */
   addStringListOption("MARKER_CLAMPED", nMarker_Clamped, Marker_Clamped);
+  /* DESCRIPTION: Roller bearings boundary marker(s) */
+  addStringUShortListOption("MARKER_ROLLER", nMarker_Roller, Marker_Roller, Comp_Roller);
   /* DESCRIPTION: Displacement boundary marker(s) */
   addStringDoubleListOption("MARKER_NORMAL_DISPL", nMarker_Displacement, Marker_Displacement, Displ_Value);
   /* DESCRIPTION: Load boundary marker(s) */
@@ -1128,10 +1132,12 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addBoolOption("OS_STEP_ADAPT", OneShotStepAdaptive, false);
   addDoubleOption("OS_STEP_SIZE", OneShotStepSize, 1E-4);
   addBoolOption("OS_CONSTRAINT", OneShotConstraint, false);
-  addBoolOption("EX_BOUNDS", BoundsExact, true);
-  addDoubleOption("CONS_FACTOR", ConstraintFactor, 0.2);
+  addBoolOption("ONE_SHOT", OneShot, false);
+  addBoolOption("EX_BOUNDS", BoundsExact, true); 
   addDoubleOption("CONS_START", ConstraintStart, 1.0);
-  addBoolOption("EQUAL_CONS", EqualConstraint, false);
+  addUnsignedShortOption("CONS_NUM", ConstraintNum, 1);
+  addDoubleListOption("CONS_FACTOR", ConstraintNum, ConstraintFactor); //default 0.2
+  addUShortListOption("EQUAL_CONS", ConstraintNum, EqualConstraint); //default false
   addBoolOption("BFGS_ID", IdentityHessian, false);
   addBoolOption("FACTOR_NORM", MultiplierNorm, false);
   addBoolOption("LINE_SEARCH", LineSearch, false);
@@ -1157,6 +1163,10 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
    addBoolOption("NORM_HB", NormHB, true);
    addDoubleOption("DAMP_GAMMA", DampedGamma, 0.1);
    addBoolOption("CHECK_DESC", CheckDescent, false);
+
+   addDoubleOption("MIN_ELAS", TopOptMinElasticity, 1E-3);
+   addDoubleOption("DENS_PENALTY", TopOptPenalty, 3);
+   addDoubleOption("VOL_FRAC",TopOptVolumeFraction,0.5);
   /*  DESCRIPTION: Linear solver for the mesh deformation\n OPTIONS: see \link Linear_Solver_Map \endlink \n Default: FGMRES \ingroup Config*/
   /*  DESCRIPTION: Linear solver for the mesh deformation\n OPTIONS: see \link Linear_Solver_Map \endlink \n DEFAULT: FGMRES \ingroup Config*/
   addEnumOption("DEFORM_LINEAR_SOLVER", Deform_Linear_Solver, Linear_Solver_Map, FGMRES);
@@ -2471,6 +2481,10 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
     nRKStep = 1;
     RK_Alpha_Step = new su2double[1]; RK_Alpha_Step[0] = 1.0;
   }
+
+  if(ConstraintNum==0){
+    ConstraintFactor = new su2double[1]; ConstraintFactor[0]=0.2;
+  }
   
   if (nIntCoeffs == 0) {
 	nIntCoeffs = 2;
@@ -2599,8 +2613,16 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
       case NAVIER_STOKES:
         Kind_Solver = DISC_ADJ_NAVIER_STOKES;
         break;
+      case FEM_ELASTICITY:
+        Kind_Solver = DISC_ADJ_FEA;
+        break;
       default:
         break;
+    }
+
+    if (OneShot){
+        Restart      = false;
+        Restart_Flow = false;
     }
   }
 
@@ -2626,7 +2648,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
   iMarker_Displacement, iMarker_Load, iMarker_FlowLoad, iMarker_Neumann,
   iMarker_Monitoring, iMarker_Designing, iMarker_GeoEval, iMarker_Plotting,
   iMarker_DV, iMarker_Moving, iMarker_Supersonic_Inlet, iMarker_Supersonic_Outlet,
-  iMarker_Clamped, iMarker_FSIinterface, iMarker_Load_Dir, iMarker_Load_Sine,
+  iMarker_Clamped, iMarker_FSIinterface, iMarker_Load_Dir, iMarker_Load_Sine, iMarker_Roller,
   iMarker_ActDisk_Inlet, iMarker_ActDisk_Outlet, iMarker_Out_1D;
 
   int size = SINGLE_NODE;
@@ -2645,7 +2667,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
   nMarker_EngineInflow + nMarker_EngineBleed + nMarker_EngineExhaust +
   nMarker_Supersonic_Inlet + nMarker_Supersonic_Outlet + nMarker_Displacement + nMarker_Load +
   nMarker_FlowLoad + nMarker_Custom +
-  nMarker_Clamped + nMarker_Load_Sine + nMarker_Load_Dir +
+  nMarker_Clamped + nMarker_Load_Sine + nMarker_Load_Dir + nMarker_Roller +
   nMarker_ActDisk_Inlet + nMarker_ActDisk_Outlet + nMarker_Out_1D;
   
   /*--- Add the possible send/receive domains ---*/
@@ -2879,6 +2901,12 @@ void CConfig::SetMarkers(unsigned short val_software) {
     iMarker_CfgFile++;
   }
 
+  for (iMarker_Roller = 0; iMarker_Roller < nMarker_Roller; iMarker_Roller++) {
+    Marker_CfgFile_TagBound[iMarker_CfgFile] = Marker_Roller[iMarker_Roller];
+    Marker_CfgFile_KindBC[iMarker_CfgFile] = ROLLER_BOUNDARY;
+    iMarker_CfgFile++;
+  }
+
   for (iMarker_Displacement = 0; iMarker_Displacement < nMarker_Displacement; iMarker_Displacement++) {
     Marker_CfgFile_TagBound[iMarker_CfgFile] = Marker_Displacement[iMarker_Displacement];
     Marker_CfgFile_KindBC[iMarker_CfgFile] = DISPLACEMENT_BOUNDARY;
@@ -2981,7 +3009,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
   iMarker_EngineInflow, iMarker_EngineBleed, iMarker_EngineExhaust, iMarker_Displacement,
   iMarker_Load, iMarker_FlowLoad,  iMarker_Neumann, iMarker_Monitoring,
   iMarker_Designing, iMarker_GeoEval, iMarker_Plotting, iMarker_DV, iDV_Value,
-  iMarker_FSIinterface, iMarker_Load_Dir, iMarker_Load_Sine, iMarker_Clamped,
+  iMarker_FSIinterface, iMarker_Load_Dir, iMarker_Load_Sine, iMarker_Clamped, iMarker_Roller,
   iMarker_Moving, iMarker_Supersonic_Inlet, iMarker_Supersonic_Outlet, iMarker_ActDisk_Inlet,
   iMarker_ActDisk_Outlet;
   
@@ -3080,7 +3108,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       case POISSON_EQUATION: cout << "Poisson equation." << endl; break;
       case WAVE_EQUATION: cout << "Wave equation." << endl; break;
       case HEAT_EQUATION: cout << "Heat equation." << endl; break;
-      case FEM_ELASTICITY:
+      case FEM_ELASTICITY: case DISC_ADJ_FEA:
     	  if (Kind_Struct_Solver == SMALL_DEFORMATIONS) cout << "Geometrically linear elasticity solver." << endl;
     	  if (Kind_Struct_Solver == LARGE_DEFORMATIONS) cout << "Geometrically non-linear elasticity solver." << endl;
     	  if (Kind_Material == LINEAR_ELASTIC) cout << "Linear elastic material." << endl;
@@ -3424,6 +3452,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       case AVG_OUTLET_PRESSURE:     cout << "Average static objective pressure." << endl; break;
       case MASS_FLOW_RATE:          cout << "Mass flow rate objective function." << endl; break;
       case OUTFLOW_GENERALIZED:     cout << "Generalized outflow objective function." << endl; break;
+      case MINIMUM_COMPLIANCE:      cout << "Minimum compliance / maximum stiffness objective function." << endl; break;
 		}
 
 	}
@@ -4154,6 +4183,15 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
     }
   }
 
+  if (nMarker_Roller != 0) {
+    cout << "Roller boundary marker(s): ";
+    for (iMarker_Roller = 0; iMarker_Roller < nMarker_Roller; iMarker_Roller++) {
+      cout << Marker_Roller[iMarker_Roller];
+      if (iMarker_Roller < nMarker_Roller-1) cout << ", ";
+      else cout <<"."<<endl;
+    }
+  }
+
   if (nMarker_Displacement != 0) {
     cout << "Displacement boundary marker(s): ";
     for (iMarker_Displacement = 0; iMarker_Displacement < nMarker_Displacement; iMarker_Displacement++) {
@@ -4470,7 +4508,12 @@ unsigned short CConfig::GetMarker_CfgFile_PerBound(string val_marker) {
 
 CConfig::~CConfig(void) {
 
-  if (RK_Alpha_Step!=NULL) delete [] RK_Alpha_Step;
+    if (ConstraintFactor!=NULL) delete [] ConstraintFactor;
+
+    if (RK_Alpha_Step!=NULL) delete [] RK_Alpha_Step;
+
+
+
   if (MG_PreSmooth!=NULL) delete [] MG_PreSmooth;
   if (MG_PostSmooth!=NULL) delete [] MG_PostSmooth;
   /*--- Free memory for Aeroelastic problems. ---*/
@@ -4596,6 +4639,7 @@ CConfig::~CConfig(void) {
   if (Heat_Flux != NULL)    delete[] Heat_Flux;
   if (Displ_Value != NULL)    delete[] Displ_Value;
   if (Load_Value != NULL)    delete[] Load_Value;
+  if (Comp_Roller != NULL)    delete[] Comp_Roller;
   if (Load_Dir != NULL)    delete[] Load_Dir;
   if (Load_Dir_Multiplier != NULL)    delete[] Load_Dir_Multiplier;
   if (Load_Dir_Value != NULL)    delete[] Load_Dir_Value;
@@ -4726,6 +4770,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) {
       case AVG_OUTLET_PRESSURE:     AdjExt = "_pe";       break;
       case MASS_FLOW_RATE:          AdjExt = "_mfr";       break;
       case OUTFLOW_GENERALIZED:     AdjExt = "_chn";       break;
+      case MINIMUM_COMPLIANCE:      AdjExt = "_minc";      break;
     }
     Filename.append(AdjExt);
 
@@ -5274,6 +5319,13 @@ su2double CConfig::GetLoad_Value(string val_marker) {
   for (iMarker_Load = 0; iMarker_Load < nMarker_Load; iMarker_Load++)
     if (Marker_Load[iMarker_Load] == val_marker) break;
   return Load_Value[iMarker_Load];
+}
+
+unsigned short CConfig::GetComp_Roller(string val_marker) {
+  unsigned short iMarker_Roller;
+  for (iMarker_Roller = 0; iMarker_Roller < nMarker_Roller; iMarker_Roller++)
+    if (Marker_Roller[iMarker_Roller] == val_marker) break;
+  return Comp_Roller[iMarker_Roller];
 }
 
 su2double CConfig::GetLoad_Dir_Value(string val_marker) {

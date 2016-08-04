@@ -172,7 +172,6 @@ private:
 	nMarker_EngineInflow,					/*!< \brief Number of nacelle inflow flow markers. */
   nMarker_EngineBleed,					/*!< \brief Number of nacelle inflow flow markers. */
   nMarker_Clamped,						/*!< \brief Number of clamped markers in the FEM. */
-  nMarker_Roller,                       /*!< \brief Number of roller markers in the FEM. */
   nMarker_Displacement,					/*!< \brief Number of displacement surface markers. */
 	nMarker_Load,					/*!< \brief Number of load surface markers. */
 	nMarker_Load_Dir,					/*!< \brief Number of load surface markers defined by magnitude and direction. */
@@ -213,7 +212,6 @@ private:
   *Marker_EngineBleed,					/*!< \brief Engine Inflow flow markers. */
   *Marker_EngineExhaust,					/*!< \brief Engine Exhaust flow markers. */
 	*Marker_Clamped,						/*!< \brief Clamped markers. */
-    *Marker_Roller,						/*!< \brief Roller markers. */
 	*Marker_Displacement,					/*!< \brief Displacement markers. */
 	*Marker_Load,					/*!< \brief Load markers. */
 	*Marker_Load_Dir,					/*!< \brief Load markers defined in cartesian coordinates. */
@@ -249,7 +247,6 @@ private:
 	su2double *Heat_Flux;  /*!< \brief Specified wall heat fluxes. */
 	su2double *Displ_Value;    /*!< \brief Specified displacement for displacement boundaries. */
 	su2double *Load_Value;    /*!< \brief Specified force for load boundaries. */
-    unsigned short *Comp_Roller; /*!< \brief Component of acting roller bearing. */
   su2double *Load_Dir_Value;    /*!< \brief Specified force for load boundaries defined in cartesian coordinates. */
 	su2double *Load_Dir_Multiplier;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
 	su2double **Load_Dir;  /*!< \brief Specified flow direction vector (unit vector) for inlet boundaries. */
@@ -424,11 +421,9 @@ private:
   unsigned short Deform_Linear_Solver; /*!< Numerical method to deform the grid */
   unsigned short FFD_Continuity; /*!< Surface continuity at the intersection with the FFD */
   su2double Deform_ElasticityMod, Deform_PoissonRatio; /*!< young's modulus and poisson ratio for volume deformation stiffness model */
-  su2double OneShotAlpha, OneShotBeta, OneShotStepSize, *ConstraintFactor, ConstraintStart;
+  su2double OneShotAlpha, OneShotBeta, OneShotStepSize, ConstraintFactor, ConstraintStart;
   unsigned long OneShotStart, SearchCounterMax;
-  unsigned short ConstraintNum;
-  bool OneShotStepAdaptive, OneShotConstraint, IdentityHessian, MultiplierNorm, LineSearch, CheckVk, Armijo, BoundsExact; //bool EqualConstraint
-  unsigned short *EqualConstraint;
+  bool OneShotStepAdaptive, OneShotConstraint, EqualConstraint, IdentityHessian, MultiplierNorm, LineSearch, CheckVk, Armijo, BoundsExact;
   bool posconstraint, posupdate;
   bool FactorIncrease;
   su2double ScaleObjective, ScaleConstraint, FDStep, TargetLift;
@@ -439,9 +434,6 @@ private:
   bool NormNewY, NormHB;
   su2double DampedGamma;
   bool CheckDescent;
-
-  su2double TopOptMinElasticity, TopOptPenalty, TopOptVolumeFraction;
-
   bool Visualize_Deformation;	/*!< \brief Flag to visualize the deformation in MDC. */
 	su2double Mach;		/*!< \brief Mach number. */
 	su2double Reynolds;	/*!< \brief Reynolds number. */
@@ -727,7 +719,12 @@ private:
   bool ParMETIS;      /*!< \brief Boolean for activating ParMETIS mode (while testing). */
   unsigned short DirectDiff; /*!< \brief Direct Differentation mode. */
   bool DiscreteAdjoint; /*!< \brief AD-based discrete adjoint mode. */
+<<<<<<< HEAD
   bool OneShot;
+  /*!< \brief param is a map from the option name (config file string) to a pointer to an option child class */
+//	map<string, CAnyOptionRef*> param;
+=======
+>>>>>>> github/develop
 
   
   /*--- all_options is a map containing all of the options. This is used during config file parsing
@@ -925,14 +922,6 @@ private:
     assert(option_map.find(name) == option_map.end());
     all_options.insert(pair<string, bool>(name, true));
     COptionBase* val = new COptionStringDoubleList(name, list_size, string_field, double_field);
-    option_map.insert(pair<string, COptionBase *>(name, val));
-  }
-
-  void addStringUShortListOption(const string name, unsigned short & list_size, string * & string_field,
-                        unsigned short* & double_field) {
-    assert(option_map.find(name) == option_map.end());
-    all_options.insert(pair<string, bool>(name, true));
-    COptionBase* val = new COptionStringUShortList(name, list_size, string_field, double_field);
     option_map.insert(pair<string, COptionBase *>(name, val));
   }
 
@@ -2946,10 +2935,6 @@ public:
    */
   su2double GetDeform_PoissonRatio(void);
 
-  su2double GetTopOptMinElasticity(void);
-  su2double GetTopOptPenalty(void);
-  su2double GetTopOptVolumeFraction(void);
-
   su2double GetOneShotAlpha(void);
   su2double GetOneShotBeta(void);
   unsigned long GetOneShotStart(void);
@@ -2957,10 +2942,9 @@ public:
   su2double GetOSStepSize(void);
   bool GetOneShotConstraint(void);
   bool GetBoundsExact(void);
-  unsigned short GetEqualConstraint(unsigned short valu);
-  su2double GetConstraintFactor(unsigned short valu);
+  bool GetEqualConstraint(void);
+  su2double GetConstraintFactor(void);
   su2double GetConstraintStart(void);
-  unsigned long GetConstraintNum(void);
   bool GetIdentityHessian(void);
   bool GetMultiplierNorm(void);
   bool GetLineSearch(void);
@@ -5028,13 +5012,6 @@ public:
 	 */
 	su2double GetLoad_Value(string val_index);
 
-    /*!
-     * \brief Get component of the roller bearings.
-     * \param[in] val_index - Index corresponding to the roller boundary.
-     * \return The component.
-     */
-    unsigned short GetComp_Roller(string val_index);
-
 	/*!
 	 * \brief Get the force value at a load boundary defined in cartesian coordinates.
 	 * \param[in] val_index - Index corresponding to the load boundary.
@@ -5583,11 +5560,15 @@ public:
 	 */
 	inline unsigned short GetKindInterpolation(void);
 
+<<<<<<< HEAD
+  bool GetOne_Shot(void);
+
+=======
   /*!
    * \brief Get the AD support.
    */
   bool GetAD_Mode(void);
-  bool GetOne_Shot(void);
+>>>>>>> github/develop
 };
 
 #include "config_structure.inl"

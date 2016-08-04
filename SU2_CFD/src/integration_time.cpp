@@ -923,6 +923,9 @@ void CStructuralIntegration::Structural_Iteration(CGeometry ***geometry, CSolver
 
   /*--- Postprocessing ---*/
 
+  solver_container[iZone][MESH_0][SolContainer_Position]->Compute_MinimumCompliance(geometry[iZone][MESH_0],
+                                                                                    config[iZone], solver_container[iZone][MESH_0]);
+
   solver_container[iZone][MESH_0][SolContainer_Position]->Postprocessing(geometry[iZone][MESH_0], solver_container[iZone][MESH_0],
 		  config[iZone], numerics_container[iZone][MESH_0][SolContainer_Position],  MESH_0);
 

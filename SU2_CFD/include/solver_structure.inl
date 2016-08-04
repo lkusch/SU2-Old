@@ -58,7 +58,6 @@ inline void CSolver::Set_MPI_Primitive_Limiter(CGeometry *geometry, CConfig *con
 //inline void CSolver::Set_MPI_Secondary_Limiter(CGeometry *geometry, CConfig *config) { }
 
 inline void CSolver::SetNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh) { }
-inline void CSolver::SetNewNondimensionalization(CGeometry *geometry, CConfig *config, unsigned short iMesh) { }
 
 inline unsigned short CSolver::GetIterLinSolver(void) { return IterLinSolver; }
 
@@ -94,6 +93,10 @@ inline void CSolver::ComputeAitken_Coefficient(CGeometry **fea_geometry, CConfig
 inline void CSolver::SetAitken_Relaxation(CGeometry **fea_geometry, CConfig *fea_config, CSolver ***fea_solution) { }
 
 inline void CSolver::Update_StructSolution(CGeometry **fea_geometry, CConfig *fea_config, CSolver ***fea_solution) { }
+
+inline void CSolver::Compute_MinimumCompliance(CGeometry *fea_geometry, CConfig *fea_config, CSolver **fea_solution) { }
+
+inline void CSolver::Initialize_Density(CGeometry *fea_geometry, CConfig *fea_config) { }
 
 inline void CSolver::SetCSensitivity(unsigned short val_marker, unsigned long val_vertex, su2double val_sensitivity) { }
 
@@ -235,6 +238,8 @@ inline void CSolver::SetIntBoundary_Jump(CGeometry *geometry, CSolver **solver_c
 inline su2double CSolver::GetTotal_CLift() { return 0; }
 
 inline su2double CSolver::GetTotal_CDrag() { return 0; }
+
+inline su2double CSolver::GetMinimumCompliance() { return 0; }
 
 inline su2double CSolver::GetTotal_CMx() { return 0; }
 
@@ -500,6 +505,12 @@ inline void CSolver::BC_Clamped(CGeometry *geometry, CSolver **solver_container,
 
 inline void CSolver::BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }
+
+inline void CSolver::BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
+
+inline void CSolver::BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
 									 
 inline void CSolver::BC_Normal_Displacement(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }
@@ -1124,6 +1135,8 @@ inline void CFEM_ElasticitySolver::SetFSI_ConvValue(unsigned short val_index, su
 
 inline su2double CFEM_ElasticitySolver::GetFSI_ConvValue(unsigned short val_index){ return FSI_Conv[val_index]; }
 
+inline su2double CFEM_ElasticitySolver::GetMinimumCompliance() { return MinimumCompliance; }
+
 inline su2double CWaveSolver::GetTotal_CWave() { return Total_CWave; }
 
 inline su2double CHeatSolver::GetTotal_CHeat() { return Total_CHeat; }
@@ -1140,12 +1153,14 @@ inline void CSolver::SetAdjointInputHelp(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::RegisterObj_Func(CConfig *config){}
 
-inline void CSolver::RegisterConstraint_Func(CConfig *config){}
-inline void CSolver::RegisterConstraint_Mom(CConfig *config){}
+inline void CSolver::RegisterConstraint_Func(CConfig *config, CGeometry *Geometry){}
+//inline void CSolver::RegisterConstraintVec(CConfig *config){}
 
 inline void CSolver::SetSurface_Sensitivity(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetSensitivity(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::SetSensDensity(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::DesignUpdate(CGeometry *geometry, CConfig *config){}
 
@@ -1178,22 +1193,33 @@ inline bool CSolver::CheckFirstWolfe(su2double steplen){}
 inline void CSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter){}
 
 inline void CSolver::SetSensitivityFD(CGeometry *geometry, CConfig *config){}
+inline void CSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config, double initVal){}
 
-inline void CSolver::SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config, double initVal){}
+inline void CSolver::SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config, double* initVal){}
+inline void CSolver::SetAdj_ConstraintFuncAD(CGeometry *geometry, CConfig *config, su2double* initVal){}
 
-inline su2double CSolver::GetConstraintFunc_Value(){}
+inline su2double* CSolver::GetConstraintFunc_Value(){}
 
-inline void CSolver::StoreConstraint(){}
+inline su2double CSolver::GetConstraint_Save(unsigned short indCons){}
+inline su2double CSolver::GetObj_Save(){}
 
-//inline void CSolver::SetInflow_Mach(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short iMesh, su2double mach){}
+inline void CSolver::StoreConstraint(CConfig* config){}
 
 inline void CSolver::UpdateMultiplier(CConfig* config){}
 
-inline double CSolver::GetMultiplier(){}
+inline double *CSolver::GetMultiplier(){}
 
-inline void CSolver::SetMultiplier(CConfig *config, double value){}
+inline void CSolver::SetMultiplier(CConfig *config, double *value){}
+
+inline void CSolver::ComputeEVEW(CConfig *config, CGeometry *geometry){}
+
+inline void CSolver::DeformSurface(CConfig *config, CGeometry *geometry, su2double* rand, CVolumetricMovement *grid_movement){}
+
+inline void CSolver::StoreMeshPoints(CConfig *config, CGeometry *geometry){}
+
+inline void CSolver::LoadMeshPoints(CConfig *config, CGeometry *geometry){}
 
 inline void CSolver::StoreOldSolution(){}
 
@@ -1215,9 +1241,23 @@ inline void CSolver::LoadSaveSolution(){}
 
 inline void CSolver::SaveSurfaceSensitivity(CGeometry *geometry){}
 
-inline void CSolver::ResetExpValues(CGeometry *geometry){}
-inline void CSolver::SumExpValues(CGeometry *geometry, unsigned short numQuad){}
-inline void CSolver::DistributeExpValues(CGeometry *geometry){}
+inline void CSolver::SetObjSave(CGeometry *geometry, CConfig *config, su2double obj_val){}
+inline void CSolver::SetLagrangian(CGeometry *geometry, CConfig *config, su2double lagrangian){}
+inline void CSolver::SetCSens(CGeometry *geometry, CConfig *config, su2double csens, unsigned short num){}
+inline void CSolver::SetLagrangeSens(CGeometry *geometry, CConfig *config, su2double lsens, unsigned short num){}
+inline void CSolver::SetConstraintSave(CGeometry *geometry, CConfig *config, su2double cons, unsigned short num){}
+
+inline su2double CSolver::GetStoredObjective(CGeometry *geometry, CConfig *config, unsigned short num){}
+inline su2double CSolver::GetStoredConstraints(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx){}
+inline su2double CSolver::GetStoredLagragian(CGeometry *geometry, CConfig *config, unsigned short num){}
+inline su2double CSolver::GetStoredCSens(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx){}
+inline su2double CSolver::GetStoredLagrangeSens(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx){}
+inline void CSolver::StoreQuadValues(CGeometry *geometry, CConfig *config){}
+inline void CSolver::ResetStoredValues(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::ResetExpValues(CGeometry *geometry, CConfig *config){}
+inline void CSolver::SumExpValues(CGeometry *geometry, CConfig *config, unsigned short numQuad){}
+inline void CSolver::DistributeExpValues(CGeometry *geometry, CConfig *config){}
 inline su2double CSolver::GetMachP(unsigned short numQuad){}
 
 inline void CSolver::AssembleLagrangian(CConfig *config){}
@@ -1248,6 +1288,8 @@ inline su2double CSolver::SensitivityNorm(CGeometry *geometry){}
 inline void CSolver::OutputWritten(CGeometry *geometry){}
 
 inline void CSolver::UpdateStateVariable(CConfig *config){}
+
+inline void CSolver::SetForwardDirection(CConfig *config){}
 
 inline void CSolver::SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config){}
 

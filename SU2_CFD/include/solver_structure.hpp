@@ -621,6 +621,32 @@ public:
 	virtual void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                  unsigned short val_marker);
 
+    /*!
+     * \brief A virtual member.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] numerics - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     * \param[in] val_marker - Surface marker where the boundary condition is applied.
+     */
+
+
+    virtual void BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
+    /*!
+     * \brief A virtual member.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] solver - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     * \param[in] val_marker - Surface marker where the boundary condition is applied.
+     */
+
+
+    virtual void BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] geometry - Geometrical definition of the problem.
@@ -1921,6 +1947,12 @@ public:
 	 * \return Value of the drag coefficient (inviscid + viscous contribution).
 	 */
 	virtual su2double GetTotal_CDrag(void);
+
+    /*!
+     * \brief A virtual member.
+     * \return Value of the minimum compliance.
+     */
+    virtual su2double GetMinimumCompliance(void);
     
 	/*!
 	 * \brief A virtual member.
@@ -2523,6 +2555,13 @@ public:
             						  CConfig *fea_config,
             						  CSolver ***fea_solution);
 
+    virtual void Compute_MinimumCompliance(CGeometry *fea_geometry,
+                                           CConfig *fea_config,
+                                           CSolver **fea_solution);
+
+    virtual void Initialize_Density(CGeometry *fea_geometry,
+                                                      CConfig *fea_config);
+
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] geometry - Geometrical definition of the problem.
@@ -2665,6 +2704,8 @@ public:
 
   virtual void OutputWritten(CGeometry *geometry);
 
+  virtual void SetForwardDirection(CConfig *config);
+
   virtual void SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config);
 
   virtual void SetAdjointOutputZero(CGeometry *geometry, CConfig *config);
@@ -2675,8 +2716,8 @@ public:
   */
   virtual void RegisterObj_Func(CConfig *config);
 
-  virtual void RegisterConstraint_Func(CConfig *config);
-  virtual void RegisterConstraint_Mom(CConfig *config);
+  virtual void RegisterConstraint_Func(CConfig *config, CGeometry *Geometry);
+  //virtual void RegisterConstraintVec(CConfig *config);
 
   /*!
    * \brief  A virtual member.
@@ -2691,6 +2732,8 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   virtual void SetSensitivity(CGeometry *geometry, CConfig *config);
+
+  virtual void SetSensDensity(CGeometry *geometry, CConfig *config);
 
   virtual void DesignUpdate(CGeometry *geometry, CConfig *config);
 
@@ -2723,14 +2766,29 @@ public:
   virtual void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
 
   virtual void SetSensitivityFD(CGeometry *geometry, CConfig *config);
+  virtual void SetMixedSensitivity(CGeometry *geometry, CConfig *config);
 
   virtual void ResetSensitivity(CGeometry *geometry);
 
   virtual void SaveSurfaceSensitivity(CGeometry *geometry);
 
-  virtual void ResetExpValues(CGeometry *geometry);
-  virtual void SumExpValues(CGeometry *geometry, unsigned short numQuad);
-  virtual void DistributeExpValues(CGeometry *geometry);
+  virtual void SetObjSave(CGeometry *geometry, CConfig *config, su2double obj_val);
+  virtual void SetLagrangian(CGeometry *geometry, CConfig *config, su2double lagrangian);
+  virtual void SetCSens(CGeometry *geometry, CConfig *config, su2double csens, unsigned short num);
+  virtual void SetLagrangeSens(CGeometry *geometry, CConfig *config, su2double lsens, unsigned short num);
+  virtual void SetConstraintSave(CGeometry *geometry, CConfig *config, su2double cons, unsigned short num);
+
+  virtual su2double GetStoredObjective(CGeometry *geometry, CConfig *config, unsigned short num);
+  virtual su2double GetStoredConstraints(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx);
+  virtual su2double GetStoredLagragian(CGeometry *geometry, CConfig *config, unsigned short num);
+  virtual su2double GetStoredCSens(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx);
+  virtual su2double GetStoredLagrangeSens(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx);
+  virtual void StoreQuadValues(CGeometry *geometry, CConfig *config);
+  virtual void ResetStoredValues(CGeometry *geometry, CConfig *config);
+
+  virtual void ResetExpValues(CGeometry *geometry, CConfig *config);
+  virtual void SumExpValues(CGeometry *geometry, CConfig *config, unsigned short numQuad);
+  virtual void DistributeExpValues(CGeometry *geometry, CConfig *config);
   virtual su2double GetMachP(unsigned short numQuad);
 
   virtual void AssembleLagrangian(CConfig *config);
@@ -2759,18 +2817,29 @@ public:
 
   virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
-  virtual void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig* config, double initVal);
+  virtual void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig* config, double* initVal);
+    virtual void SetAdj_ConstraintFuncAD(CGeometry *geometry, CConfig* config, su2double* initVal);
 
-  virtual su2double GetConstraintFunc_Value();
+  virtual su2double* GetConstraintFunc_Value();
 
-  virtual void StoreConstraint();
- // virtual void SetInflow_Mach(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short iMesh, su2double mach);
+  virtual su2double GetConstraint_Save(unsigned short indCons);
+  virtual su2double GetObj_Save();
 
-  virtual double GetMultiplier();
+  virtual void StoreConstraint(CConfig* config);
 
-  virtual void SetMultiplier(CConfig *config, double value);
+  virtual double *GetMultiplier();
+
+  virtual void SetMultiplier(CConfig *config, double *value);
 
   virtual void UpdateMultiplier(CConfig* config);
+
+  virtual void ComputeEVEW(CConfig *config, CGeometry *geometry);
+
+  virtual void DeformSurface(CConfig *config, CGeometry *geometry, su2double* rand, CVolumetricMovement *grid_movement);
+
+  virtual void StoreMeshPoints(CConfig *config, CGeometry *geometry);
+
+  virtual void LoadMeshPoints(CConfig *config, CGeometry *geometry);
 
 	/*!
 	 * \brief A virtual member.
@@ -6888,6 +6957,9 @@ private:
 	CSysVector TimeRes;				/*!< \brief Vector for adding mass and damping contributions to the residual */
 	CSysVector LinSysReact;			/*!< \brief Vector to store the residual before applying the BCs */
 
+    su2double Emin,penal;           /*!< \brief These values are needed for topology optimization */
+    su2double MinimumCompliance;    /*!< \brief Objective function for topology optimization */
+
 
 public:
 
@@ -7074,6 +7146,27 @@ public:
 	 */
 	void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                          unsigned short val_marker);
+
+    /*!
+     * \brief Roller bearings boundary conditions.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] solver - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     */
+    void BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker);
+
+    /*!
+     * \brief Enforce the solution to be 0 in the nodes for roller bearings - Avoids accumulation of numerical error.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] solver - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     * \param[in] val_marker - Surface marker where the boundary condition is applied.
+     */
+    void BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                         unsigned short val_marker);
+
 
 	/*!
 	 * \brief Impose a displacement (constraint) boundary condition.
@@ -7291,6 +7384,13 @@ public:
             				  CConfig *fea_config,
             				  CSolver ***fea_solution);
 
+    void Compute_MinimumCompliance(CGeometry *fea_geometry,
+                              CConfig *fea_config,
+                              CSolver **fea_solution);
+
+    void Initialize_Density(CGeometry *fea_geometry,
+                                                      CConfig *fea_config);
+
 	/*!
 	 * \brief Get the value of the FSI convergence.
 	 * \param[in] Set value of interest: 0 - Initial value, 1 - Current value.
@@ -7333,6 +7433,12 @@ public:
 	 * \param[in] Value of the coefficient
 	 */
 	void SetLoad_Increment(su2double val_loadIncrement);
+
+    /*!
+     * \brief Return the value of the minimum compliance objective function.
+     * \return Value of minimum compliance / maximum stiffness.
+     */
+    su2double GetMinimumCompliance(void);
 
 
 };
@@ -7741,6 +7847,7 @@ public:
 class CDiscAdjSolver : public CSolver {
 private:
   unsigned short KindDirect_Solver;
+
   CSolver *direct_solver;
   su2double *Sens_Mach, /*!< \brief Mach sensitivity coefficient for each boundary. */
   *Sens_AoA,			/*!< \brief Angle of attack sensitivity coefficient for each boundary. */
@@ -7763,6 +7870,15 @@ private:
   *DesignVarUpdateReal,
   **Hess,
   **Bess;
+  //quadrature
+  su2double ***CSensitivityQuad,
+  ***LagrangeSensQuad,
+  *Lagrangian_Value_Quad,
+  **Constraint_Save_Quad,
+  *Obj_Save_Quad;
+  unsigned short countQuadrature;
+  //quadratureend
+
   su2double *machp;
   su2double *points;
   su2double *weights;
@@ -7782,23 +7898,32 @@ private:
   su2double Total_Sens_BPress;    /*!< \brief Total sensitivity to outlet pressure. */
   su2double ObjFunc_Value;        /*!< \brief Value of the objective function. */
   su2double ExpObjFunc_Value;
-  su2double ConstraintFunc_Value;
-  su2double ConstraintMom_Value;
-  su2double Constraint_Save;
-  su2double ExpConstraint_Save;
-  su2double Constraint_Old;
+  su2double * ConstraintFunc_Value;
+//  su2double * ConstraintVec;
+//  su2double * ConstraintVecSave;
+//  su2double * ExpConstraintVecSave;
+  su2double * Constraint_Save;
+  su2double * ExpConstraint_Save;
+  su2double Obj_Save;
+  su2double * Constraint_Old;
   unsigned long TotalIterations;
   unsigned long BFGSCount;
-  double multiplier;
-  double multiplierhelp;
-  double multiplieroriginal;
-  double cons_factor;
+  double * multiplier;
+  double * multiplierhelp;
+  double * multiplieroriginal;
+  double * cons_factor;
   su2double Mach, Alpha, Beta, Pressure, Temperature;
   unsigned long nMarker;				/*!< \brief Total number of markers using the grid information. */
   su2double PhiOld;
   su2double GradPhiCubic;
   su2double PhiCubic;
   su2double StepOld;
+  su2double* ewbasis;
+  su2double** evbasis;
+  unsigned long numPoints, offPoints;
+  su2double* lenNormal;
+
+  bool flow,turbulent;
 
 public:
 
@@ -7886,15 +8011,28 @@ public:
 
   void AssembleLagrangian(CConfig *config);
 
-  su2double GetConstraintFunc_Value();
+  su2double *GetConstraintFunc_Value();
 
-  void StoreConstraint();
+  su2double GetConstraint_Save(unsigned short indCons);
+  su2double GetObj_Save();
 
-  double GetMultiplier();
+  void StoreConstraint(CConfig* config);
 
-  void SetMultiplier(CConfig *config, double value);
+  double *GetMultiplier();
+
+  void SetMultiplier(CConfig *config, double *value);
+
+  void ComputeEVEW(CConfig *config, CGeometry *geometry);
+
+  void DeformSurface(CConfig *config, CGeometry *geometry, su2double *rand, CVolumetricMovement *grid_movement);
+
+  void StoreMeshPoints(CConfig *config, CGeometry *geometry);
+
+  void LoadMeshPoints(CConfig *config, CGeometry *geometry);
 
   void OutputWritten(CGeometry *geometry);
+
+  void SetForwardDirection(CConfig *config);
 
   void SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config);
 
@@ -7906,8 +8044,8 @@ public:
   */
   void RegisterObj_Func(CConfig *config);
 
-  void RegisterConstraint_Func(CConfig *config);
-  void RegisterConstraint_Mom(CConfig *config);
+  void RegisterConstraint_Func(CConfig *config, CGeometry *Geometry);
+  //void RegisterConstraintVec(CConfig *config);
 
   /*!
    * \brief Set the surface sensitivity.
@@ -7924,6 +8062,9 @@ public:
   void SetSensitivity(CGeometry *geometry, CConfig *config);
 
   void SetSensitivityFD(CGeometry *geometry, CConfig *config);
+   void SetMixedSensitivity(CGeometry *geometry, CConfig *config);
+
+  void SetSensDensity(CGeometry *geometry, CConfig *config);
 
   void DesignUpdate(CGeometry *geometry, CConfig *config);
 
@@ -7957,9 +8098,23 @@ public:
 
   void SaveSurfaceSensitivity(CGeometry *geometry);
 
-  void ResetExpValues(CGeometry *geometry);
-  void SumExpValues(CGeometry *geometry, unsigned short numQuad);
-  void DistributeExpValues(CGeometry *geometry);
+  void SetObjSave(CGeometry *geometry, CConfig *config, su2double obj_val);
+  void SetLagrangian(CGeometry *geometry, CConfig *config, su2double lagrangian);
+  void SetCSens(CGeometry *geometry, CConfig *config, su2double csens, unsigned short num);
+  void SetLagrangeSens(CGeometry *geometry, CConfig *config, su2double lsens, unsigned short num);
+  void SetConstraintSave(CGeometry *geometry, CConfig *config, su2double cons, unsigned short num);
+
+  su2double GetStoredObjective(CGeometry *geometry, CConfig *config, unsigned short num);
+  su2double GetStoredConstraints(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx);
+  su2double GetStoredLagragian(CGeometry *geometry, CConfig *config, unsigned short num);
+  su2double GetStoredCSens(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx);
+  su2double GetStoredLagrangeSens(CGeometry *geometry, CConfig *config, unsigned short num, unsigned short indx);
+  void StoreQuadValues(CGeometry *geometry, CConfig *config);
+  void ResetStoredValues(CGeometry *geometry, CConfig *config);
+
+  void ResetExpValues(CGeometry *geometry, CConfig *config);
+  void SumExpValues(CGeometry *geometry, CConfig *config, unsigned short numQuad);
+  void DistributeExpValues(CGeometry *geometry, CConfig *config);
   su2double GetMachP(unsigned short numQuad);
 
   void OverwriteSensitivityProjected(CGeometry *geometry);
@@ -7985,7 +8140,8 @@ public:
    */
   void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
-  void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig* config, double initVal);
+  void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig* config, double *initVal);
+    void SetAdj_ConstraintFuncAD(CGeometry *geometry, CConfig* config, su2double *initVal);
 
   void UpdateMultiplier(CConfig* config);
 

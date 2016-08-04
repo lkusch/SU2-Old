@@ -87,9 +87,9 @@ CPoint::CPoint(unsigned short val_nDim, unsigned long val_globalindex, CConfig *
 	color = 0;
 
 	/*--- For smoothing the numerical grid coordinates ---*/
-  
+    Coord_Old = new su2double[nDim];
 	if (config->GetSmoothNumGrid()) {
-		Coord_Old = new su2double[nDim];
+        //Coord_Old = new su2double[nDim];
 		Coord_Sum = new su2double[nDim];
 	}
 	
@@ -175,9 +175,9 @@ CPoint::CPoint(su2double val_coord_0, su2double val_coord_1, unsigned long val_g
 	GlobalIndex = val_globalindex;
 	
 	/*--- For smoothing the numerical grid coordinates ---*/
-  
+    Coord_Old = new su2double[nDim];
 	if (config->GetSmoothNumGrid()) {
-		Coord_Old = new su2double[nDim];
+    //	Coord_Old = new su2double[nDim];
 		Coord_Sum = new su2double[nDim];
 	}
 	
@@ -268,9 +268,9 @@ CPoint::CPoint(su2double val_coord_0, su2double val_coord_1, su2double val_coord
 	GlobalIndex = val_globalindex;
 	
 	/*--- For smoothing the numerical grid coordinates ---*/
-  
+    Coord_Old = new su2double[nDim];
 	if (config->GetSmoothNumGrid()) {
-		Coord_Old = new su2double[nDim];
+        //Coord_Old = new su2double[nDim];
 		Coord_Sum = new su2double[nDim];
 	}
 	
@@ -517,12 +517,13 @@ CVertex::CVertex(unsigned long val_point, unsigned short val_nDim) : CDualGrid(v
   
   Nodes = NULL;
 	Normal = NULL;
+    Normal_Old=NULL;
   
 	/*--- Allocate node, and face normal ---*/
   
 	Nodes = new unsigned long[1]; 
 	Normal = new su2double [nDim];
-
+    Normal_Old = new su2double [nDim];
 	/*--- Initializate the structure ---*/
   
 	Nodes[0] = val_point;
@@ -546,6 +547,7 @@ CVertex::~CVertex() {
   
 	if (Normal != NULL) delete[] Normal;
 	if (Nodes != NULL) delete[] Nodes;
+    if (Normal_Old != NULL) delete[] Normal_Old;
 
   /*---  donor arrays for interpolation ---*/
   if (Donor_Coeff != NULL) delete[] Donor_Coeff;

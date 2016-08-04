@@ -190,7 +190,8 @@ enum ENUM_SOLVER {
   TEMPLATE_SOLVER = 30,                 /*!< \brief Definition of template solver. */
   DISC_ADJ_EULER = 35,
   DISC_ADJ_RANS = 36,
-  DISC_ADJ_NAVIER_STOKES = 37
+  DISC_ADJ_NAVIER_STOKES = 37,
+  DISC_ADJ_FEA=38
 };
 /* BEGIN_CONFIG_ENUMS */
 static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVER>
@@ -209,6 +210,7 @@ static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVE
 ("DISC_ADJ_RANS", DISC_ADJ_RANS)
 ("DISC_ADJ_NAVIERSTOKES", DISC_ADJ_EULER)
 ("FLUID_STRUCTURE_INTERACTION", FLUID_STRUCTURE_INTERACTION)
+("DISC_ADJ_FEA", DISC_ADJ_FEA)
 
 ("TEMPLATE_SOLVER", TEMPLATE_SOLVER);
 
@@ -368,6 +370,7 @@ const int CONV_BOUND_TERM = 4;       /*!< \brief Position of the convective boun
 const int VISC_BOUND_TERM = 5;       /*!< \brief Position of the viscous boundary terms in the numerics container array. */
 
 const int FEA_TERM = 0;			/*!< \brief Position of the finite element analysis terms in the numerics container array. */
+const int ADJFEA_SOL = 2;
 
 
 /*!
@@ -387,12 +390,14 @@ const int EL_HEXA = 1;		/*!< \brief Elements of eight nodes (3D). */
 enum ENUM_MATH_PROBLEM {
   DIRECT = 0,		/*!< \brief Direct problem */
   CONTINUOUS_ADJOINT = 1,		/*!< \brief Continuous adjoint problem */
-  DISCRETE_ADJOINT = 2 /*< \brief AD-based discrete adjoint problem. */
+  DISCRETE_ADJOINT = 2, /*< \brief AD-based discrete adjoint problem. */
+  DISCRETE_ADJOINT_FEM = 3
 };
 static const map<string, ENUM_MATH_PROBLEM> Math_Problem_Map = CCreateMap<string, ENUM_MATH_PROBLEM>
 ("DIRECT", DIRECT)
 ("CONTINUOUS_ADJOINT", CONTINUOUS_ADJOINT)
-("DISCRETE_ADJOINT", DISCRETE_ADJOINT);
+("DISCRETE_ADJOINT", DISCRETE_ADJOINT)
+("DISCRETE_ADJOINT_FEM", DISCRETE_ADJOINT_FEM);
 
 /*!
  * \brief types of spatial discretizations
@@ -758,6 +763,7 @@ enum BC_TYPE {
   LOAD_DIR_BOUNDARY = 35,		/*!< \brief Boundary Load definition. */
   LOAD_SINE_BOUNDARY = 36,		/*!< \brief Sine-waveBoundary Load definition. */
   NRBC_BOUNDARY= 37,   /*!< \brief NRBC Boundary definition. */
+  ROLLER_BOUNDARY = 38, /*!< \brief Roller Bearings boundary definition. */
   SEND_RECEIVE = 99,		/*!< \brief Boundary send-receive definition. */
 };
 
@@ -913,7 +919,8 @@ enum ENUM_OBJECTIVE {
   AVG_TOTAL_PRESSURE = 28, 	    /*!< \brief Total Pressure objective function definition. */
   AVG_OUTLET_PRESSURE = 29,      /*!< \brief Static Pressure objective function definition. */
   MASS_FLOW_RATE = 30,           /*!< \brief Mass Flow Rate objective function definition. */
-  OUTFLOW_GENERALIZED=31          /*!<\brief Objective function defined via chain rule on primitive variable gradients. */
+  OUTFLOW_GENERALIZED=31,          /*!< \brief Objective function defined via chain rule on primitive variable gradients. */
+  MINIMUM_COMPLIANCE=32         /*!< \brief Minimum Compliance or Maximum Stiffness (Topology Optimization). */
 };
 
 static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM_OBJECTIVE>
@@ -947,7 +954,8 @@ static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM
 ("AVG_TOTAL_PRESSURE", AVG_TOTAL_PRESSURE)
 ("AVG_OUTLET_PRESSURE", AVG_OUTLET_PRESSURE)
 ("MASS_FLOW_RATE", MASS_FLOW_RATE)
-("OUTFLOW_GENERALIZED", OUTFLOW_GENERALIZED);
+("OUTFLOW_GENERALIZED", OUTFLOW_GENERALIZED)
+("MINIMUM_COMPLIANCE", MINIMUM_COMPLIANCE);
 
 /*!
  * \brief types of residual criteria equations
@@ -1903,6 +1911,12 @@ public:
       this->restart = true;
       return "";
     }
+    if (option_value[0] == "DISCRETE_ADJOINT_FEM"){
+      this->disc_adjoint = true;
+      this->cont_adjoint= false;
+      this->restart = false;
+      return "";
+    }
     return "option in math problem map not considered in constructor";
   }
 
@@ -2378,6 +2392,57 @@ public:
       su2double val;
       if (!(is >> val)) {
         return badValue(option_value, "string su2double", this->name);
+      }
+      this->d_f[i] = val;
+    }
+    // Need to return something...
+    return "";
+  }
+
+  void SetDefault() {
+    this->size = 0; // There is no default value for list
+  }
+};
+
+// Class where the option is represented by (String, unsigned short, string, unsigned short, ...)
+class COptionStringUShortList : public COptionBase{
+  string name; // identifier for the option
+  unsigned short & size; // how many strings are there (same as number of su2doubles)
+
+  string * & s_f; // Reference to the string fields
+  unsigned short* & d_f; // reference to the ushort fields
+
+public:
+  COptionStringUShortList(string option_field_name, unsigned short & list_size, string * & string_field, unsigned short* & double_field) : size(list_size), s_f(string_field), d_f(double_field) {
+    this->name = option_field_name;
+  }
+
+  ~COptionStringUShortList() {};
+  string SetValue(vector<string> option_value) {
+    // There must be an even number of entries (same number of strings and shorts
+    unsigned short totalVals = option_value.size();
+    if ((totalVals % 2) != 0) {
+      if ((totalVals == 1) && (option_value[0].compare("NONE") == 0)) {
+        // It's okay to say its NONE
+        this->size = 0;
+        return "";
+      }
+      string newstring;
+      newstring.append(this->name);
+      newstring.append(": must have an even number of entries");
+      return newstring;
+    }
+    unsigned short nVals = totalVals / 2;
+    this->size = nVals;
+    this->s_f = new string[nVals];
+    this->d_f = new unsigned short[nVals];
+
+    for (unsigned long i = 0; i < nVals; i++) {
+      this->s_f[i].assign(option_value[2*i]); // 2 because have short and string
+      istringstream is(option_value[2*i + 1]);
+      unsigned short val;
+      if (!(is >> val)) {
+        return badValue(option_value, "string short", this->name);
       }
       this->d_f[i] = val;
     }

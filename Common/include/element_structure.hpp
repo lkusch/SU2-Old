@@ -75,6 +75,7 @@ protected:
 	su2double **Kt_a;						/*!< \brief Structure for the nodal stress term for the residual computation. */
 	su2double **FDL_a;						/*!< \brief Structure for the dead loads for the residual computation. */
 	su2double el_Pressure;					/*!< \brief Pressure in the element */
+        su2double el_Density;
 
 public:
 	/*!
@@ -133,6 +134,12 @@ public:
 	 * \param[in] val_ElPressure - Value of the pressure.
 	 */
 	void SetElement_Pressure(su2double val_ElPressure);
+
+    /*!
+     * \brief Set the value of the density in the element.
+     * \param[in] val_ElDensity - Value of the density.
+     */
+    void SetElement_Density(su2double val_ElDensity);
 
 	/*!
 	 * \brief Set the value of the coordinate of the nodes in the reference configuration.
@@ -199,6 +206,12 @@ public:
 	 * \param[out] Value of the pressure.
 	 */
 	su2double GetElement_Pressure(void);
+
+    /*!
+    * \brief Retrieve the value of the density in the element.
+    * \param[out] Value of the density.
+    */
+    su2double GetElement_Density(void);
 
 	/*!
 	 * \brief Add the value of the diagonal term for the mass matrix.

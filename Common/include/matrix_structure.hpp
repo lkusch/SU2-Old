@@ -142,6 +142,17 @@ public:
 	 * \param[in] **val_block - Block to set to A(i, j).
 	 */
 	void SetBlock(unsigned long block_i, unsigned long block_j, su2double **val_block);
+
+  /*!
+     * \brief Set a single value in the sparse matrix.
+     * \param[in] block_i - Indexes of the block in the matrix-by-blocks structure.
+     * \param[in] block_j - Indexes of the block in the matrix-by-blocks structure.
+     * \param[in] iVar - Component in the block matrix
+     * \param[in] jVar - Component in the block matrix
+     * \param[in] val_block - Value to set.
+     */
+    void SetEntry(unsigned long block_i, unsigned long block_j, unsigned short iVar, unsigned short jVar, su2double val_entry);
+    su2double GetEntry(unsigned long block_i, unsigned long block_j, unsigned short iVar, unsigned short jVar);
   
   /*!
 	 * \brief Set the value of a block in the sparse matrix.

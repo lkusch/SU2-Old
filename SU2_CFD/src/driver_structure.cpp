@@ -244,6 +244,7 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
     case DISC_ADJ_EULER: euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; break;
+    case DISC_ADJ_FEA: fem = true; disc_adj = true; break;
   }
   
   /*--- Assign turbulence model booleans ---*/
@@ -317,8 +318,10 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
     if (adj_turb) {
       solver_container[iMGlevel][ADJTURB_SOL] = new CAdjTurbSolver(geometry[iMGlevel], config, iMGlevel);
     }
-    
-    if (disc_adj) {
+    if (disc_adj && fem){
+        solver_container[iMGlevel][ADJFEA_SOL] = new CDiscAdjSolver(geometry[iMGlevel], config, solver_container[iMGlevel][FEA_SOL], RUNTIME_FEA_SYS, iMGlevel);
+    }
+    else if (disc_adj) {
       solver_container[iMGlevel][ADJFLOW_SOL] = new CDiscAdjSolver(geometry[iMGlevel], config, solver_container[iMGlevel][FLOW_SOL], RUNTIME_FLOW_SYS, iMGlevel);
       if (turbulent)
         solver_container[iMGlevel][ADJTURB_SOL] = new CDiscAdjSolver(geometry[iMGlevel], config, solver_container[iMGlevel][TURB_SOL], RUNTIME_TURB_SYS, iMGlevel);
@@ -365,6 +368,7 @@ void CDriver::Solver_Postprocessing(CSolver ***solver_container, CGeometry **geo
   case DISC_ADJ_EULER: euler = true; disc_adj = true; break;
   case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
   case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; break;
+  case DISC_ADJ_FEA: fem = true; disc_adj = true; break;
   }
 
   /*--- Assign turbulence model booleans --- */
@@ -386,11 +390,14 @@ and potential are incompatible, they use the same position in sol container ---*
     }
 
     /*--- DeAllocate solution for adjoint problem ---*/
-    if (adj_euler || adj_ns || disc_adj) {
+    if (adj_euler || adj_ns || (disc_adj&&!fem)) {
       delete solver_container[iMGlevel][ADJFLOW_SOL];
       if ((turbulent and disc_adj) or adj_turb){
         delete solver_container[iMGlevel][ADJTURB_SOL];
       }
+    }
+    if(disc_adj &&fem){
+        delete solver_container[iMGlevel][ADJFEA_SOL];
     }
 
     /*--- DeAllocate solution for direct problem ---*/
@@ -460,6 +467,7 @@ void CDriver::Integration_Preprocessing(CIntegration **integration_container,
     case DISC_ADJ_EULER : euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS : ns = true; turbulent = true; disc_adj = true; break;
+    case DISC_ADJ_FEA: fem = true; disc_adj = true; break;
       
   }
   
@@ -481,7 +489,8 @@ void CDriver::Integration_Preprocessing(CIntegration **integration_container,
   if (adj_ns) integration_container[ADJFLOW_SOL] = new CMultiGridIntegration(config);
   if (adj_turb) integration_container[ADJTURB_SOL] = new CSingleGridIntegration(config);
   
-  if (disc_adj) integration_container[ADJFLOW_SOL] = new CIntegration(config);
+  if (disc_adj&&!fem) integration_container[ADJFLOW_SOL] = new CIntegration(config);
+  if (disc_adj&&fem) integration_container[ADJFEA_SOL] = new CIntegration(config);
   
 }
 
@@ -519,6 +528,7 @@ void CDriver::Integration_Postprocessing(CIntegration **integration_container, C
     case DISC_ADJ_EULER : euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS : ns = true; turbulent = true; disc_adj = true; adj_turb=true; break;
+    case DISC_ADJ_FEA: fem = true; disc_adj = true; break;
 
   }
 
@@ -535,7 +545,8 @@ void CDriver::Integration_Postprocessing(CIntegration **integration_container, C
   if (fem) delete integration_container[FEA_SOL];
 
   /*--- DeAllocate solution for adjoint problem ---*/
-  if (adj_euler || adj_ns || disc_adj) delete integration_container[ADJFLOW_SOL];
+  if (adj_euler || adj_ns || (disc_adj&&!fem)) delete integration_container[ADJFLOW_SOL];
+  if (disc_adj&&fem) delete integration_container[ADJFEA_SOL];
   if (adj_turb) delete integration_container[ADJTURB_SOL];
 
 
@@ -595,7 +606,7 @@ void CDriver::Numerics_Preprocessing(CNumerics ****numerics_container,
     case POISSON_EQUATION: poisson = true; break;
     case WAVE_EQUATION: wave = true; break;
     case HEAT_EQUATION: heat = true; break;
-    case FEM_ELASTICITY: fem = true; break;
+    case FEM_ELASTICITY: case DISC_ADJ_FEA: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
     case ADJ_RANS : ns = true; turbulent = true; adj_ns = true; adj_turb = (!config->GetFrozen_Visc()); break;
@@ -1306,7 +1317,7 @@ void CDriver::Numerics_Postprocessing(CNumerics ****numerics_container,
     case POISSON_EQUATION: poisson = true; break;
     case WAVE_EQUATION: wave = true; break;
     case HEAT_EQUATION: heat = true; break;
-    case FEM_ELASTICITY: fem = true; break;
+    case FEM_ELASTICITY: case DISC_ADJ_FEA: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
     case ADJ_RANS : ns = true; turbulent = true; adj_ns = true; adj_turb = (!config->GetFrozen_Visc()); break;
@@ -1697,8 +1708,15 @@ void CDriver::Iteration_Preprocessing(CIteration **iteration_container, CConfig 
     case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
       if (rank == MASTER_NODE)
         cout << ": discrete adjoint Euler/Navier-Stokes/RANS flow iteration." << endl;
-      iteration_container[iZone] = new CDiscAdjMeanFlowIteration(config[iZone]);
+      iteration_container[iZone] = new CDiscOneShotIteration(config[iZone]);
+     // iteration_container[iZone] = new CDiscAdjMeanFlowIteration(config[iZone]);
       break;
+
+    case DISC_ADJ_FEA:
+      if (rank == MASTER_NODE)
+      cout << ": discrete adjoint FEA iteration." << endl;
+       iteration_container[iZone] = new TopologyOptimization(config[iZone]);
+    break;
   }
   
 }
@@ -1873,7 +1891,6 @@ void CSingleZoneDriver::Run(CIteration **iteration_container,
   iteration_container[ZONE_0]->Preprocess(output, integration_container, geometry_container,
                                           solver_container, numerics_container, config_container,
                                           surface_movement, grid_movement, FFDBox, ZONE_0);
-  
   iteration_container[ZONE_0]->Iterate(output, integration_container, geometry_container,
                                        solver_container, numerics_container, config_container,
                                        surface_movement, grid_movement, FFDBox, ZONE_0);
@@ -1938,7 +1955,6 @@ void CMultiZoneDriver::Run(CIteration **iteration_container,
     iteration_container[iZone]->Preprocess(output, integration_container, geometry_container,
                                            solver_container, numerics_container, config_container,
                                            surface_movement, grid_movement, FFDBox, iZone);
-    
     iteration_container[iZone]->Iterate(output, integration_container, geometry_container,
                                         solver_container, numerics_container, config_container,
                                         surface_movement, grid_movement, FFDBox, iZone);
@@ -2530,7 +2546,6 @@ void CFSIDriver::Run(CIteration **iteration_container,
 		iteration_container[ZONE_FLOW]->Preprocess(output, integration_container, geometry_container,
 		                                       solver_container, numerics_container, config_container,
 		                                       surface_movement, grid_movement, FFDBox, ZONE_FLOW);
-
 		iteration_container[ZONE_FLOW]->Iterate(output, integration_container, geometry_container,
 		                                       solver_container, numerics_container, config_container,
 		                                       surface_movement, grid_movement, FFDBox, ZONE_FLOW);
@@ -2555,7 +2570,6 @@ void CFSIDriver::Run(CIteration **iteration_container,
 		/*-----------------------------------------------------------------*/
 		/*------------------ Structural subiteration ----------------------*/
 		/*-----------------------------------------------------------------*/
-
 		iteration_container[ZONE_STRUCT]->Iterate(output, integration_container, geometry_container,
 		                                       solver_container, numerics_container, config_container,
 		                                       surface_movement, grid_movement, FFDBox, ZONE_STRUCT);

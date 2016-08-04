@@ -56,7 +56,8 @@ protected:
 
 	su2double *Solution,		/*!< \brief Solution of the problem. */
     *Solution_Old,			/*!< \brief Old solution of the problem R-K. */
-    *Solution_Save;
+    *Solution_Save,
+    *Solution_Store;
     //ROBUST
     su2double **SolutionVec_Old;
     su2double **SolutionVec;
@@ -164,6 +165,7 @@ public:
 	 */
 	su2double GetSolution_Old(unsigned short val_var);
     su2double GetSolution_Save(unsigned short val_var);
+    su2double GetSolution_Store(unsigned short val_var);
 
 	/*!
 	 * \brief Set the value of the old solution.
@@ -171,6 +173,7 @@ public:
 	 */
 	void SetSolution_Old(su2double *val_solution_old);
     void SetSolution_Save(su2double *val_solution_old);
+    void SetSolution_Store(su2double *val_solution_old);
 
 	/*!
 	 * \overload
@@ -179,6 +182,7 @@ public:
 	 */	
 	void SetSolution_Old(unsigned short val_var, su2double val_solution_old);
     void SetSolution_Save(unsigned short val_var, su2double val_solution_old);
+    void SetSolution_Store(unsigned short val_var, su2double val_solution_old);
 
 	/*!
 	 * \brief Set old variables to the value of the current variables.
@@ -189,6 +193,8 @@ public:
 
     void SetSolutionVec(unsigned short numQuad);
     void SetSolutionVecOld(unsigned short numQuad);
+
+    void Set_StoreSolution(void);
 
 	/*!
 	 * \brief Set variables to the value of the old variables.
@@ -289,6 +295,7 @@ public:
 	 */
 	su2double *GetSolution_Old(void);
     su2double *GetSolution_Save(void);
+    su2double *GetSolution_Store(void);
 
     su2double *GetSolutionVec(bool quad, unsigned short numQuad);
     su2double *GetSolutionVecOld(bool quad, unsigned short numQuad);
@@ -2055,6 +2062,8 @@ public:
    * \param[in] adj_sol - The adjoint values of the solution.
    */
   void SetAdjointSolution(su2double *adj_sol);
+
+  void SetForwardSolution(su2double *adj_sol);
 
   /*!
    * \brief Get the adjoint values of the solution.

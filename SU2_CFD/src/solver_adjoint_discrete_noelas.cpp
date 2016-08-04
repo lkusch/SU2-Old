@@ -48,7 +48,7 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config)  : CSolver(
 CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short Kind_Solver, unsigned short iMesh)  : CSolver(){
 
   unsigned short iVar, iMarker, iDim;
-  unsigned long jVertex, iElem;
+  unsigned long jVertex;
 
   bool restart = config->GetRestart();
 
@@ -57,13 +57,6 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
   ifstream restart_file;
   string filename, AdjExt;
   su2double dull_val;
-
-  turbulent = false, flow = false;
-
-  switch(config->GetKind_Solver()){
-    case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: flow = true; break;
-    case DISC_ADJ_RANS: flow = true; turbulent = true; break;
-  }
 
   int rank = MASTER_NODE;
 #ifdef HAVE_MPI
@@ -195,23 +188,14 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
 
   Hess=new su2double*[38];
   Bess=new su2double*[38];
-
+  UpdateSens=new su2double[geometry->nVertex[0]];
 
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
-      if(flow){
-        CSensitivity[iMarker]        = new su2double [geometry->nVertex[iMarker]];
-        CSensitivityOld[iMarker]        = new su2double [geometry->nVertex[iMarker]];
-        LagrangeSens[iMarker]        = new su2double [geometry->nVertex[iMarker]];
-        ExpCSensitivityOld[iMarker]        = new su2double [geometry->nVertex[iMarker]];
-        ExpLagrangeSens[iMarker]        = new su2double [geometry->nVertex[iMarker]];
-      }else{
-          CSensitivity[iMarker]        = new su2double [geometry->GetnElem()];
-          CSensitivityOld[iMarker]        = new su2double [geometry->GetnElem()];
-          LagrangeSens[iMarker]        = new su2double [geometry->GetnElem()];
-          ExpCSensitivityOld[iMarker]        = new su2double [geometry->GetnElem()];
-          ExpLagrangeSens[iMarker]        = new su2double [geometry->GetnElem()];
-      }
-
+      CSensitivity[iMarker]        = new su2double [geometry->nVertex[iMarker]];
+      CSensitivityOld[iMarker]        = new su2double [geometry->nVertex[iMarker]];
+      LagrangeSens[iMarker]        = new su2double [geometry->nVertex[iMarker]];
+      ExpCSensitivityOld[iMarker]        = new su2double [geometry->nVertex[iMarker]];
+      ExpLagrangeSens[iMarker]        = new su2double [geometry->nVertex[iMarker]];
   }
   for (iMarker = 0; iMarker < config->GetLBFGSNum(); iMarker++) {
       rkStore[iMarker]=new su2double[38];
@@ -223,16 +207,8 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
      Bess[iVertex]= new su2double [38];
   }
 
-  if(flow){
-      UpdateSens=new su2double[geometry->nVertex[0]];
-      for (iVertex = 0; iVertex < geometry->nVertex[0]; iVertex++) {
-          UpdateSens[iVertex]=0;
-      }
-  }else{
-      UpdateSens=new su2double[geometry->GetnElem()];
-      for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
-          UpdateSens[iElem]=0;
-      }
+  for (iVertex = 0; iVertex < geometry->nVertex[0]; iVertex++) {
+      UpdateSens[iVertex]=0;
   }
 
   for (iVertex = 0; iVertex < 38; iVertex++) {
@@ -258,22 +234,12 @@ CDiscAdjSolver::CDiscAdjSolver(CGeometry *geometry, CConfig *config, CSolver *di
       Sens_AoA[iMarker]  = 0.0;
       Sens_Press[iMarker] = 0.0;
       Sens_Temp[iMarker]  = 0.0;
-      if(flow){
-          for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
-              CSensitivity[iMarker][iVertex] = 0.0;
-              CSensitivityOld[iMarker][iVertex] = 0.0;
-              ExpCSensitivityOld[iMarker][iVertex] = 0.0;
-              ExpLagrangeSens[iMarker][iVertex] = 0.0;
-              LagrangeSens[iMarker][iVertex] = 0.0;
-          }
-      }else{
-          for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
-              CSensitivity[iMarker][iElem] = 0.0;
-              CSensitivityOld[iMarker][iElem] = 0.0;
-              ExpCSensitivityOld[iMarker][iElem] = 0.0;
-              ExpLagrangeSens[iMarker][iElem] = 0.0;
-              LagrangeSens[iMarker][iElem] = 0.0;
-          }
+      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
+          CSensitivity[iMarker][iVertex] = 0.0;
+          CSensitivityOld[iMarker][iVertex] = 0.0;
+          ExpCSensitivityOld[iMarker][iVertex] = 0.0;
+          ExpLagrangeSens[iMarker][iVertex] = 0.0;
+          LagrangeSens[iMarker][iVertex] = 0.0;
       }
   }
 
@@ -525,9 +491,6 @@ void CDiscAdjSolver::RegisterObj_Func(CConfig *config){
     break;
   case MASS_FLOW_RATE:
     ObjFunc_Value = direct_solver->GetOneD_MassFlowRate();
-    break;
-  case MINIMUM_COMPLIANCE:
-    ObjFunc_Value = direct_solver->GetMinimumCompliance();
     break;
  /*--- Template for new objective functions where TemplateObjFunction()
   *  is the routine that returns the obj. function value. The computation
@@ -1125,13 +1088,6 @@ void CDiscAdjSolver::OutputWritten(CGeometry *geometry){
     unsigned short iVar;
     unsigned long iPoint;
     unsigned long iVertex;
- /*   std::cout<<"fdot "<<SU2_TYPE::GetForwardDerivative(ObjFunc_Value)<<std::endl;
-    std::cout<<"ydot "<<std::endl;
-    for (iPoint = 0; iPoint < nPoint; iPoint++){
-      for (iVar = 0; iVar < nVar; iVar++){
-        std::cout<<SU2_TYPE::GetForwardDerivative(direct_solver->node[iPoint]->GetSolution(iVar))<<" ";
-      }
-    }*/
     //for (unsigned short numQuad=0; numQuad<4; numQuad++){
      //   std::cout<<"SolutionVec_Old["<<numQuad<<"]=";
     //    for (iPoint = 0; iPoint < nPoint; iPoint++){
@@ -1152,32 +1108,29 @@ void CDiscAdjSolver::OutputWritten(CGeometry *geometry){
       direct_solver->node[iPoint]->SetAdjointSolution(Solution);
     }
     std::cout<<"SetAdjointUpdate: "<<sqrt(norm)<<std::endl;*/
-//    std::cout<<"CSensitivity: "<<std::endl;
-    //for (iVertex = 0; iVertex < geometry->GetnVertex(0); iVertex++){
-//    for (iVertex = 0; iVertex < geometry->GetnElem(); iVertex++){
- //     std::cout<<CSensitivity[0][iVertex]<<" ";
-//    }
-//    std::cout<<std::endl;
-//    std::cout<<"Objective: "<<ObjFunc_Value<<std::endl;
-    //std::cout<<"SolutionOld - direct_solver"<<std::endl;
+  /*  std::cout<<"CSensitivity: "<<std::endl;
+    for (iVertex = 0; iVertex < geometry->GetnVertex(0); iVertex++){
+      std::cout<<CSensitivity[0][iVertex]<<" ";
+    }
+    std::cout<<std::endl;*/
+    std::cout<<"SolutionOld - direct_solver"<<std::endl;
     //for (iPoint = 0; iPoint < nPoint; iPoint++){
    //     for (iVar = 0; iVar < nVar; iVar++){
             //std::cout<<direct_solver->node[iPoint]->GetSolution(iVar)<<" ";
-   //        std::cout<<direct_solver->node[0]->GetSolution(0)<<" ";
+           std::cout<<direct_solver->node[0]->GetSolution(0)<<" ";
 
    //     }
    // }
-   // std::cout<<std::endl;
-    //std::cout<<"SolutionOld"<<std::endl;
-//    for (iPoint = 0; iPoint < nPoint; iPoint++){
-//        std::cout<<geometry->node[iPoint]->GetCoord(0)<<" "<<geometry->node[iPoint]->GetCoord(1)<<" "<<direct_solver->node[iPoint]->GetSolution(0)<<" "<<direct_solver->node[iPoint]->GetSolution(1)<<std::endl;
-        //for (iVar = 0; iVar < nVar; iVar++){
+    std::cout<<std::endl;
+    std::cout<<"SolutionOld"<<std::endl;
+   // for (iPoint = 0; iPoint < nPoint; iPoint++){
+   //     for (iVar = 0; iVar < nVar; iVar++){
             //std::cout<<node[iPoint]->GetSolution(iVar)<<" ";
-    //std::cout<<node[0]->GetSolution(0)<<" ";
+    std::cout<<node[0]->GetSolution(0)<<" ";
 
    //     }
-//    }
- //   std::cout<<std::endl;
+   // }
+    std::cout<<std::endl;
 }
 
 void CDiscAdjSolver::AssembleLagrangian(CConfig *config){
@@ -1209,6 +1162,7 @@ void CDiscAdjSolver::AssembleLagrangian(CConfig *config){
     }
     Lagrangian_Value+=sqrt(helper/(nPoint*nVar))*(config->GetOneShotBeta()/2);
     Lagrangian_Value+=ObjFunc_Value;
+    //std::cout<<ObjFunc_Value<<" ";
     Obj_Save=ObjFunc_Value;
     if(config->GetOneShotConstraint()==true){
         for (unsigned short iValue=0; iValue<config->GetConstraintNum();iValue++){
@@ -1236,21 +1190,6 @@ void CDiscAdjSolver::UpdateStateVariable(CConfig *config){
       }
       direct_solver->node[iPoint]->SetSolution(Solution);
     }
-}
-
-void CDiscAdjSolver::SetForwardDirection(CConfig *config){
-    unsigned short iVar;
-    unsigned long iPoint;
-   // std::cout<<"ForwardDirection"<<std::endl;
-    for (iPoint = 0; iPoint < nPoint; iPoint++){
-      for (iVar = 0; iVar < nVar; iVar++){
-        Solution[iVar] = (node[iPoint]->GetSolution_Save(iVar)-node[iPoint]->GetSolution_Store(iVar));
-         // Solution[iVar] = 1.0;
-       // std::cout<<Solution[iVar]<<" ";
-      }
-      direct_solver->node[iPoint]->SetForwardSolution(Solution);
-    }
-   // std::cout<<std::endl;
 }
 
 void CDiscAdjSolver::SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config){
@@ -1366,6 +1305,7 @@ void CDiscAdjSolver::OverwriteSensitivityProjected(CGeometry *geometry){
     for (iVertex = 0; iVertex < geometry->GetnVertex(0); iVertex++){
           geometry->vertex[0][iVertex]->SetAuxVar(LagrangeSens[0][iVertex]);
     }
+    std::cout<<std::endl;
 }
 
 void CDiscAdjSolver::OverwriteGradientProjected(CGeometry *geometry){
@@ -1373,6 +1313,7 @@ void CDiscAdjSolver::OverwriteGradientProjected(CGeometry *geometry){
     for (iVertex = 0; iVertex < geometry->GetnVertex(0); iVertex++){
           geometry->vertex[0][iVertex]->SetAuxVar(CSensitivityOld[0][iVertex]);
     }
+    std::cout<<std::endl;
 }
 
 void CDiscAdjSolver::SetProjectedSensitivity(unsigned long iDV, su2double value){
@@ -1555,42 +1496,6 @@ void CDiscAdjSolver::SetSensitivity(CGeometry *geometry, CConfig *config){
 
       /*--- Set the index manually to zero. ---*/
 
-      AD::ResetInput(Coord[iDim]);
-
-      /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
-
-      if (config->GetSens_Remove_Sharp()) {
-        eps = config->GetLimiterCoeff()*config->GetRefElemLength();
-        if ( geometry->node[iPoint]->GetSharpEdge_Distance() < config->GetSharpEdgesCoeff()*eps )
-          Sensitivity = 0.0;
-      }
-
-      node[iPoint]->SetSensitivity(iDim, Sensitivity);
-    }
-  }
-  SetSurface_Sensitivity(geometry, config);
-}
-
-void CDiscAdjSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){
-
-  unsigned long iPoint, iVar;
-  unsigned short iDim;
-  su2double *Coord, Sensitivity, eps;
-
-  //std::cout<<"FORWARDDER"<<SU2_TYPE::GetMixedDerivative(ObjFunc_Value)<<std::endl;
-  AD::ResetVectorPosition();
-
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    Coord = geometry->node[iPoint]->GetCoord();
-
-    for (iDim = 0; iDim < nDim; iDim++){
-     // Sensitivity = Coord[iDim].getGradient().getGradient();
-     // std::cout<<Sensitivity<<" ";
-      Sensitivity = SU2_TYPE::GetMixedDerivative(Coord[iDim]);
-
-
-      /*--- Set the index manually to zero. ---*/
-
      AD::ResetInput(Coord[iDim]);
 
       /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
@@ -1604,27 +1509,7 @@ void CDiscAdjSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){
       node[iPoint]->SetSensitivity(iDim, Sensitivity);
     }
   }
-/*  std::cout<<std::endl;
-  std::cout<<"direct_solver->node"<<std::endl;
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-
-        for (iVar = 0; iVar < nVar; iVar++){
-          std::cout<<SU2_TYPE::GetMixedDerivative(direct_solver->node[iPoint]->GetSolution(iVar))<<" ";
-        }
-  }*/
   SetSurface_Sensitivity(geometry, config);
-}
-
-void CDiscAdjSolver::SetSensDensity(CGeometry *geometry, CConfig *config){
-
-    unsigned long iElem;
-    su2double Density, Sensitivity;
-    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
-      Density = geometry->elem[iElem]->GetDensity()[0];
-      Sensitivity= SU2_TYPE::GetDerivative(Density);
-      AD::ResetInput(Density);
-      CSensitivity[0][iElem]=Sensitivity;
-    }
 }
 
 void CDiscAdjSolver::WriteDesignVariable(){

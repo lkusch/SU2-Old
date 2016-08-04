@@ -45,6 +45,8 @@
 #include "../../Common/include/grid_movement_structure.hpp"
 #include "../../Common/include/config_structure.hpp"
 
+#include "../../SparseGrid/SG/oSolverControl.h"
+
 using namespace std;
 
 /*!
@@ -933,6 +935,77 @@ public:
                        unsigned short iZone,
                        unsigned short kind_recording);
 
+};
+
+class CDiscOneShotIteration : public CIteration {
+
+private:
+
+  CMeanFlowIteration* meanflow_iteration; /*!< \brief Pointer to the mean flow iteration class. */
+  unsigned short CurrentRecording; /*!< \brief Stores the current status of the recording. */
+  bool turbulent;       /*!< \brief Stores the turbulent flag. */
+  oSolverControlData SolverControl;
+
+  enum RECORDING{
+    NONE = 0,      /*!< \brief Indicates that nothing is recorded. */
+    FLOW_VARIABLES = 1, /*!< \brief Indicates that the current recording
+                                    can be used to compute the gradients with respect
+                                    to the conservative flow variables. */
+    GEOMETRY_VARIABLES = 2, /*!< \brief Indicates that the current recording
+                                       can be used to compute the gradients with respect
+                                       to the geometry variables. */
+    ALL_VARIABLES = 3,
+  };
+
+
+public:
+
+  CDiscOneShotIteration(CConfig *config);
+
+  ~CDiscOneShotIteration(void);
+
+  void Preprocess(COutput *output,
+                  CIntegration ***integration_container,
+                  CGeometry ***geometry_container,
+                  CSolver ****solver_container,
+                  CNumerics *****numerics_container,
+                  CConfig **config_container,
+                  CSurfaceMovement **surface_movement,
+                  CVolumetricMovement **grid_movement,
+                  CFreeFormDefBox*** FFDBox,
+                  unsigned short val_iZone);
+
+  void Iterate(COutput *output,
+               CIntegration ***integration_container,
+               CGeometry ***geometry_container,
+               CSolver ****solver_container,
+               CNumerics *****numerics_container,
+               CConfig **config_container,
+               CSurfaceMovement **surface_movement,
+               CVolumetricMovement **grid_movement,
+               CFreeFormDefBox*** FFDBox,
+               unsigned short val_iZone);
+
+  void Update(COutput *output,
+              CIntegration ***integration_container,
+              CGeometry ***geometry_container,
+              CSolver ****solver_container,
+              CNumerics *****numerics_container,
+              CConfig **config_container,
+              CSurfaceMovement **surface_movement,
+              CVolumetricMovement **grid_movement,
+              CFreeFormDefBox*** FFDBox,
+              unsigned short val_iZone);
+
+  void Monitor();
+
+  void Output();
+
+  void Postprocess();
+
+  void DiscAdjMeanFlowIterationSparseGrid(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
   void DiscAdjMeanFlowIterationConstraint(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                        CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                        CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
@@ -942,7 +1015,13 @@ public:
   void DiscAdjMeanFlowIterationPiggyBack(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                        CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                        CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
+  void DiscAdjMeanFlowIterationRun(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
   void OneShotStep(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                       CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                       CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short whilecounter);
+  void OneShotStepTrial(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                        CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                        CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short whilecounter);
   void projectOneShot(CGeometry ***geometry_container, CConfig **config_container,
@@ -955,6 +1034,75 @@ public:
 
 
 };
+
+class TopologyOptimization : public CIteration {
+
+private:
+
+  CFEM_StructuralAnalysis* mean_iteration; /*!< \brief Pointer to the mean flow iteration class. */
+  unsigned short CurrentRecording; /*!< \brief Stores the current status of the recording. */
+//  bool turbulent;       /*!< \brief Stores the turbulent flag. */
+ // oSolverControlData SolverControl;
+
+  enum RECORDING{
+    NONE = 0,      /*!< \brief Indicates that nothing is recorded. */
+    FLOW_VARIABLES = 1, /*!< \brief Indicates that the current recording
+                                    can be used to compute the gradients with respect
+                                    to the conservative flow variables. */
+    GEOMETRY_VARIABLES = 2, /*!< \brief Indicates that the current recording
+                                       can be used to compute the gradients with respect
+                                       to the geometry variables. */
+    ALL_VARIABLES = 3,
+  };
+
+
+public:
+
+  TopologyOptimization(CConfig *config);
+
+  ~TopologyOptimization(void);
+
+  void Preprocess(COutput *output,
+                  CIntegration ***integration_container,
+                  CGeometry ***geometry_container,
+                  CSolver ****solver_container,
+                  CNumerics *****numerics_container,
+                  CConfig **config_container,
+                  CSurfaceMovement **surface_movement,
+                  CVolumetricMovement **grid_movement,
+                  CFreeFormDefBox*** FFDBox,
+                  unsigned short val_iZone);
+
+  void Iterate(COutput *output,
+               CIntegration ***integration_container,
+               CGeometry ***geometry_container,
+               CSolver ****solver_container,
+               CNumerics *****numerics_container,
+               CConfig **config_container,
+               CSurfaceMovement **surface_movement,
+               CVolumetricMovement **grid_movement,
+               CFreeFormDefBox*** FFDBox,
+               unsigned short val_iZone);
+
+  void Update(COutput *output,
+              CIntegration ***integration_container,
+              CGeometry ***geometry_container,
+              CSolver ****solver_container,
+              CNumerics *****numerics_container,
+              CConfig **config_container,
+              CSurfaceMovement **surface_movement,
+              CVolumetricMovement **grid_movement,
+              CFreeFormDefBox*** FFDBox,
+              unsigned short val_iZone);
+
+  void Monitor();
+
+  void Output();
+
+  void Postprocess();
+
+};
+
 
 
 /*!
