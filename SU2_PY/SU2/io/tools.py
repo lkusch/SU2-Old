@@ -3,7 +3,7 @@
 ## \file tools.py
 #  \brief file i/o functions
 #  \author T. Lukaczyk, F. Palacios
-#  \version 4.1.0 "Cardinal"
+#  \version 4.2.0 "Cardinal"
 #
 # SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
 #                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -14,7 +14,7 @@
 #                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
 #                 Prof. Rafael Palacios' group at Imperial College London.
 #
-# Copyright (C) 2012-2015 SU2, the open-source CFD code.
+# Copyright (C) 2012-2016 SU2, the open-source CFD code.
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -372,7 +372,7 @@ def read_aerodynamics( History_filename , special_cases=[], final_avg=0 ):
             Func_Values[this_objfun] = history_data[this_objfun] 
     
     # for unsteady cases, average time-accurate objective function values
-    if 'UNSTEADY_SIMULATION' in special_cases:
+    if 'UNSTEADY_SIMULATION' in special_cases and not final_avg:
         for key,value in Func_Values.iteritems():
             Func_Values[key] = sum(value)/len(value)
          
@@ -825,6 +825,25 @@ def get_specialCases(config):
     return special_cases
 
 #: def get_specialCases()
+
+# -------------------------------------------------------------------
+#  Check Fluid Structure Interaction
+# -------------------------------------------------------------------
+def get_multizone(config):
+    """ returns a list of special physical problems that were
+        specified in the config file, and set to 'yes'
+    """
+    
+    all_multizone_problems = ['FLUID_STRUCTURE_INTERACTION']
+    
+    multizone = []
+    for key in all_multizone_problems:
+        if config.has_key('PHYSICAL_PROBLEM') and config['PHYSICAL_PROBLEM'] == key:
+            multizone.append(key)
+            
+    return multizone
+
+#: def get_multizone()
 
 
 def next_folder(folder_format,num_format='%03d'):

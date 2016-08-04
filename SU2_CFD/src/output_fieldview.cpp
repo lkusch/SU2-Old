@@ -2,7 +2,7 @@
  * \file output_fieldview.cpp
  * \brief Main subroutines for output solver information.
  * \author F. Palacios, T. Economon, M. Colonno
- * \version 4.1.0 "Cardinal"
+ * \version 4.2.0 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -13,7 +13,7 @@
  *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
  *                 Prof. Rafael Palacios' group at Imperial College London.
  *
- * Copyright (C) 2012-2015 SU2, the open-source CFD code.
+ * Copyright (C) 2012-2016 SU2, the open-source CFD code.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,8 +39,7 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
   unsigned long iPoint, iElem, iNode, nbfaces;
   
   unsigned long iExtIter = config->GetExtIter();
-  bool adjoint = config->GetAdjoint();
-  bool disc_adjoint = config->GetDiscrete_Adjoint();
+  bool adjoint = config->GetContinuous_Adjoint() || config->GetDiscrete_Adjoint();
 
   bool grid_movement  = config->GetGrid_Movement();
 
@@ -49,10 +48,10 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
   
   /*--- Write file name with extension ---*/
   
-  if (adjoint || disc_adjoint) filename = config->GetAdj_FileName();
+  if (adjoint) filename = config->GetAdj_FileName();
   else filename = config->GetFlow_FileName();
   
-  if (Kind_Solver == LINEAR_ELASTICITY)
+  if (Kind_Solver == FEM_ELASTICITY)
     filename = config->GetStructure_FileName().c_str();
   
   if (Kind_Solver == WAVE_EQUATION)
@@ -63,6 +62,10 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
   
   if (Kind_Solver == POISSON_EQUATION)
     filename = config->GetStructure_FileName().c_str();
+
+  if (config->GetKind_SU2() == SU2_DOT){
+    filename = config->GetVolSens_FileName().c_str();
+  }
   
   strcpy (cstr, filename.c_str());
   
@@ -151,7 +154,7 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
    be provided here, and its values must be written in the variables
    section below (typically padded with zeros.) ---*/
   
-  if (config->GetKind_SU2() == SU2_SOL) {
+  if ((config->GetKind_SU2() == SU2_SOL) || (config->GetKind_SU2() == SU2_DOT)) {
     
     /*--- If SU2_SOL called this routine, we already have a set of output
      variables with the appropriate string tags stored in the config class. ---*/
@@ -257,7 +260,7 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
     FieldView_File << "Nodes\t" << nGlobal_Poin << endl;
 
     for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
-      if (config->GetKind_SU2() != SU2_SOL) {
+      if ((config->GetKind_SU2() != SU2_SOL) && (config->GetKind_SU2() != SU2_DOT)) {
         for (iDim = 0; iDim < nDim; iDim++)
           FieldView_File << scientific << Coords[iDim][iPoint] << "\t";
       }
@@ -275,7 +278,7 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
     FieldView_File << "Nodes\t" << nGlobal_Poin*2 << endl;
 
     for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
-      if (config->GetKind_SU2() != SU2_SOL) {
+      if ((config->GetKind_SU2() != SU2_SOL) && (config->GetKind_SU2() != SU2_DOT)) {
         for (iDim = 0; iDim < nDim; iDim++)
           FieldView_File << scientific << Coords[iDim][iPoint] << "\t";
       }
@@ -286,7 +289,7 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
       FieldView_File << scientific << "0.0" << endl;
     }
     for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
-      if (config->GetKind_SU2() != SU2_SOL) {
+      if ((config->GetKind_SU2() != SU2_SOL) && (config->GetKind_SU2() != SU2_DOT)) {
         for (iDim = 0; iDim < nDim; iDim++)
           FieldView_File << scientific << Coords[iDim][iPoint] << "\t";
       }
@@ -431,7 +434,7 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
   
   /*--- Loop over the vars/residuals and write the values to file ---*/
   
-  if (config->GetKind_SU2() != SU2_SOL) {
+  if ((config->GetKind_SU2() != SU2_SOL) && (config->GetKind_SU2() != SU2_DOT)) {
     for (iVar = 0; iVar < nvars; iVar++) {
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
         FieldView_File << scientific << Data[iVar][iPoint] << endl;
@@ -484,18 +487,17 @@ void COutput::SetFieldViewBinary(CConfig *config, CGeometry *geometry, unsigned 
   
   unsigned long iPoint, iElem, iNode, nbfaces;
   unsigned long iExtIter = config->GetExtIter();
-  bool adjoint = config->GetAdjoint();
-  bool disc_adjoint = config->GetDiscrete_Adjoint();
+  bool adjoint = config->GetContinuous_Adjoint() || config->GetDiscrete_Adjoint();
   
   char cstr[200], buffer[50];
   string filename;
   
   /*--- Write file name with extension ---*/
   
-  if (adjoint || disc_adjoint) filename = config->GetAdj_FileName();
+  if (adjoint) filename = config->GetAdj_FileName();
   else filename = config->GetFlow_FileName();
   
-  if (Kind_Solver == LINEAR_ELASTICITY)
+  if (Kind_Solver == FEM_ELASTICITY)
     filename = config->GetStructure_FileName().c_str();
   
   if (Kind_Solver == WAVE_EQUATION)
