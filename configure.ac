@@ -554,6 +554,8 @@ AM_CONDITIONAL([BUILD_GEO],[test $build_GEO != "no"])
 
 ###########################
 
+CXXFLAGS="$CXXFLAGS -I"/home/lkusch/su2-oneshot-old/SparseGrid" -I"/home/lkusch/Programme/eigen""
+
 AC_OUTPUT(Makefile \
         externals/Makefile \
 	Common/lib/Makefile \
