@@ -2,9 +2,9 @@
  * \file mpi_structure.hpp
  * \brief In-Line subroutines of the <i>mpi_structure.hpp</i> file.
  * \author T. Albring
- * \version 4.0.0 "Cardinal"
+ * \version 4.1.2 "Cardinal"
  *
- * SU2 Lead Developers: Dr. Francisco Palacios (francisco.palacios@boeing.com).
+ * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
  *
  * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
@@ -13,7 +13,7 @@
  *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
  *                 Prof. Rafael Palacios' group at Imperial College London.
  *
- * Copyright (C) 2012-2015 SU2, the open-source CFD code.
+ * Copyright (C) 2012-2016 SU2, the open-source CFD code.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -90,10 +90,16 @@ inline void CMPIWrapper::Gather(void *sendbuf, int sendcnt,MPI_Datatype sendtype
   MPI_Gather(sendbuf,sendcnt,sendtype,recvbuf,recvcnt,recvtype,root,comm);
 }
 
+inline void CMPIWrapper::Scatter(void *sendbuf, int sendcnt,MPI_Datatype sendtype,
+                                 void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm){
+  MPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+}
+
 inline void CMPIWrapper::Allgather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                                    void *recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm){
   MPI_Allgather(sendbuf,sendcnt,sendtype, recvbuf, recvcnt, recvtype, comm);
 }
+
 
 inline void CMPIWrapper::Sendrecv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                                   int dest, int sendtag, void *recvbuf, int recvcnt,
@@ -101,6 +107,12 @@ inline void CMPIWrapper::Sendrecv(void *sendbuf, int sendcnt, MPI_Datatype sendt
                                   MPI_Comm comm, MPI_Status *status){
   MPI_Sendrecv(sendbuf,sendcnt,sendtype,dest,sendtag,recvbuf,recvcnt,recvtype,source,recvtag,comm,status);
 }
+
+inline void CMPIWrapper::Waitany(int nrequests, MPI_Request *request,
+                                 int *index, MPI_Status *status){
+  MPI_Waitany(nrequests, request, index, status);
+}
+  
 #if defined COMPLEX_TYPE || defined ADOLC_FORWARD_TYPE || defined CODI_FORWARD_TYPE
 inline void CAuxMPIWrapper::Allgather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm){
   if (sendtype != MPI_DOUBLE){
@@ -219,6 +231,14 @@ inline void CAdjointMPIWrapper::Gather(void *sendbuf, int sendcnt,MPI_Datatype s
   }
 }
 
+inline void CAdjointMPIWrapper::Scatter(void *sendbuf, int sendcnt,MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm){
+  if (sendtype != MPI_DOUBLE){
+    MPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+  }else{
+    AMPI_Scatter(sendbuf, sendcnt, sendtype, recvbuf, recvcnt, recvtype, root, comm);
+  }
+}
+
 inline void CAdjointMPIWrapper::Allgather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, MPI_Comm comm){
   if (sendtype != MPI_DOUBLE){
     MPI_Allgather(sendbuf,sendcnt,sendtype, recvbuf, recvcnt, recvtype, comm);
@@ -236,6 +256,11 @@ inline void CAdjointMPIWrapper::Sendrecv(void *sendbuf, int sendcnt, MPI_Datatyp
   } else {
     AMPI_Sendrecv(sendbuf,sendcnt,sendtype,dest,sendtag,recvbuf,recvcnt,recvtype,source,recvtag,comm,status);
   }
+}
+
+inline void CAdjointMPIWrapper::Waitany(int nrequests, MPI_Request *request,
+                                        int *index, MPI_Status *status){
+  AMPI_Waitany(nrequests, request, index, status);
 }
 #endif
 #endif

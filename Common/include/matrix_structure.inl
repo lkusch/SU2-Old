@@ -2,7 +2,7 @@
  * \file matrix_structure.inl
  * \brief In-Line subroutines of the <i>matrix_structure.hpp</i> file.
  * \author F. Palacios, A. Bueno, T. Economon
- * \version 4.0.0 "Cardinal"
+ * \version 4.1.2 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -13,7 +13,7 @@
  *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
  *                 Prof. Rafael Palacios' group at Imperial College London.
  *
- * Copyright (C) 2012-2015 SU2, the open-source CFD code.
+ * Copyright (C) 2012-2016 SU2, the open-source CFD code.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -100,14 +100,7 @@ inline void CILUPreconditioner::operator()(const CSysVector & u, CSysVector & v)
 inline CLU_SGSPreconditioner::CLU_SGSPreconditioner(CSysMatrix & matrix_ref, CGeometry *geometry_ref, CConfig *config_ref) {
   sparse_matrix = &matrix_ref;
       geometry = geometry_ref;
-  config = config_ref;  
-}
-
-inline CLU_SGS_TransposedPreconditioner::CLU_SGS_TransposedPreconditioner(CSysMatrix & matrix_ref, CGeometry *geometry_ref, CConfig *config_ref, CSysVector &tmp_ref) {
-  sparse_matrix = &matrix_ref;
-      geometry = geometry_ref;
   config = config_ref;
-  tmp = &tmp_ref;
 }
 
 inline void CLU_SGSPreconditioner::operator()(const CSysVector & u, CSysVector & v) const {
@@ -117,15 +110,6 @@ inline void CLU_SGSPreconditioner::operator()(const CSysVector & u, CSysVector &
     throw(-1);
   }
   sparse_matrix->ComputeLU_SGSPreconditioner(u, v, geometry, config);
-}
-
-inline void CLU_SGS_TransposedPreconditioner::operator()(const CSysVector & u, CSysVector & v) const {
-  if (sparse_matrix == NULL) {
-    cerr << "CLU_SGSPreconditioner::operator()(const CSysVector &, CSysVector &): " << endl;
-    cerr << "pointer to sparse matrix is NULL." << endl;
-    throw(-1);
-  }
-  sparse_matrix->ComputeLU_SGS_TransposedPreconditioner(u, v, geometry, config, *tmp);
 }
 
 inline CLineletPreconditioner::CLineletPreconditioner(CSysMatrix & matrix_ref, CGeometry *geometry_ref, CConfig *config_ref) {

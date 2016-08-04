@@ -3,7 +3,7 @@
 ## \file gradients.py
 #  \brief python package for gradients
 #  \author T. Lukaczyk, F. Palacios
-#  \version 4.0.0 "Cardinal"
+#  \version 4.1.2 "Cardinal"
 #
 # SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
 #                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -14,7 +14,7 @@
 #                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
 #                 Prof. Rafael Palacios' group at Imperial College London.
 #
-# Copyright (C) 2012-2015 SU2, the open-source CFD code.
+# Copyright (C) 2012-2016 SU2, the open-source CFD code.
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,7 @@ def gradient( func_name, method, config, state=None ):
 
         Inputs:
             func_name - SU2 objective function name
-            method    - 'ADJOINT' or 'FINDIFF'
+            method    - 'CONTINUOUS_ADJOINT' or 'FINDIFF' or 'DISCRETE_ADJOINT'
             config    - an SU2 config
             state     - optional, an SU2 state
 
@@ -83,8 +83,15 @@ def gradient( func_name, method, config, state=None ):
     if not state['GRADIENTS'].has_key(func_name):
 
         # Adjoint Gradients
-        if any([method == 'ADJOINT', method == 'DISCRETE_ADJOINT']):
+        if any([method == 'CONTINUOUS_ADJOINT', method == 'DISCRETE_ADJOINT']):
 
+            # If using chain rule
+            if config.OBJECTIVE_FUNCTION == 'OUTFLOW_GENERALIZED':
+                import downstream_function
+                chaingrad = downstream_function.downstream_gradient(config,state)
+                # Set coefficients for gradients
+                config.OBJ_CHAIN_RULE_COEFF = str(chaingrad[0:5])
+                
             # Aerodynamics
             if func_name in su2io.optnames_aero:
                 grads = adjoint( func_name, config, state )
@@ -109,7 +116,16 @@ def gradient( func_name, method, config, state=None ):
 
         else:
             raise Exception , 'unrecognized gradient method'
-
+        
+        if ('CUSTOM' in config.DV_KIND and 'OUTFLOW_GENERALIZED' in config.OBJECTIVE_FUNCTION ):
+            import downstream_function
+            chaingrad = downstream_function.downstream_gradient(config,state)
+            n_dv = len(grads[func_name])
+            custom_dv=1
+            for idv in range(n_dv):
+                if (config.DV_KIND[idv] == 'CUSTOM'):
+                    grads['OUTFLOW_GENERALIZED'][idv] = chaingrad[4+custom_dv]
+                    custom_dv = custom_dv+1
         # store
         state['GRADIENTS'].update(grads)
 
@@ -248,7 +264,7 @@ def adjoint( func_name, config, state=None ):
             state.update(info)
 
             # Gradient Projection
-            info = su2run.projection(config)
+            info = su2run.projection(config,state)
             state.update(info)
 
             # solution files to push
@@ -311,7 +327,7 @@ def stability( func_name, config, state=None, step=1e-2 ):
     # ----------------------------------------------------    
 
     # will run in ADJOINT/
-    grads_0 = gradient(base_name,'ADJOINT',config,state)
+    grads_0 = gradient(base_name,'CONTINUOUS_ADJOINT',config,state)
 
 
     # ----------------------------------------------------    
@@ -357,7 +373,7 @@ def stability( func_name, config, state=None, step=1e-2 ):
             #ztate.find_files(konfig)
 
             # the gradient
-            grads_1 = gradient(base_name,'ADJOINT',konfig,ztate)
+            grads_1 = gradient(base_name,'CONTINUOUS_ADJOINT',konfig,ztate)
 
             ## direct files to store
             #name = ztate.FILES[ADJ_NAME]
@@ -466,7 +482,7 @@ def findiff( config, state=None, step=1e-4 ):
     konfig = copy.deepcopy(config)
 
     # check deformation setup
-    n_dv = len(Definition_DV['KIND'])
+    n_dv = sum(Definition_DV['SIZE'])
     deform_set = konfig['DV_KIND'] == Definition_DV['KIND']
     if not deform_set: 
         dvs_base = [0.0] * n_dv
@@ -511,6 +527,12 @@ def findiff( config, state=None, step=1e-4 ):
     if 'INV_DESIGN_HEATFLUX' in special_cases and 'TARGET_HEATFLUX' in files:
         pull.append(files['TARGET_HEATFLUX'])
 
+    # Use custom variable
+    if ('CUSTOM' in konfig.DV_KIND and 'OUTFLOW_GENERALIZED' in config.OBJECTIVE_FUNCTION):
+        import downstream_function
+        chaingrad = downstream_function.downstream_gradient(config,state)
+        custom_dv=1
+        
     # output redirection
     with redirect_folder('FINDIFF',pull,link) as push:
         with redirect_output(log_findiff):
@@ -548,8 +570,14 @@ def findiff( config, state=None, step=1e-4 ):
                     else:
                         this_grad = ( func_step[key] - func_base[key] ) / this_step
                         grads[key].append(this_grad)
+                        
+                # Use custom DV
+                if (konfig.DV_KIND[i_dv] == 'CUSTOM'):
+                    grads['OUTFLOW_GENERALIZED'][i_dv] = chaingrad[4+custom_dv]
+                    custom_dv = custom_dv+1
+                    
                 #: for each grad name
-
+                    
                 su2util.write_plot(grad_filename,output_format,grads)
                 os.remove(temp_config_name)
 
@@ -673,7 +701,7 @@ def geometry( func_name, config, state=None ):
 
 
 # ----------------------------------------------------------------------
-#  Finite Difference Gradients
+#  Direct Differentiation Gradients
 # ----------------------------------------------------------------------
 
 def directdiff( config, state=None ):
@@ -749,7 +777,7 @@ def directdiff( config, state=None ):
     # local config
     konfig = copy.deepcopy(config)
 
-    n_dv = len(Definition_DV['KIND'])
+    n_dv = sum(Definition_DV['SIZE'])
 
     # initialize gradients
     func_keys = su2io.grad_names_map.keys()
@@ -831,5 +859,5 @@ def directdiff( config, state=None ):
     grads = copy.deepcopy(grads)
     return grads
 
-#: def findiff()
+#: def directdiff()
 

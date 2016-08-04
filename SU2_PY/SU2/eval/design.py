@@ -3,7 +3,7 @@
 ## \file design.py
 #  \brief python package for designs
 #  \author T. Lukaczyk, F. Palacios
-#  \version 4.0.0 "Cardinal"
+#  \version 4.1.2 "Cardinal"
 #
 # SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
 #                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -14,7 +14,7 @@
 #                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
 #                 Prof. Rafael Palacios' group at Imperial College London.
 #
-# Copyright (C) 2012-2015 SU2, the open-source CFD code.
+# Copyright (C) 2012-2016 SU2, the open-source CFD code.
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -80,7 +80,7 @@ class Design(object):
             Fucntional Interface
             The following methods take an objective function name for input.
             func(func_name)                  - function of specified name
-            grad(func_name,method='ADJOINT') - gradient of specified name
+            grad(func_name,method='CONTINUOUS_ADJOINT') - gradient of specified name
     """
     
     def __init__(self, config, state=None, folder='DESIGNS/DSN_*'):
@@ -180,7 +180,7 @@ class Design(object):
         """ Evaluates SU2 Design Functions by Name """
         return self._eval(su2func,func_name)
     
-    def grad(self,func_name,method='ADJOINT'):
+    def grad(self,func_name,method='CONTINUOUS_ADJOINT'):
         """ Evaluates SU2 Design Gradients by Name """
         return self._eval(su2grad,func_name,method)
     
@@ -267,7 +267,7 @@ def obj_df(dvs,config,state=None):
     # unpack config and state
     config.unpack_dvs(dvs)
     state = su2io.State(state)
-    grad_method = config.get('GRADIENT_METHOD','ADJOINT')
+    grad_method = config.get('GRADIENT_METHOD','CONTINUOUS_ADJOINT')
     
     def_objs = config['OPT_OBJECTIVE']
     objectives = def_objs.keys()
@@ -275,6 +275,7 @@ def obj_df(dvs,config,state=None):
     assert n_obj == 1 , 'SU2 currently only supports one objective'
     
     dv_scales = config['DEFINITION_DV']['SCALE']
+    dv_size   = config['DEFINITION_DV']['SIZE']
     
 #    if objectives: print('Evaluate Objective Gradients')
     
@@ -290,9 +291,12 @@ def obj_df(dvs,config,state=None):
 #        sys.stdout.write('done\n')
         
         # scaling and sign
-        for i_grd,dv_scl in enumerate(dv_scales):
-            grad[i_grd] = grad[i_grd] * sign * scale / dv_scl
-        
+        k = 0
+        for i_dv,dv_scl in enumerate(dv_scales):
+            for i_grd in range(dv_size[i_dv]):
+                grad[k] = grad[k] * sign * scale / dv_scl
+                k = k + 1
+
         vals_out.append(grad)
     
     #: for each objective
@@ -363,13 +367,14 @@ def con_dceq(dvs,config,state=None):
     # unpack state and config
     config.unpack_dvs(dvs)
     state = su2io.State(state)
-    grad_method = config.get('GRADIENT_METHOD','ADJOINT')
+    grad_method = config.get('GRADIENT_METHOD','CONTINUOUS_ADJOINT')
     
     def_cons = config['OPT_CONSTRAINT']['EQUALITY']
     constraints = def_cons.keys()
     
     dv_scales = config['DEFINITION_DV']['SCALE']
-    
+    dv_size   = config['DEFINITION_DV']['SIZE']
+
 #    if constraints: sys.stdout.write('Evaluate Equality Constraint Gradients ...')
     
     # evaluate each constraint
@@ -384,9 +389,12 @@ def con_dceq(dvs,config,state=None):
 #        sys.stdout.write('done\n')
         
         # scaling
-        for i_grd,dv_scl in enumerate(dv_scales):
-            grad[i_grd] = grad[i_grd] * scale / dv_scl     
-        
+        k = 0
+        for i_dv,dv_scl in enumerate(dv_scales):
+            for i_grd in range(dv_size[i_dv]):
+                grad[k] = grad[k] * scale / dv_scl
+                k = k + 1
+
         vals_out.append(grad)
         
     #: for each constraint
@@ -461,13 +469,14 @@ def con_dcieq(dvs,config,state=None):
     # unpack state and config
     config.unpack_dvs(dvs)
     state = su2io.State(state)
-    grad_method = config.get('GRADIENT_METHOD','ADJOINT')
+    grad_method = config.get('GRADIENT_METHOD','CONTINUOUS_ADJOINT')
     
     def_cons = config['OPT_CONSTRAINT']['INEQUALITY']
     constraints = def_cons.keys()
     
     dv_scales = config['DEFINITION_DV']['SCALE']
-    
+    dv_size   = config['DEFINITION_DV']['SIZE']
+
 #    if constraints: sys.stdout.write('Evaluate Inequality Constraint Gradients')
     
     # evaluate each constraint
@@ -484,8 +493,11 @@ def con_dcieq(dvs,config,state=None):
 #        sys.stdout.write('done\n')
         
         # scaling and sign
-        for i_grd,dv_scl in enumerate(dv_scales):
-            grad[i_grd] = grad[i_grd] * sign * scale / dv_scl          
+        k = 0
+        for i_dv,dv_scl in enumerate(dv_scales):
+            for i_grd in range(dv_size[i_dv]):
+                grad[k] = grad[k] * sign * scale / dv_scl
+                k = k + 1
 
         vals_out.append(grad)
         

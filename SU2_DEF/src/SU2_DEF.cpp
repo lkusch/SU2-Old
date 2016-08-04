@@ -2,7 +2,7 @@
  * \file SU2_DEF.cpp
  * \brief Main file of Mesh Deformation Code (SU2_DEF).
  * \author F. Palacios, T. Economon
- * \version 4.0.0 "Cardinal"
+ * \version 4.1.2 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -13,7 +13,7 @@
  *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
  *                 Prof. Rafael Palacios' group at Imperial College London.
  *
- * Copyright (C) 2012-2015 SU2, the open-source CFD code.
+ * Copyright (C) 2012-2016 SU2, the open-source CFD code.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,11 +34,12 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
   
-  unsigned short iZone, nZone = SINGLE_ZONE;
+  unsigned short iZone, nZone = SINGLE_ZONE, iMarker;
   su2double StartTime = 0.0, StopTime = 0.0, UsedTime = 0.0;
   char config_file_name[MAX_STRING_SIZE];
   int rank = MASTER_NODE, size = SINGLE_NODE;
   string str;
+  bool allmoving=true;
 
   /*--- MPI initialization ---*/
 
@@ -48,7 +49,8 @@ int main(int argc, char *argv[]) {
   MPI_Comm_size(MPI_COMM_WORLD,&size);
 #endif
   
-  /*--- Pointer to different structures that will be used throughout the entire code ---*/
+  /*--- Pointer to different structures that will be used throughout 
+   the entire code ---*/
   
   CConfig **config_container         = NULL;
   CGeometry **geometry_container     = NULL;
@@ -56,8 +58,8 @@ int main(int argc, char *argv[]) {
   CVolumetricMovement *grid_movement = NULL;
   COutput *output                    = NULL;
 
-  /*--- Load in the number of zones and spatial dimensions in the mesh file (if no config
-   file is specified, default.cfg is used) ---*/
+  /*--- Load in the number of zones and spatial dimensions in the mesh file 
+   (if no config file is specified, default.cfg is used) ---*/
   
   if (argc == 2){ strcpy(config_file_name,argv[1]); }
   else{ strcpy(config_file_name, "default.cfg"); }
@@ -100,7 +102,7 @@ int main(int argc, char *argv[]) {
     /*--- Allocate the memory of the current domain, and
      divide the grid between the nodes ---*/
     
-    geometry_container[iZone] = new CPhysicalGeometry(geometry_aux, config_container[iZone], 1);
+    geometry_container[iZone] = new CPhysicalGeometry(geometry_aux, config_container[iZone]);
     
     /*--- Deallocate the memory of geometry_aux ---*/
     
@@ -146,7 +148,7 @@ int main(int argc, char *argv[]) {
   /*--- Compute center of gravity ---*/
   
   if (rank == MASTER_NODE) cout << "Computing centers of gravity." << endl;
-  geometry_container[ZONE_0]->SetCG();
+  geometry_container[ZONE_0]->SetCoord_CG();
   
   /*--- Create the dual control volume structures ---*/
   
@@ -182,17 +184,52 @@ int main(int argc, char *argv[]) {
   if (rank == MASTER_NODE) cout << "Performing the deformation of the surface grid." << endl;
   surface_movement->SetSurface_Deformation(geometry_container[ZONE_0], config_container[ZONE_0]);
   
-  /*--- Volumetric grid deformation ---*/
-  
   if (config_container[ZONE_0]->GetDesign_Variable(0) != FFD_SETTING) {
     
-    if (rank == MASTER_NODE) cout << endl << "----------------------- Volumetric grid deformation ---------------------" << endl;
+    if (rank == MASTER_NODE)
+      cout << endl << "----------------------- Volumetric grid deformation ---------------------" << endl;
     
     /*--- Definition of the Class for grid movement ---*/
+    grid_movement = new CVolumetricMovement(geometry_container[ZONE_0], config_container[ZONE_0]);
     
-    grid_movement = new CVolumetricMovement(geometry_container[ZONE_0]);
+  }
+
+  /*--- For scale, translation and rotation if all boundaries are moving they are set via volume method
+   * Otherwise, the surface deformation has been set already in SetSurface_Deformation.  --- */
+  allmoving = true;
+  /*--- Loop over markers, set flag to false if any are not moving ---*/
+  for (iMarker = 0; iMarker < config_container[ZONE_0]->GetnMarker_All(); iMarker++){
+    if (config_container[ZONE_0]->GetMarker_All_DV(iMarker) == NO)
+      allmoving = false;
+  }
+
+  /*--- Volumetric grid deformation/transformations ---*/
+  
+  if (config_container[ZONE_0]->GetDesign_Variable(0) == SCALE && allmoving) {
     
-    if (rank == MASTER_NODE) cout << "Performing the deformation of the volumetric grid." << endl;
+    if (rank == MASTER_NODE)
+      cout << "Performing a scaling of the volumetric grid." << endl;
+    
+    grid_movement->SetVolume_Scaling(geometry_container[ZONE_0], config_container[ZONE_0], false);
+    
+  } else if (config_container[ZONE_0]->GetDesign_Variable(0) == TRANSLATION && allmoving) {
+    
+    if (rank == MASTER_NODE)
+      cout << "Performing a translation of the volumetric grid." << endl;
+    
+    grid_movement->SetVolume_Translation(geometry_container[ZONE_0], config_container[ZONE_0], false);
+    
+  } else if (config_container[ZONE_0]->GetDesign_Variable(0) == ROTATION && allmoving) {
+    
+    if (rank == MASTER_NODE)
+      cout << "Performing a rotation of the volumetric grid." << endl;
+    
+    grid_movement->SetVolume_Rotation(geometry_container[ZONE_0], config_container[ZONE_0], false);
+    
+  } else if (config_container[ZONE_0]->GetDesign_Variable(0) != FFD_SETTING) {
+    
+    if (rank == MASTER_NODE)
+      cout << "Performing the deformation of the volumetric grid." << endl;
     
     grid_movement->SetVolume_Deformation(geometry_container[ZONE_0], config_container[ZONE_0], false);
     
@@ -211,7 +248,7 @@ int main(int argc, char *argv[]) {
   
   /*--- Write the the free-form deformation boxes after deformation. ---*/
 
-  if (rank == MASTER_NODE) cout << "Adding FFD information to the SU2 file." << endl;
+  if (rank == MASTER_NODE) cout << "Adding any FFD information to the SU2 file." << endl;
     
   surface_movement->WriteFFDInfo(geometry_container[ZONE_0], config_container[ZONE_0]);
   

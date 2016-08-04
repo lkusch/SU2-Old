@@ -2,7 +2,7 @@
  * \file solution_adjoint_mean.cpp
  * \brief Main subrotuines for solving adjoint problems (Euler, Navier-Stokes, etc.).
  * \author F. Palacios, T. Economon
- * \version 4.0.0 "Cardinal"
+ * \version 4.1.2 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -13,7 +13,7 @@
  *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
  *                 Prof. Rafael Palacios' group at Imperial College London.
  *
- * Copyright (C) 2012-2015 SU2, the open-source CFD code.
+ * Copyright (C) 2012-2016 SU2, the open-source CFD code.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,6 +40,7 @@ CAdjEulerSolver::CAdjEulerSolver(void) : CSolver() {
   Sens_Geo = NULL;
   Sens_Press = NULL;
   Sens_Temp = NULL;
+  Sens_BPress = NULL;
   iPoint_UndLapl = NULL;
   jPoint_UndLapl = NULL;
   Jacobian_Axisymmetric = NULL;
@@ -55,7 +56,7 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   unsigned short iDim, iVar, iMarker, nLineLets;
   ifstream restart_file;
   string filename, AdjExt;
-  su2double dull_val;
+  su2double dull_val, myArea_Monitored, Area, *Normal;
   bool restart = config->GetRestart();
   bool compressible = (config->GetKind_Regime() == COMPRESSIBLE);
   bool incompressible = (config->GetKind_Regime() == INCOMPRESSIBLE);
@@ -74,6 +75,7 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   Sens_Geo = NULL;
   Sens_Press = NULL;
   Sens_Temp = NULL;
+  Sens_BPress = NULL;
   iPoint_UndLapl = NULL;
   jPoint_UndLapl = NULL;
   Jacobian_Axisymmetric = NULL;
@@ -204,6 +206,7 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   Sens_AoA  = new su2double[nMarker];
   Sens_Press = new su2double[nMarker];
   Sens_Temp  = new su2double[nMarker];
+  Sens_BPress = new su2double[nMarker];
   
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
     Sens_Geo[iMarker]  = 0.0;
@@ -211,6 +214,7 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
     Sens_AoA[iMarker]  = 0.0;
     Sens_Press[iMarker] = 0.0;
     Sens_Temp[iMarker]  = 0.0;
+    Sens_BPress[iMarker] = 0.0;
     for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
       CSensitivity[iMarker][iVertex] = 0.0;
     }
@@ -222,6 +226,29 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   Phi_Inf[0] = 0.0; Phi_Inf[1] = 0.0;
   if (nDim == 3) Phi_Inf[2] = 0.0;
   
+  /*--- If outflow objective, nonzero initialization ---*/
+  if ((config->GetKind_ObjFunc() == AVG_TOTAL_PRESSURE)){
+    su2double SoundSpeed,*vel_inf,R,vel2,vel;
+    R = config->GetGas_ConstantND();
+    vel_inf = config->GetVelocity_FreeStreamND();
+    vel2=0;
+    for (iDim=0; iDim<nDim; iDim++)
+      vel2 +=vel_inf[iDim]*vel_inf[iDim];
+    vel = pow(vel2,0.5);
+    SoundSpeed= pow(Gamma*config->GetTemperature_FreeStreamND()*R, 0.5);
+    PsiE_Inf = Gamma_Minus_One*vel2/(vel2-pow(SoundSpeed,2.0))*0.5/vel;
+    PsiRho_Inf += PsiE_Inf*(2*SoundSpeed*SoundSpeed+vel2*Gamma_Minus_One)/(2.0*Gamma_Minus_One);
+    // Assumes +x flow direction
+    // Assume v.n = |v|, n = -v/|v|
+
+    for (iDim=0; iDim<nDim; iDim++){
+      Phi_Inf[iDim] +=PsiE_Inf*(SoundSpeed*SoundSpeed/Gamma_Minus_One/vel2-1)*vel_inf[iDim];
+      // Assumes n in direction of v
+      Phi_Inf[iDim]+=vel_inf[iDim]/vel*(0.5);
+    }
+
+  }
+
   if (!restart || (iMesh != MESH_0)) {
     /*--- Restart the solution from infinity ---*/
     for (iPoint = 0; iPoint < nPoint; iPoint++)
@@ -305,6 +332,32 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   if (config->GetKind_ConvNumScheme_AdjFlow() == SPACE_CENTERED) space_centered = true;
   else space_centered = false;
   
+  /*--- Calculate area monitored for area-averaged-outflow-quantity-based objectives ---*/
+  myArea_Monitored = 0.0;
+  if (config->GetKind_ObjFunc()==OUTFLOW_GENERALIZED || config->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE ||
+    config->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE){
+    for (iMarker =0; iMarker < config->GetnMarker_All();  iMarker++){
+      if (config->GetMarker_All_Monitoring(iMarker) == YES){
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+          if (geometry->node[iPoint]->GetDomain()) {
+            Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+            Area = 0.0;
+            for (iDim = 0; iDim < nDim; iDim++)
+              Area += Normal[iDim]*Normal[iDim];
+            myArea_Monitored += sqrt (Area);
+          }
+        }
+      }
+    }
+  }
+#ifdef HAVE_MPI
+  Area_Monitored = 0.0;
+  SU2_MPI::Allreduce(&myArea_Monitored, &Area_Monitored, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+  Area_Monitored = myArea_Monitored;
+#endif
+
   /*--- MPI solution ---*/
   Set_MPI_Solution(geometry, config);
   
@@ -319,6 +372,7 @@ CAdjEulerSolver::~CAdjEulerSolver(void) {
   if (Sens_Geo != NULL) delete [] Sens_Geo;
   if (Sens_Press != NULL) delete [] Sens_Press;
   if (Sens_Temp != NULL) delete [] Sens_Temp;
+  if (Sens_BPress != NULL) delete [] Sens_BPress;
   if (iPoint_UndLapl != NULL) delete [] iPoint_UndLapl;
   if (jPoint_UndLapl != NULL) delete [] jPoint_UndLapl;
   if (FlowPrimVar_i != NULL) delete [] FlowPrimVar_i;
@@ -1134,7 +1188,7 @@ void CAdjEulerSolver::SetForceProj_Vector(CGeometry *geometry, CSolver **solver_
               ForceProj_Vector[2] =  CTRCQ2*(y - y_origin);
             }
             break;
-          case INVERSE_DESIGN_HEATFLUX: case TOTAL_HEATFLUX : case MAXIMUM_HEATFLUX: case AVG_TOTAL_PRESSURE : case AVG_OUTLET_PRESSURE: case MASS_FLOW_RATE : case FREE_SURFACE :
+          default :
             if (nDim == 2) { ForceProj_Vector[0] = 0.0; ForceProj_Vector[1] = 0.0; }
             if (nDim == 3) { ForceProj_Vector[0] = 0.0; ForceProj_Vector[1] = 0.0; ForceProj_Vector[2] = 0.0; }
             break;
@@ -1217,8 +1271,19 @@ void CAdjEulerSolver::SetIntBoundary_Jump(CGeometry *geometry, CSolver **solver_
     for (AngleInt = 0; AngleInt < 180; AngleInt++)
       IndexNF_inv[AngleInt] = -1;
     
-    for (iIndex = 0; iIndex < IndexNF.size(); iIndex++)
-      IndexNF_inv[IndexNF[iIndex]] = iIndex;
+	if (IndexNF.size() <= 180) {
+		for (iIndex = 0; iIndex < IndexNF.size(); iIndex++)
+			IndexNF_inv[IndexNF[iIndex]] = iIndex;
+	}
+	else {
+		#ifndef HAVE_MPI
+				exit(EXIT_FAILURE);
+		#else
+				MPI_Barrier(MPI_COMM_WORLD);
+				MPI_Abort(MPI_COMM_WORLD, 1);
+				MPI_Finalize();
+		#endif
+	}
     
   }
   
@@ -2282,9 +2347,11 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
   LevelSet, Target_LevelSet, eps, r, ru, rv, rw, rE, p, T, dp_dr, dp_dru, dp_drv,
   dp_drw, dp_drE, dH_dr, dH_dru, dH_drv, dH_drw, dH_drE, H, *USens, D[3][3], Dd[3], scale = 1.0;
   su2double RefVel2, RefDensity, Mach2Vel, *Velocity_Inf, factor;
+  su2double Vn, SoundSpeed, *Velocity;
   
   USens = new su2double[nVar];
-  
+  Velocity = new su2double[nDim];
+
   su2double Gas_Constant    = config->GetGas_ConstantND();
   bool compressible      = (config->GetKind_Regime() == COMPRESSIBLE);
   bool incompressible    = (config->GetKind_Regime() == INCOMPRESSIBLE);
@@ -2319,8 +2386,10 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
   
   if ((ObjFunc == INVERSE_DESIGN_HEATFLUX) || (ObjFunc == FREE_SURFACE) ||
       (ObjFunc == TOTAL_HEATFLUX) || (ObjFunc == MAXIMUM_HEATFLUX) ||
-      (ObjFunc == AVG_TOTAL_PRESSURE) || (ObjFunc == AVG_OUTLET_PRESSURE) ||
-      (ObjFunc == MASS_FLOW_RATE)) factor = 1.0;
+      (ObjFunc == MASS_FLOW_RATE) ) factor = 1.0;
+
+ if ((ObjFunc == AVG_TOTAL_PRESSURE) || (ObjFunc == AVG_OUTLET_PRESSURE) ||
+     (ObjFunc == OUTFLOW_GENERALIZED)) factor = 1.0/Area_Monitored;
   
   /*--- Initialize sensitivities to zero ---*/
   
@@ -2329,11 +2398,12 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
   Total_Sens_AoA = 0.0;
   Total_Sens_Press = 0.0;
   Total_Sens_Temp = 0.0;
+  Total_Sens_BPress = 0.0;
   
   /*--- Loop over boundary markers to select those for Euler walls ---*/
   
   for (iMarker = 0; iMarker < nMarker; iMarker++)
-    
+
     if (config->GetMarker_All_KindBC(iMarker) == EULER_WALL)
       
     /*--- Loop over points on the surface to store the auxiliary variable ---*/
@@ -2467,7 +2537,55 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
   if (compressible) {
     
     for (iMarker = 0; iMarker < nMarker; iMarker++) {
-      
+      Sens_BPress[iMarker] = 0.0;
+      if (config->GetMarker_All_KindBC(iMarker) == OUTLET_FLOW){
+
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+
+          if (geometry->node[iPoint]->GetDomain()) {
+            Psi = node[iPoint]->GetSolution();
+            U = solver_container[FLOW_SOL]->node[iPoint]->GetSolution();
+            Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+
+            Mach_Inf   = config->GetMach();
+            if (grid_movement) Mach_Inf = config->GetMach_Motion();
+
+            Area = 0.0; for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
+            Area = sqrt(Area);
+
+            for (iDim = 0; iDim < nDim; iDim++) UnitNormal[iDim] = -Normal[iDim]/Area;
+
+            Vn = 0.0;
+            for (iDim = 0; iDim < nDim; iDim++) {
+              Velocity[iDim] = U[iDim+1]/U[0];
+              Vn += UnitNormal[iDim]*Velocity[iDim];
+            }
+
+            SoundSpeed = solver_container[FLOW_SOL]->node[iPoint]->GetSoundSpeed();
+            if (Vn<SoundSpeed){
+              /* Characteristic-based
+              Sens_BPress[iMarker]+=Psi[nDim+1]*(SoundSpeed-Vn)/Gamma_Minus_One;
+              if (config->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE)
+                Sens_BPress[iMarker]+=Vn/(SoundSpeed+Vn);
+              if (config->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE){
+                for (iDim=0; iDim<nDim; iDim++) Sens_BPress[iMarker]+=Velocity[iDim]*Velocity[iDim]/(2.0*Vn*(SoundSpeed+Vn));
+              }
+               */
+              /*Pressure based*/
+              Sens_BPress[iMarker]+=Psi[nDim+1]*(SoundSpeed*SoundSpeed-Vn*Vn)/(Vn*Gamma_Minus_One);
+              if (config->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE)
+                Sens_BPress[iMarker]+=1;
+              if (config->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE){
+                for (iDim=0; iDim<nDim; iDim++)
+                  Sens_BPress[iMarker]+=0.5*Velocity[iDim]*Velocity[iDim]/(Vn*Vn);
+              }
+            }
+          }
+          Total_Sens_BPress+= Sens_BPress[iMarker] * scale * factor;
+        }
+      }
+
       if (config->GetMarker_All_KindBC(iMarker) == FAR_FIELD || config->GetMarker_All_KindBC(iMarker) == INLET_FLOW
           || config->GetMarker_All_KindBC(iMarker) == SUPERSONIC_INLET || config->GetMarker_All_KindBC(iMarker) == SUPERSONIC_OUTLET
           || config->GetMarker_All_KindBC(iMarker) == ENGINE_INFLOW  ) {
@@ -2712,16 +2830,20 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
   su2double MyTotal_Sens_AoA   = Total_Sens_AoA;     Total_Sens_AoA = 0.0;
   su2double MyTotal_Sens_Press = Total_Sens_Press;   Total_Sens_Press = 0.0;
   su2double MyTotal_Sens_Temp  = Total_Sens_Temp;    Total_Sens_Temp = 0.0;
+  su2double MyTotal_Sens_BPress  = Total_Sens_BPress;    Total_Sens_BPress = 0.0;
   
   SU2_MPI::Allreduce(&MyTotal_Sens_Geo, &Total_Sens_Geo, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_Mach, &Total_Sens_Mach, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_AoA, &Total_Sens_AoA, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_Press, &Total_Sens_Press, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(&MyTotal_Sens_Temp, &Total_Sens_Temp, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(&MyTotal_Sens_BPress, &Total_Sens_BPress, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   
 #endif
   
   delete [] USens;
+  delete [] Velocity;
+  
 }
 
 void CAdjEulerSolver::Smooth_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config) {
@@ -3647,8 +3769,9 @@ void CAdjEulerSolver::BC_NearField_Boundary(CGeometry *geometry, CSolver **solve
 #else
   
   int rank, jProcessor;
-  MPI_Status send_stat[1], recv_stat[1], status;
-  MPI_Request send_req[1], recv_req[1];
+  MPI_Status status;
+  //MPI_Status send_stat[1], recv_stat[1];
+  //MPI_Request send_req[1], recv_req[1];
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   
   bool compute;
@@ -3940,7 +4063,6 @@ void CAdjEulerSolver::BC_Supersonic_Inlet(CGeometry *geometry, CSolver **solver_
     CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
   unsigned short iVar, iDim;
   unsigned long iVertex, iPoint, Point_Normal;
-  su2double Area, UnitNormal[3];
   su2double *V_inlet, *V_domain, *Normal, *Psi_domain, *Psi_inlet;
 
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
@@ -3964,14 +4086,6 @@ void CAdjEulerSolver::BC_Supersonic_Inlet(CGeometry *geometry, CSolver **solver_
       geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
       for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
       conv_numerics->SetNormal(Normal);
-
-      Area = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++)
-        Area += Normal[iDim]*Normal[iDim];
-      Area = sqrt (Area);
-
-      for (iDim = 0; iDim < nDim; iDim++)
-        UnitNormal[iDim] = Normal[iDim]/Area;
 
       /*--- Allocate the value at the inlet ---*/
 
@@ -4019,6 +4133,7 @@ void CAdjEulerSolver::BC_Supersonic_Inlet(CGeometry *geometry, CSolver **solver_
       /*--- Viscous residual contribution, it doesn't work ---*/
 
       if (config->GetViscous()) {
+        
         /*--- Index of the closest interior node ---*/
 
         Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
@@ -4063,7 +4178,6 @@ void CAdjEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solver
                                           CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
   unsigned short iVar, iDim;
   unsigned long iVertex, iPoint, Point_Normal;
-  su2double Area, UnitNormal[3];
   su2double *V_outlet, *V_domain, *Normal, *Psi_domain, *Psi_outlet;
   
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
@@ -4087,14 +4201,6 @@ void CAdjEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solver
       geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
       for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
       conv_numerics->SetNormal(Normal);
-      
-      Area = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++)
-      Area += Normal[iDim]*Normal[iDim];
-      Area = sqrt (Area);
-      
-      for (iDim = 0; iDim < nDim; iDim++)
-      UnitNormal[iDim] = Normal[iDim]/Area;
       
       /*--- Allocate the value at the inlet ---*/
       
@@ -4139,10 +4245,14 @@ void CAdjEulerSolver::BC_Supersonic_Outlet(CGeometry *geometry, CSolver **solver
       if (implicit)
       Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_ii);
       
-      /*--- Viscous residual contribution, it doesn't work ---*/
+      /*--- Viscous residual contribution (check again, Point_Normal was not being initialized before) ---*/
 
       if (config->GetViscous()) {
 
+        /*--- Index of the closest interior node ---*/
+        
+        Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
+        
         /*--- Points in edge, coordinates and normal vector---*/
 
         visc_numerics->SetCoord(geometry->node[iPoint]->GetCoord(), geometry->node[Point_Normal]->GetCoord());
@@ -4373,13 +4483,15 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
   
   unsigned short iVar, iDim;
   unsigned long iVertex, iPoint, Point_Normal;
-  su2double Pressure, P_Exit, Velocity[3], Velocity2 = 0.0;
-  su2double Density, Height;
-  su2double Vn = 0.0, SoundSpeed = 0.0, Mach_Exit, a1 = 0.0, LevelSet, Vn_Exit, Riemann, Entropy, Density_Outlet = 0.0;
-  su2double Area, UnitNormal[3];
+  su2double Pressure=0.0, P_Exit=0.0,  Velocity2 = 0.0, Area=0.0, Density=0.0, Height=0.0,
+      Vn = 0.0, SoundSpeed = 0.0,  LevelSet=0.0, Vn_Exit=0.0, ProjGridVel = 0.0,
+      Riemann=0.0, Entropy=0.0, Density_Outlet = 0.0, Vn_rel=0.0;
+  su2double Velocity[3], UnitNormal[3];
   su2double *V_outlet, *V_domain, *Psi_domain, *Psi_outlet, *Normal;
-  su2double dpterm;
-  
+  su2double a1=0.0, a2=0.0; /*Placeholder terms to simplify expressions/ repeated terms*/
+  /*Gradient terms for the generalized boundary */
+  su2double density_gradient, pressure_gradient, velocity_gradient;
+
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
   bool compressible = (config->GetKind_Regime() == COMPRESSIBLE);
   bool incompressible = (config->GetKind_Regime() == INCOMPRESSIBLE);
@@ -4391,21 +4503,21 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
   su2double RatioDensity     = config->GetRatioDensity();
   su2double Froude           = config->GetFroude();
   string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
-  
+
   Psi_domain = new su2double [nVar]; Psi_outlet = new su2double [nVar];
   Normal = new su2double[nDim];
 
   /*--- Loop over all the vertices ---*/
-  
+
   for (iVertex = 0; iVertex < geometry->nVertex[val_marker]; iVertex++) {
     iPoint = geometry->vertex[val_marker][iVertex]->GetNode();
-    
+
     /*--- If the node belong to the domain ---*/
-    
+
     if (geometry->node[iPoint]->GetDomain()) {
-      
+
       /*--- Normal vector for this vertex (negate for outward convention) ---*/
-      
+
       geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
       for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
       conv_numerics->SetNormal(Normal);
@@ -4414,39 +4526,39 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
       for (iDim = 0; iDim < nDim; iDim++)
         Area += Normal[iDim]*Normal[iDim];
       Area = sqrt (Area);
-      
+
       for (iDim = 0; iDim < nDim; iDim++)
         UnitNormal[iDim] = Normal[iDim]/Area;
-      
+
       /*--- Set the normal point ---*/
-      
+
       Point_Normal = geometry->vertex[val_marker][iVertex]->GetNormal_Neighbor();
-      
+
       /*--- Allocate the value at the outlet ---*/
-      
+
       V_outlet = solver_container[FLOW_SOL]->GetCharacPrimVar(val_marker, iVertex);
-      
+
       /*--- Retrieve solution at the boundary node ---*/
-      
+
       V_domain = solver_container[FLOW_SOL]->node[iPoint]->GetPrimitive();
-      
+
       /*--- Adjoint flow solution at the boundary ---*/
-      
+
       for (iVar = 0; iVar < nVar; iVar++)
         Psi_domain[iVar] = node[iPoint]->GetSolution(iVar);
-      
+
       /*--- Construct the flow & adjoint states at the outlet ---*/
-      
+
       if (compressible) {
-        
+
         /*--- Retrieve the specified back pressure for this outlet, Non-dim. the inputs if necessary. ---*/
-        
+
         P_Exit = config->GetOutlet_Pressure(Marker_Tag);
         P_Exit = P_Exit/config->GetPressure_Ref();
-        
+
         /*--- Check whether the flow is supersonic at the exit. The type
          of boundary update depends on this. ---*/
-        
+
         Density = V_domain[nDim+2];
         Velocity2 = 0.0; Vn = 0.0;
         for (iDim = 0; iDim < nDim; iDim++) {
@@ -4454,201 +4566,291 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
           Velocity2 += Velocity[iDim]*Velocity[iDim];
           Vn += Velocity[iDim]*UnitNormal[iDim];
         }
+        /*--- Extra boundary term for grid movement ---*/
+        if (grid_movement) {
+          su2double *GridVel = geometry->node[iPoint]->GetGridVel();
+          for (iDim = 0; iDim < nDim; iDim++)
+            ProjGridVel += GridVel[iDim]*UnitNormal[iDim];
+        }
+
         Pressure = V_domain[nDim+1];
         SoundSpeed = sqrt(Pressure*Gamma/Density);
-        Mach_Exit  = sqrt(Velocity2)/SoundSpeed;
-        
-        if (Mach_Exit >= 1.0) {
-          
-          for (iVar = 0; iVar < nVar; iVar++) {
-            Psi_outlet[iVar] = 0.0;
-          }
-          if (config->GetKind_ObjFunc() == AVG_OUTLET_PRESSURE) {
-            /*--- Compute Riemann constant ---*/
-            Entropy = Pressure*pow(1.0/Density, Gamma);
-            Riemann = Vn + 2.0*SoundSpeed/Gamma_Minus_One;
-            /*--- Compute (Vn - Ubn).n term for use in the BC. ---*/
 
-            /*--- Compute the new fictious state at the outlet ---*/
-            Density    = pow(P_Exit/Entropy,1.0/Gamma);
-            Pressure   = P_Exit;
-            SoundSpeed = sqrt(Gamma*P_Exit/Density);
-            Vn_Exit    = Riemann - 2.0*SoundSpeed/Gamma_Minus_One;
+        /*--- Set Adjoint variables to 0 initially ---*/
+        for (iVar = 0; iVar < nVar; iVar++) {
+          Psi_outlet[iVar] = 0.0;
+        }
+
+        if (Vn > SoundSpeed) {
+          /*--- Objective-dependent additions to energy term ---*/
+          Vn_Exit = Vn; /* Vn_Exit comes from Reiman conditions in subsonic case*/
+          Vn_rel = Vn_Exit-ProjGridVel;
+          /* Repeated term */
+          a1 = Gamma_Minus_One/(Vn_rel*Vn_rel-SoundSpeed*SoundSpeed);
+
+          switch (config->GetKind_ObjFunc()){
+          case OUTFLOW_GENERALIZED:
+            velocity_gradient = 0.0;
+            for (iDim=0; iDim<nDim; iDim++) velocity_gradient += UnitNormal[iDim]*config->GetCoeff_ObjChainRule(iDim+1);
+            density_gradient = config->GetCoeff_ObjChainRule(0);
+            pressure_gradient = config->GetCoeff_ObjChainRule(4);
+            Psi_outlet[nDim+1]=a1*(density_gradient/Vn_rel+pressure_gradient*Vn_rel-velocity_gradient/Density);
+            break;
+          case AVG_TOTAL_PRESSURE:
+            /*--- Total Pressure term. NOTE: this is AREA averaged
+             * Additional terms are added later (as they are common between subsonic,
+             * supersonic equations) ---*/
             Velocity2  = 0.0;
             for (iDim = 0; iDim < nDim; iDim++) {
-              Velocity[iDim] = Velocity[iDim] + (Vn_Exit-Vn)*UnitNormal[iDim];
               Velocity2 += Velocity[iDim]*Velocity[iDim];
             }
-
-            /*--- Extra boundary term for grid movement ---*/
-
-            if (grid_movement) {
-              su2double ProjGridVel = 0.0;
-              su2double *GridVel = geometry->node[iPoint]->GetGridVel();
-              for (iDim = 0; iDim < nDim; iDim++)
-                ProjGridVel += GridVel[iDim]*UnitNormal[iDim];
-              //Ubn = ProjGridVel;
-            }
-            /*Repeated term*/
-            dpterm = 1./((SoundSpeed-Vn_Exit)*(SoundSpeed+Vn_Exit))/2.;
-            // Need a different term if v = c
-            if (Vn_Exit==SoundSpeed)
-                dpterm = 0;
-            Psi_outlet[0] = dpterm*(-Vn_Exit*(2*SoundSpeed*SoundSpeed+Velocity2*(Gamma-1)));
-            for (iDim = 0; iDim < nDim; iDim++) {
-              Psi_outlet[iDim+1] = dpterm*(UnitNormal[iDim]*2*SoundSpeed+Velocity[iDim]*Vn_Exit*(Gamma-1));
-            }
-            Psi_outlet[nDim+1]=dpterm*(-2*Vn_Exit*(Gamma-1));
-          }
-          /*--- Total Pressure term. NOTE: this is AREA averaged
-           * Additional terms are added later (as they are common between subsonic,
-           * supersonic equations) ---*/
-          if (config->GetKind_ObjFunc() == AVG_TOTAL_PRESSURE) {
-            Psi_outlet[nDim+1]=-Gamma_Minus_One*(5*Velocity2-4*Vn*Vn*Gamma_Minus_One)/2/(SoundSpeed-Vn)/(SoundSpeed+Vn)/Vn;
-            Psi_outlet[0] = 0.5*Psi_outlet[nDim+1]*Velocity2;
-            for (iDim = 0; iDim < nDim; iDim++) {
-              Psi_outlet[0]   += Psi_outlet[nDim+1]*a1*Velocity[iDim]*UnitNormal[iDim];
-              Psi_outlet[iDim+1] = -Psi_outlet[nDim+1]*(a1*UnitNormal[iDim] + Velocity[iDim]);
-            }
+            a2 = Pressure*(Gamma/Gamma_Minus_One)*pow((1.0+Gamma_Minus_One*Density*Velocity2/(2.0*Gamma*Pressure)),1.0/Gamma_Minus_One);
+            density_gradient = a2*(Gamma_Minus_One*Velocity2/(2.0*Gamma*Pressure));
+            velocity_gradient = 0.0;
+            for (iDim=0; iDim<nDim; iDim++)
+              velocity_gradient+=a2*Gamma_Minus_One*Density/(Gamma*Pressure)*Velocity[iDim]*UnitNormal[iDim];
+            pressure_gradient = a2*(-Gamma_Minus_One*Density*Velocity2/(2.0*Gamma*pow(Pressure,2.0)))+pow((1.0+Gamma_Minus_One*Density*Velocity2/(2.0*Gamma*Pressure)),(Gamma/Gamma_Minus_One));
+            Psi_outlet[nDim+1]+=a1*(density_gradient/Vn_rel+pressure_gradient*Vn_rel-velocity_gradient/Density);
+            break;
+          case AVG_OUTLET_PRESSURE:
+            /*Area averaged static pressure*/
+            /*--- Note: further terms are NOT added later for this case, only energy term is modified ---*/
+            Psi_outlet[nDim+1]+=a1*Vn_Exit;
+            break;
+          default:
+            break;
           }
         } else {
-          /*---Subsonic Case(s) ---*/
+          /*---Subsonic Case: Psi-rho E term from volume, objective-specific terms which are common
+           * between subsonic and supersonic cases are added later  ---*/
           /*--- Compute Riemann constant ---*/
           Entropy = Pressure*pow(1.0/Density, Gamma);
           Riemann = Vn + 2.0*SoundSpeed/Gamma_Minus_One;
-          /*--- Compute (Vn - Ubn).n term for use in the BC. ---*/
-          
+
           /*--- Compute the new fictious state at the outlet ---*/
           Density    = pow(P_Exit/Entropy,1.0/Gamma);
           SoundSpeed = sqrt(Gamma*P_Exit/Density);
           Vn_Exit    = Riemann - 2.0*SoundSpeed/Gamma_Minus_One;
+          /*--- Update velocity terms ---*/
+          Vn_rel  = Vn_Exit-ProjGridVel;
+
           Velocity2  = 0.0;
           for (iDim = 0; iDim < nDim; iDim++) {
             Velocity[iDim] = Velocity[iDim] + (Vn_Exit-Vn)*UnitNormal[iDim];
             Velocity2 += Velocity[iDim]*Velocity[iDim];
           }
-          
+
           /*--- Extra boundary term for grid movement ---*/
-          
+
           if (grid_movement) {
-            su2double ProjGridVel = 0.0;
+            ProjGridVel = 0.0;
             su2double *GridVel = geometry->node[iPoint]->GetGridVel();
             for (iDim = 0; iDim < nDim; iDim++)
               ProjGridVel += GridVel[iDim]*UnitNormal[iDim];
-//            Ubn = ProjGridVel;
           }
-          
-          /*--- Shorthand for repeated term in the boundary conditions ---*/
-          
-          //a1 = Gamma*(P_Exit/(Density*Gamma_Minus_One))/(Vn-Ubn);
-          a1 = sqrt(Gamma*P_Exit/Density)/(Gamma_Minus_One);
-          
+
           /*--- Impose values for PsiRho & Phi using PsiE from domain. ---*/
-          
+
           Psi_outlet[nVar-1] = Psi_domain[nVar-1];
-          Psi_outlet[0] = 0.5*Psi_outlet[nVar-1]*Velocity2;
-          for (iDim = 0; iDim < nDim; iDim++) {
-            Psi_outlet[0]   += Psi_outlet[nVar-1]*a1*Velocity[iDim]*UnitNormal[iDim];
-            Psi_outlet[iDim+1] = -Psi_outlet[nVar-1]*(a1*UnitNormal[iDim] + Velocity[iDim]);
-          }
-          
+
         }
-        
+
+        /*--- When Psi_outlet[nVar-1] is not 0, the other terms of Psi_outlet must be updated
+        This occurs when subsonic, or for certain objective functions ---*/
+        if ( Psi_outlet[nVar-1]!=0.0 ){
+          /*--- Shorthand for repeated term in the boundary conditions ---*/
+          /* Characteristic-based version
+          a1 = SoundSpeed/Gamma_Minus_One;
+          Psi_outlet[0] += Psi_outlet[nVar-1]*(Velocity2*0.5+Vn_rel*a1);
+          for (iDim = 0; iDim < nDim; iDim++) {
+            Psi_outlet[iDim+1] += -Psi_outlet[nVar-1]*(a1*UnitNormal[iDim] + Velocity[iDim]);
+          }
+           */
+          /*Constant-pressure version*/
+          a1 = 0.0;
+          if (Vn!=0.0)
+            a1 = SoundSpeed*SoundSpeed/Gamma_Minus_One/Vn;
+          Psi_outlet[0] += Psi_outlet[nVar-1]*(Velocity2*0.5+Vn_rel*a1);
+          for (iDim = 0; iDim < nDim; iDim++) {
+            Psi_outlet[iDim+1] += -Psi_outlet[nVar-1]*(a1*UnitNormal[iDim] + Velocity[iDim]);
+          }
+        }
+
       }
       if (incompressible || freesurface) {
-        
+
         if (freesurface) {
-          
+
           /*--- Density computation at the exit using the level set function ---*/
-          
+
           Height = geometry->node[iPoint]->GetCoord(nDim-1);
           LevelSet = Height - FreeSurface_Zero;
-          
+
           /*--- Pressure computation the density at the exit (imposed) ---*/
-          
+
           if (LevelSet < -epsilon) Density_Outlet = config->GetDensity_FreeStreamND();
           if (LevelSet > epsilon) Density_Outlet = RatioDensity*config->GetDensity_FreeStreamND();
           V_outlet[0] = PressFreeSurface + Density_Outlet*((FreeSurface_Zero-Height)/(Froude*Froude));
-          
+
           /*--- Neumann condition in the interface for the pressure and density ---*/
-          
+
           if (fabs(LevelSet) <= epsilon) {
             V_outlet[0] = solver_container[FLOW_SOL]->node[Point_Normal]->GetSolution(0);
             Density_Outlet = solver_container[FLOW_SOL]->node[Point_Normal]->GetDensityInc();
           }
-          
+
         }
-        
+
         else {
-          
+
           /*--- Imposed pressure and density ---*/
-          
+
           Density_Outlet = solver_container[FLOW_SOL]->GetDensity_Inf();
           V_outlet[0] = solver_container[FLOW_SOL]->GetPressure_Inf();
-          
+
         }
-        
+
         /*--- Neumann condition for the velocity ---*/
-        
+
         for (iDim = 0; iDim < nDim; iDim++)
           V_outlet[iDim+1] = node[Point_Normal]->GetSolution(iDim+1);
-        
+
         /*--- Adjoint flow solution at the outlet (hard-coded for size[3] again?) ---*/
-        
+
         Psi_outlet[2] = 0.0;
         su2double coeff = (2.0*V_domain[1])/ solver_container[FLOW_SOL]->node[Point_Normal]->GetBetaInc2();
         Psi_outlet[1] = node[Point_Normal]->GetSolution(1);
         Psi_outlet[0] = -coeff*Psi_outlet[1];
-        
+
       }
 
-      /*--- For mass_flow objective function add B.C. contribution ---*/
-      if (config->GetKind_ObjFunc() == MASS_FLOW_RATE) {
+      /*--- Add terms for objective functions where additions are needed outside the energy term
+       *     Terms which are added to the energy term are taken care of in the supersonic section above ---*/
+      switch (config->GetKind_ObjFunc()){
+      case MASS_FLOW_RATE:
         Psi_outlet[0]+=1;
+        break;
+      case OUTFLOW_GENERALIZED:
+        density_gradient = config->GetCoeff_ObjChainRule(0);
+        pressure_gradient = config->GetCoeff_ObjChainRule(4);
+        velocity_gradient = 0.0;    /*Inside the option, this term is $\vec{v} \cdot \frac{dg}{d\vec{v}}$ */
+        for (iDim=0; iDim<nDim; iDim++)
+          velocity_gradient += Velocity[iDim]*config->GetCoeff_ObjChainRule(iDim+1);
+        /* repeated term */
+        /* Characteristic-based version (for possible future use.)
+        a1 = 1.0/(SoundSpeed+Vn_Exit); // Repeated term
+        normgrad = 0.0;   // n dot dgdv
+        velgradcross=0.0; // (v x n ) dot (dgdv x n)
+        for (iDim=0; iDim<nDim; iDim++){
+          normgrad += UnitNormal[iDim]*config->GetCoeff_ObjChainRule(iDim+1);
+        }
+        velgradcross = (config->GetCoeff_ObjChainRule(1)*UnitNormal[1]-config->GetCoeff_ObjChainRule(2)*UnitNormal[0])*(Velocity[0]*UnitNormal[1]-Velocity[1]*UnitNormal[0]);
+        if (nDim==3){
+          velgradcross += (config->GetCoeff_ObjChainRule(2)*UnitNormal[2]-config->GetCoeff_ObjChainRule(3)*UnitNormal[1])*(Velocity[1]*UnitNormal[2]-Velocity[2]*UnitNormal[1]);
+          velgradcross +=(config->GetCoeff_ObjChainRule(3)*UnitNormal[0]-config->GetCoeff_ObjChainRule(1)*UnitNormal[2])*(Velocity[2]*UnitNormal[0]-Velocity[0]*UnitNormal[2]);
+        }
+        Psi_outlet[0]+= ((SoundSpeed+Vn_Exit+Vn)*density_gradient/Vn_Exit -SoundSpeed*Vn_Exit*pressure_gradient - velocity_gradient/Density )*a1;
+        Psi_outlet[0]-= velgradcross/Density/Vn_Exit*SoundSpeed*a1;
+        for (iDim=0; iDim<nDim; iDim++){
+          Psi_outlet[iDim+1]+=a1*UnitNormal[iDim]*(-density_gradient/Vn_Exit+ SoundSpeed*pressure_gradient - normgrad*SoundSpeed/Density/Vn_Exit);
+          Psi_outlet[iDim+1]+=(config->GetCoeff_ObjChainRule(iDim+1)/Density/Vn_Exit);
+        }
+         */
+        /*Pressure-fixed version*/
+        if (Vn_Exit != 0.0){
+          Psi_outlet[0]+=density_gradient*2.0/Vn_Exit-velocity_gradient/Density/Vn_Exit;
+          for (iDim=0; iDim<nDim; iDim++){
+            Psi_outlet[iDim+1]+=config->GetCoeff_ObjChainRule(iDim+1)/Density/Vn_Exit-UnitNormal[iDim]*density_gradient/Vn_Exit/Vn_Exit;
+          }
+        }
+        break;
+      case AVG_TOTAL_PRESSURE:
+        /*--- For total pressure objective function. NOTE: this is AREA averaged term---*/
+        Velocity2  = 0.0;
+        for (iDim = 0; iDim < nDim; iDim++)
+          Velocity2 += Velocity[iDim]*Velocity[iDim];
+        /* Characteristic-based version
+        a1 = 1.0/(SoundSpeed+Vn_Exit);
+        Psi_outlet[0]-=a1*SoundSpeed*Velocity2/Vn_rel;
+        for (iDim = 0; iDim < nDim; iDim++)
+          Psi_outlet[iDim+1] +=a1*UnitNormal[iDim]*(-Velocity2)/(2.0*Vn_Exit)+Velocity[iDim]/Vn_Exit;
+         */
+        /*Pressure-fixed version*/
+        if (Vn_Exit !=0.0){
+          a2 = Pressure*(Gamma/Gamma_Minus_One)*pow((1.0+Gamma_Minus_One*Density*Velocity2/(2.0*Gamma*Pressure)),1.0/(Gamma_Minus_One));
+          density_gradient = a2*(Gamma_Minus_One*Velocity2/(2.0*Gamma*Pressure));
+          velocity_gradient=a2*Gamma_Minus_One*Density/(Gamma*Pressure); // re-using variable as the constant multiplying V[i] for dj/dvi
+          Psi_outlet[0]+=density_gradient*2.0/Vn_Exit;
+          for (iDim=0; iDim<nDim; iDim++){
+            Psi_outlet[0]-=velocity_gradient*Velocity[iDim]*Velocity[iDim]/(Density*Vn_Exit);
+            Psi_outlet[iDim+1] += velocity_gradient*Velocity[iDim]/(Density*Vn_Exit) - UnitNormal[iDim]*density_gradient/(Vn_Exit*Vn_Exit);
+          }
+        }
+        break;
+      case AVG_OUTLET_PRESSURE:
+        /* Characteristic-based version
+        a1 = 1.0/(SoundSpeed+Vn_Exit);
+        Psi_outlet[0]+=-SoundSpeed*Vn_Exit*a1;
+        for (iDim = 0; iDim < nDim; iDim++)
+          Psi_outlet[iDim+1]+=UnitNormal[iDim]*SoundSpeed*a1;
+         */
+        /*Pressure-fixed version: all 0s*/
+        break;
+      default:
+        break;
       }
-      /*--- For total pressure objective function. NOTE: this is AREA averaged term---*/
-      if (config->GetKind_ObjFunc() == AVG_TOTAL_PRESSURE) {
-        Psi_outlet[0]+=Velocity2*(2*Vn/(SoundSpeed+Vn)-SoundSpeed/2/Vn)+2*SoundSpeed*Vn*Vn*Gamma_Minus_One/(SoundSpeed+Vn);
-        for  (iDim = 0; iDim < nDim; iDim++)
-          Psi_outlet[iDim+1]-=UnitNormal[iDim]*(Velocity2*0.5+2*(Gamma_Minus_One)*(Velocity2+SoundSpeed*Vn))/Vn/(SoundSpeed+Vn)+Velocity[iDim]*(1-2*Gamma)/Vn;
-      }
-      
+
       /*--- Set the flow and adjoint states in the solver ---*/
-      
+
       conv_numerics->SetPrimitive(V_domain, V_outlet);
       conv_numerics->SetAdjointVar(Psi_domain, Psi_outlet);
-      
+
       /*--- Grid Movement ---*/
-      
+
       if (grid_movement)
         conv_numerics->SetGridVel(geometry->node[iPoint]->GetGridVel(),
-                                  geometry->node[iPoint]->GetGridVel());
-      
+            geometry->node[iPoint]->GetGridVel());
+
       conv_numerics->ComputeResidual(Residual_i, Residual_j, Jacobian_ii, Jacobian_ij,
-                                     Jacobian_ji, Jacobian_jj, config);
-      
+          Jacobian_ji, Jacobian_jj, config);
+
       /*--- Add and Subtract Residual ---*/
-      
+
       LinSysRes.SubtractBlock(iPoint, Residual_i);
-      
+
       /*--- Implicit contribution to the residual ---*/
-      
+
       if (implicit)
         Jacobian.SubtractBlock(iPoint, iPoint, Jacobian_ii);
-      
+
       /*--- Viscous residual contribution, it doesn't work ---*/
 
       if (config->GetViscous()) {
 
-        /*--- Points in edge, coordinates and normal vector---*/
+        /*--- Set laminar and eddy viscosity at the infinity ---*/
+        if (compressible) {
+          V_outlet[nDim+5] = solver_container[FLOW_SOL]->node[iPoint]->GetLaminarViscosity();
+          V_outlet[nDim+6] = solver_container[FLOW_SOL]->node[iPoint]->GetEddyViscosity();
+        }
+        if (incompressible || freesurface) {
+          V_outlet[nDim+3] = solver_container[FLOW_SOL]->node[iPoint]->GetLaminarViscosityInc();
+          V_outlet[nDim+4] = solver_container[FLOW_SOL]->node[iPoint]->GetEddyViscosityInc();
+        }
 
-        visc_numerics->SetCoord(geometry->node[iPoint]->GetCoord(), geometry->node[Point_Normal]->GetCoord());
+        /*--- Points in edge, coordinates and normal vector---*/
         visc_numerics->SetNormal(Normal);
+        visc_numerics->SetCoord(geometry->node[iPoint]->GetCoord(), geometry->node[Point_Normal]->GetCoord());
+
 
         /*--- Conservative variables w/o reconstruction and adjoint variables w/o reconstruction---*/
 
         visc_numerics->SetPrimitive(V_domain, V_outlet);
         visc_numerics->SetAdjointVar(Psi_domain, Psi_outlet);
+
+        /*--- Turbulent kinetic energy ---*/
+        if (config->GetKind_Turb_Model() == SST)
+          visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->node[iPoint]->GetSolution(0), solver_container[TURB_SOL]->node[iPoint]->GetSolution(0));
+
 
         /*--- Gradient and limiter of Adjoint Variables ---*/
 
@@ -4678,7 +4880,9 @@ void CAdjEulerSolver::BC_Outlet(CGeometry *geometry, CSolver **solver_container,
 
 void CAdjEulerSolver::BC_Engine_Inflow(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
   
-  su2double *Normal, *V_domain, *V_inflow, *Psi_domain, *Psi_inflow, P_Fan, Velocity[3], Velocity2, Density, Vn, UnitNormal[3], Area, a1;
+  su2double *Normal, *V_domain, *V_inflow, *Psi_domain, *Psi_inflow, P_Fan;
+  su2double Velocity[3] = {0.0,0.0,0.0}, Velocity2, Density, Vn;
+  su2double UnitNormal[3] = {0.0,0.0,0.0}, Area, a1;
   unsigned short iVar, iDim;
   unsigned long iVertex, iPoint;
   
@@ -4779,7 +4983,9 @@ void CAdjEulerSolver::BC_Engine_Inflow(CGeometry *geometry, CSolver **solver_con
 
 void CAdjEulerSolver::BC_Engine_Bleed(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
   
-  su2double *Normal, *V_domain, *V_inflow, *Psi_domain, *Psi_inflow, P_Fan, Velocity[3], Velocity2, Density, Vn, UnitNormal[3], Area, a1;
+  su2double *Normal, *V_domain, *V_inflow, *Psi_domain, *Psi_inflow, P_Fan;
+  su2double Velocity[3] = {0.0,0.0,0.0}, Velocity2, Density, Vn;
+  su2double UnitNormal[3] = {0.0,0.0,0.0}, Area, a1;
   unsigned short iVar, iDim;
   unsigned long iVertex, iPoint;
   
@@ -4881,7 +5087,7 @@ void CAdjEulerSolver::BC_Engine_Bleed(CGeometry *geometry, CSolver **solver_cont
 void CAdjEulerSolver::BC_Engine_Exhaust(CGeometry *geometry, CSolver **solver_container, CNumerics *conv_numerics, CNumerics *visc_numerics, CConfig *config, unsigned short val_marker) {
   
   unsigned long iVertex, iPoint, Point_Normal;
-  su2double Area, UnitNormal[3], *Normal, *V_domain, *V_exhaust, *Psi_domain, *Psi_exhaust;
+  su2double *Normal, *V_domain, *V_exhaust, *Psi_domain, *Psi_exhaust;
   unsigned short iVar, iDim;
   
   bool implicit = (config->GetKind_TimeIntScheme_AdjFlow() == EULER_IMPLICIT);
@@ -4904,14 +5110,6 @@ void CAdjEulerSolver::BC_Engine_Exhaust(CGeometry *geometry, CSolver **solver_co
       geometry->vertex[val_marker][iVertex]->GetNormal(Normal);
       for (iDim = 0; iDim < nDim; iDim++) Normal[iDim] = -Normal[iDim];
       conv_numerics->SetNormal(Normal);
-
-      Area = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++)
-        Area += Normal[iDim]*Normal[iDim];
-      Area = sqrt (Area);
-      
-      for (iDim = 0; iDim < nDim; iDim++)
-        UnitNormal[iDim] = Normal[iDim]/Area;
       
       /*--- Index of the closest interior node ---*/
       
@@ -5039,7 +5237,7 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
   unsigned short iDim, iVar, iMarker, nLineLets;
   ifstream restart_file;
   string filename, AdjExt;
-  su2double dull_val;
+  su2double dull_val, Area=0.0, *Normal = NULL, myArea_Monitored;
   bool restart = config->GetRestart();
   bool compressible = (config->GetKind_Regime() == COMPRESSIBLE);
   bool incompressible = (config->GetKind_Regime() == INCOMPRESSIBLE);
@@ -5051,8 +5249,9 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
 #endif
   
   /*--- Norm heat flux objective test ---*/
-  
-  pnorm = 10;
+  pnorm = 1.0;
+  if (config->GetKind_ObjFunc()==MAXIMUM_HEATFLUX)
+    pnorm = 8.0; // Matches MaxNorm defined in solver_direct_mean.
   
   /*--- Set the gamma value ---*/
   
@@ -5172,6 +5371,7 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
   Sens_AoA   = new su2double[nMarker];
   Sens_Press = new su2double[nMarker];
   Sens_Temp  = new su2double[nMarker];
+  Sens_BPress = new su2double[nMarker];
   
   /*--- Initialize sensitivities to zero ---*/
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
@@ -5180,6 +5380,7 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
     Sens_AoA[iMarker]   = 0.0;
     Sens_Press[iMarker] = 0.0;
     Sens_Temp[iMarker]  = 0.0;
+    Sens_BPress[iMarker] = 0.0;
     for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++){
       CSensitivity[iMarker][iVertex] = 0.0;
     }
@@ -5190,7 +5391,7 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
   if ((config->GetKind_ObjFunc() == TOTAL_HEATFLUX) ||
       (config->GetKind_ObjFunc() == MAXIMUM_HEATFLUX) ||
       (config->GetKind_ObjFunc() == INVERSE_DESIGN_HEATFLUX))
-    PsiE_Inf = -1.0;
+    PsiE_Inf = 1.0;
   else
     PsiE_Inf = 0.0;
   Phi_Inf = new su2double [nDim];
@@ -5276,6 +5477,32 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
     delete [] Global2Local;
   }
   
+  /*--- Calculate area monitored for area-averaged-outflow-quantity-based objectives ---*/
+  myArea_Monitored = 0.0;
+  if (config->GetKind_ObjFunc()==OUTFLOW_GENERALIZED || config->GetKind_ObjFunc()==AVG_TOTAL_PRESSURE ||
+    config->GetKind_ObjFunc()==AVG_OUTLET_PRESSURE){
+    for (iMarker =0; iMarker < config->GetnMarker_All();  iMarker++){
+      if (config->GetMarker_All_Monitoring(iMarker) == YES){
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+          iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+          if (geometry->node[iPoint]->GetDomain()) {
+            Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+            Area = 0.0;
+            for (iDim = 0; iDim < nDim; iDim++)
+              Area += Normal[iDim]*Normal[iDim];
+            myArea_Monitored += sqrt (Area);
+          }
+        }
+      }
+    }
+  }
+#ifdef HAVE_MPI
+  Area_Monitored = 0.0;
+  SU2_MPI::Allreduce(&myArea_Monitored, &Area_Monitored, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+  Area_Monitored = myArea_Monitored;
+#endif
+
   /*--- MPI solution ---*/
   Set_MPI_Solution(geometry, config);
   
@@ -5597,7 +5824,7 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
   unsigned long iVertex, iPoint;
   unsigned short iDim, jDim, iMarker, iPos, jPos;
   su2double *d = NULL, **PsiVar_Grad = NULL, **PrimVar_Grad = NULL, div_phi, *Normal = NULL, Area,
-  normal_grad_psi5, normal_grad_T, sigma_partial, Laminar_Viscosity = 0.0, heat_flux_factor, LevelSet, Target_LevelSet, temp_sens = 0.0, *Psi = NULL, *U = NULL, Enthalpy, **GridVel_Grad, gradPsi5_v, psi5_tau_partial, psi5_tau_grad_vel, source_v_1, Density, Pressure = 0.0, div_vel, val_turb_ke, vartheta, vartheta_partial, psi5_p_div_vel, Omega[3], rho_v[3], CrossProduct[3], delta[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}}, r, ru, rv, rw, rE, p, T, dp_dr, dp_dru, dp_drv, dp_drw, dp_drE, dH_dr, dH_dru, dH_drv, dH_drw, dH_drE, H, D[3][3], Dd[3], Mach_Inf, eps, scale = 1.0;
+  normal_grad_psi5, normal_grad_T, sigma_partial, Laminar_Viscosity = 0.0, heat_flux_factor, LevelSet, Target_LevelSet, temp_sens = 0.0, *Psi = NULL, *U = NULL, Enthalpy, **GridVel_Grad, gradPsi5_v, psi5_tau_partial, psi5_tau_grad_vel, source_v_1, Density, Pressure = 0.0, div_vel, val_turb_ke, vartheta, vartheta_partial, psi5_p_div_vel, Omega[3], rho_v[3] = {0.0,0.0,0.0}, CrossProduct[3], delta[3][3] = {{1.0, 0.0, 0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}}, r, ru, rv, rw, rE, p, T, dp_dr, dp_dru, dp_drv, dp_drw, dp_drE, dH_dr, dH_dru, dH_drv, dH_drw, dH_drE, H, D[3][3], Dd[3], Mach_Inf, eps, scale = 1.0;
   su2double RefVel2, RefDensity, Mach2Vel, *Velocity_Inf, factor;
 
   su2double *USens = new su2double[nVar];
@@ -5657,8 +5884,11 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
   
   if ((ObjFunc == INVERSE_DESIGN_HEATFLUX) || (ObjFunc == FREE_SURFACE) ||
       (ObjFunc == TOTAL_HEATFLUX) || (ObjFunc == MAXIMUM_HEATFLUX) ||
-      (ObjFunc == AVG_TOTAL_PRESSURE) || (ObjFunc == AVG_OUTLET_PRESSURE) ||
-      (ObjFunc == MASS_FLOW_RATE)) factor = 1.0;
+      (ObjFunc == MASS_FLOW_RATE) ) factor = 1.0;
+
+ if ((ObjFunc == AVG_TOTAL_PRESSURE) || (ObjFunc == AVG_OUTLET_PRESSURE) ||
+     (ObjFunc == OUTFLOW_GENERALIZED)) factor = 1.0/Area_Monitored;
+
 
   /*--- Compute gradient of the grid velocity, if applicable ---*/
   
@@ -5902,10 +6132,10 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
           
           CSensitivity[iMarker][iVertex] = (sigma_partial - temp_sens) * Area * scale * factor;
             
-          /*--sign of the sensitivity if the normal has been flipped --*/
+          /*--- Change the sign of the sensitivity if the normal has been flipped --*/
 
           if (geometry->node[iPoint]->GetFlip_Orientation())
-            CSensitivity[iMarker][iVertex]= -CSensitivity[iMarker][iVertex];
+            CSensitivity[iMarker][iVertex] = -CSensitivity[iMarker][iVertex];
           
           /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
           
@@ -5939,6 +6169,7 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
         Sens_AoA[iMarker]   = 0.0;
         Sens_Press[iMarker] = 0.0;
         Sens_Temp[iMarker]  = 0.0;
+        Sens_BPress[iMarker] = 0.0;
         
         for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
           iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
@@ -6092,6 +6323,7 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
         Sens_AoA[iMarker]   = 0.0;
         Sens_Press[iMarker] = 0.0;
         Sens_Temp[iMarker]  = 0.0;
+        Sens_BPress[iMarker] = 0.0;
         
         for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
           iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
@@ -6601,7 +6833,7 @@ void CAdjNSSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_cont
   Sigma_xx, Sigma_yy, Sigma_zz, Sigma_xy, Sigma_xz, Sigma_yz,
   Sigma_xx5, Sigma_yy5, Sigma_zz5, Sigma_xy5, Sigma_xz5,
   Sigma_yz5, eta_xx, eta_yy, eta_zz, eta_xy, eta_xz, eta_yz;
-  su2double kGTdotn;
+  su2double kGTdotn=0.0, Area=0.0, Xi=0.0;
   
   su2double *Psi = new su2double[nVar];
   su2double **Tau = new su2double* [nDim];
@@ -6704,14 +6936,23 @@ void CAdjNSSolver::BC_Isothermal_Wall(CGeometry *geometry, CSolver **solver_cont
         q = 0.0;
       }
       else {
+
+        Area = 0.0;
+        for (iDim = 0; iDim < nDim; iDim++) Area += Normal[iDim]*Normal[iDim];
+        Area = sqrt(Area);
+
+        /* --- Temperature gradient term ---*/
         GradT = solver_container[FLOW_SOL]->node[iPoint]->GetGradient_Primitive()[0];
-        kGTdotn = 0;
-//        Xi = solver_container[FLOW_SOL]->GetTotal_MaxHeatFlux();
-//        Xi = 1.0;
+        kGTdotn = 0.0;
         for (iDim = 0; iDim < nDim; iDim++)
-          kGTdotn += Thermal_Conductivity*GradT[iDim]*Normal[iDim];
-        //q = - Xi * pnorm * pow(kGTdotn, pnorm-1.0);
-        q = -1.0;
+          kGTdotn += Cp * Laminar_Viscosity/Prandtl_Lam*GradT[iDim]*Normal[iDim]/Area;
+        // Cp * Viscosity/Prandtl_Lam matches term used in solver_direct_mean
+        /*--- constant term to multiply max heat flux objective ---*/
+        Xi = solver_container[FLOW_SOL]->GetTotal_HeatFlux(); // versions for max heat flux
+        Xi = pow(Xi, 1.0/pnorm-1.0)/pnorm;
+
+        /*--- Boundary condition value ---*/
+        q = Xi * pnorm * pow(kGTdotn, pnorm-1.0)*Area;
       }
       
       /*--- Strong BC enforcement of the energy equation ---*/
