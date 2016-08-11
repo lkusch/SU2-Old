@@ -62,7 +62,7 @@ namespace AD{
     }
   }
 
-  inline void SetPreaccIn(su2double* data, const int size){
+  inline void SetPreaccIn(const su2double* data, const int size){
     if (PreaccActive){
       for (unsigned short i = 0; i < size; i++){
         if (data[i].isActive()){
@@ -72,7 +72,7 @@ namespace AD{
     }
   }
 
-  inline void SetPreaccIn(su2double** data, const int size_x, const int size_y){
+  inline void SetPreaccIn(const su2double* const *data, const int size_x, const int size_y){
     if (PreaccActive){
       for (unsigned short i = 0; i < size_x; i++){
         for (unsigned short j = 0; j < size_y; j++){
@@ -150,9 +150,9 @@ namespace AD{
 
   inline void SetPreaccIn(const su2double &data){}
 
-  inline void SetPreaccIn(su2double* data, const int size){}
+  inline void SetPreaccIn(const su2double* data, const int size){}
 
-  inline void SetPreaccIn(su2double** data, const int size_x, const int size_y){}
+  inline void SetPreaccIn(const su2double* const *data, const int size_x, const int size_y){}
 
   inline void SetPreaccOut(su2double &data){}
 

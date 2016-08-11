@@ -2,7 +2,7 @@
  * \file solution_adjoint_mean.cpp
  * \brief Main subrotuines for solving adjoint problems (Euler, Navier-Stokes, etc.).
  * \author F. Palacios, T. Economon
- * \version 4.1.2 "Cardinal"
+ * \version 4.2.0 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -96,6 +96,10 @@ CAdjEulerSolver::CAdjEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
   if (compressible) { nVar = nDim + 2; }
   if (incompressible) { nVar = nDim + 1; }
   if (freesurface) { nVar = nDim + 2; }
+  
+  /*--- Initialize nVarGrad for deallocation ---*/
+  
+  nVarGrad = nVar;
   
   node = new CVariable*[nPoint];
   
@@ -2508,11 +2512,6 @@ void CAdjEulerSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver
           
           CSensitivity[iMarker][iVertex] = (d_press + grad_v + v_gradconspsi) * Area * scale * factor;
           
-          /*--- Change the sign of the sensitivity if the normal has been flipped --*/
-          
-          if (geometry->node[iPoint]->GetFlip_Orientation())
-            CSensitivity[iMarker][iVertex] = -CSensitivity[iMarker][iVertex];
-
           /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
           
           if (config->GetSens_Remove_Sharp()) {
@@ -5269,6 +5268,10 @@ CAdjNSSolver::CAdjNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
   if (incompressible) { nVar = nDim + 1; }
   if (freesurface) { nVar = nDim + 1; }
   
+  /*--- Initialize nVarGrad for deallocation ---*/
+  
+  nVarGrad = nVar;
+  
   node = new CVariable*[nPoint];
   
   /*--- Define some auxiliary arrays related to the residual ---*/
@@ -6132,11 +6135,6 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
           
           CSensitivity[iMarker][iVertex] = (sigma_partial - temp_sens) * Area * scale * factor;
             
-          /*--- Change the sign of the sensitivity if the normal has been flipped --*/
-
-          if (geometry->node[iPoint]->GetFlip_Orientation())
-            CSensitivity[iMarker][iVertex] = -CSensitivity[iMarker][iVertex];
-          
           /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
           
           if (config->GetSens_Remove_Sharp()) {
@@ -6424,12 +6422,13 @@ void CAdjNSSolver::Viscous_Sensitivity(CGeometry *geometry, CSolver **solver_con
   delete [] tang_deriv_psi5;
   delete [] tang_deriv_T;
   for (iDim = 0; iDim < nDim; iDim++)
-    delete Sigma[iDim];
+    delete [] Sigma[iDim];
   delete [] Sigma;
   delete [] normal_grad_gridvel;
   delete [] normal_grad_v_ux;
   for (iDim = 0; iDim < nDim; iDim++)
-    delete Sigma_Psi5v[iDim];
+    delete [] Sigma_Psi5v[iDim];
+  delete [] Sigma_Psi5v;
   for (iDim = 0; iDim < nDim; iDim++)
     delete tau[iDim];
   delete [] tau;

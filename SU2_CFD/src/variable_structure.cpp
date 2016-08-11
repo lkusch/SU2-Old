@@ -2,7 +2,7 @@
  * \file variable_structure.cpp
  * \brief Definition of the solution fields.
  * \author F. Palacios, T. Economon
- * \version 4.1.2 "Cardinal"
+ * \version 4.2.0 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -177,7 +177,7 @@ CVariable::~CVariable(void) {
 	if (Solution_Max        != NULL) delete [] Solution_Max;
 	if (Solution_Min        != NULL) delete [] Solution_Min;
 	if (Grad_AuxVar         != NULL) delete [] Grad_AuxVar;
-	if (Undivided_Laplacian != NULL) delete [] Undivided_Laplacian;
+	//if (Undivided_Laplacian != NULL) delete [] Undivided_Laplacian; // Need to break pointer dependence btwn CNumerics and CVariable
 	if (Res_TruncError      != NULL) delete [] Res_TruncError;
 	if (Residual_Old        != NULL) delete [] Residual_Old;
 	if (Residual_Sum        != NULL) delete [] Residual_Sum;
@@ -238,6 +238,7 @@ void CVariable::SetSolution(su2double *val_solution) {
 }
 
 void CVariable::Set_OldSolution(void) {
+  
 	for (unsigned short iVar = 0; iVar < nVar; iVar++)
 		Solution_Old[iVar] = Solution[iVar];
   
