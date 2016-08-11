@@ -1670,11 +1670,11 @@ void CDiscAdjSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){
         if ( geometry->node[iPoint]->GetSharpEdge_Distance() < config->GetSharpEdgesCoeff()*eps )
           Sensitivity = 0.0;
       }
-      if (!time_stepping){
+     // if (!time_stepping){
         node[iPoint]->SetSensitivity(iDim, Sensitivity);
-      } else {
-        node[iPoint]->SetSensitivity(iDim, node[iPoint]->GetSensitivity(iDim) + Sensitivity);
-      }
+     // } else {
+     //   node[iPoint]->SetSensitivity(iDim, node[iPoint]->GetSensitivity(iDim) + Sensitivity);
+     // }
     }
   }
 /*  std::cout<<std::endl;

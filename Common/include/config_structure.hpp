@@ -858,10 +858,10 @@ private:
 
   void addDoubleArrayOption(const string name, const int size, su2double * & option_field, su2double * default_value) {
 
-    su2double * def = new su2double [size];
-    for (int i = 0; i < size; i++) {
-      def[i] = default_value[i];
-    }
+   // su2double * def = new su2double [size];
+   // for (int i = 0; i < size; i++) {
+   //   def[i] = default_value[i];
+   // }
     assert(option_map.find(name) == option_map.end());
     all_options.insert(pair<string, bool>(name, true));
     COptionBase* val = new COptionDoubleArray(name, size, option_field, def);
