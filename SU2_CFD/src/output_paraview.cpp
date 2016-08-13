@@ -47,31 +47,41 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 	bool grid_movement  = config->GetGrid_Movement();
 	bool adjoint = config->GetContinuous_Adjoint();
   bool disc_adj = config->GetDiscrete_Adjoint();
-  bool fem = (config->GetKind_Solver() == FEM_ELASTICITY);
+  bool fem = ((config->GetKind_Solver() == FEM_ELASTICITY)||
+		       (config->GetKind_Solver() == ADJ_ELASTICITY));
+  bool disc_adj_fem = (config->GetKind_Solver() == DISC_ADJ_FEM);
+
 
 	char cstr[200], buffer[50];
   string filename, fieldname;
     
 	/*--- Write file name with extension ---*/
   if (surf_sol) {
-    if (adjoint || disc_adj)
+    if ((adjoint || disc_adj) && (!disc_adj_fem))
       filename = config->GetSurfAdjCoeff_FileName();
     else
       filename = config->GetSurfFlowCoeff_FileName();
   }
   else {
-    if (adjoint || disc_adj)
+    if ((adjoint || disc_adj) && (!disc_adj_fem))
       filename = config->GetAdj_FileName();
     else
       filename = config->GetFlow_FileName();
   }
   
-	if (Kind_Solver == FEM_ELASTICITY) {
+	if ((Kind_Solver == FEM_ELASTICITY) || (Kind_Solver == ADJ_ELASTICITY)) {
 		if (surf_sol)
 			filename = config->GetSurfStructure_FileName().c_str();
 		else
-			filename = config->GetStructure_FileName().c_str();
+		  filename = config->GetStructure_FileName().c_str();
 	}
+
+  if (Kind_Solver == DISC_ADJ_FEM) {
+    if (surf_sol)
+      filename = config->GetAdjSurfStructure_FileName().c_str();
+    else
+      filename = config->GetAdjStructure_FileName().c_str();
+  }
   
 	if (Kind_Solver == WAVE_EQUATION)
 		filename = config->GetWave_FileName().c_str();
@@ -94,14 +104,14 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     
 
 	/*--- Special cases where a number needs to be appended to the file name. ---*/
-	if ((Kind_Solver == EULER || Kind_Solver == NAVIER_STOKES || Kind_Solver == RANS || Kind_Solver == FEM_ELASTICITY) &&
+	if ((Kind_Solver == EULER || Kind_Solver == NAVIER_STOKES || Kind_Solver == RANS || Kind_Solver == FEM_ELASTICITY ) &&
         (val_nZone > 1) && (config->GetUnsteady_Simulation() != TIME_SPECTRAL)) {
 		SPRINTF (buffer, "_%d", SU2_TYPE::Int(val_iZone));
 		strcat(cstr, buffer);
 	}
     
 	/*--- Special cases where a number needs to be appended to the file name. ---*/
-	if (((Kind_Solver == ADJ_EULER) || (Kind_Solver == ADJ_NAVIER_STOKES) || (Kind_Solver == ADJ_RANS)) &&
+	if (((Kind_Solver == ADJ_EULER) || (Kind_Solver == ADJ_NAVIER_STOKES) || (Kind_Solver == ADJ_RANS) || (Kind_Solver == ADJ_ELASTICITY) ) &&
         (val_nZone > 1) && (config->GetUnsteady_Simulation() != TIME_SPECTRAL)) {
 		SPRINTF (buffer, "_%d", SU2_TYPE::Int(val_iZone));
 		strcat(cstr, buffer);
@@ -379,7 +389,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     
     for (iVar = 0; iVar < nVar_Consv; iVar++) {
 
-    	if (Kind_Solver == FEM_ELASTICITY)
+    	if ((Kind_Solver == FEM_ELASTICITY) || (Kind_Solver == ADJ_ELASTICITY) || (Kind_Solver == DISC_ADJ_FEM))
     		Paraview_File << "\nSCALARS Displacement_" << iVar+1 << " float 1\n";
     	else
     		Paraview_File << "\nSCALARS Conservative_" << iVar+1 << " float 1\n";
@@ -771,7 +781,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
     }
 
-    if (Kind_Solver == FEM_ELASTICITY) {
+    if ((Kind_Solver == FEM_ELASTICITY)||(Kind_Solver == ADJ_ELASTICITY)) {
 
        if (config->GetDynamic_Analysis() == DYNAMIC) {
 
@@ -948,7 +958,8 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
   
 	bool grid_movement  = config->GetGrid_Movement();
 	bool adjoint = config->GetContinuous_Adjoint();
-	bool fem = (config->GetKind_Solver() == FEM_ELASTICITY);
+	bool fem = ((config->GetKind_Solver() == FEM_ELASTICITY)||
+			     (config->GetKind_Solver() == ADJ_ELASTICITY));
   
 	char cstr[200], buffer[50];
   string filename, fieldname;
@@ -977,7 +988,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     }
   }
   
-	if (Kind_Solver == FEM_ELASTICITY){
+	if ((Kind_Solver == FEM_ELASTICITY)||(Kind_Solver == ADJ_ELASTICITY)){
 		if (surf_sol)
 			filename = config->GetSurfStructure_FileName().c_str();
 		else
@@ -1004,7 +1015,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 	}
   
 	/*--- Special cases where a number needs to be appended to the file name. ---*/
-	if (((Kind_Solver == ADJ_EULER) || (Kind_Solver == ADJ_NAVIER_STOKES) || (Kind_Solver == ADJ_RANS)) &&
+	if (((Kind_Solver == ADJ_EULER) || (Kind_Solver == ADJ_NAVIER_STOKES) || (Kind_Solver == ADJ_RANS) || (Kind_Solver == ADJ_ELASTICITY)) &&
       (val_nZone > 1) && (config->GetUnsteady_Simulation() != TIME_SPECTRAL)) {
 		SPRINTF (buffer, "_%d", SU2_TYPE::Int(val_iZone));
 		strcat(cstr, buffer);
@@ -1286,7 +1297,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     
     for (iVar = 0; iVar < nVar_Consv; iVar++) {
 
-    	if (Kind_Solver == FEM_ELASTICITY)
+    	if ((Kind_Solver == FEM_ELASTICITY) || (Kind_Solver == ADJ_ELASTICITY))
     		Paraview_File << "\nSCALARS Displacement_" << iVar+1 << " float 1\n";
     	else
     		Paraview_File << "\nSCALARS Conservative_" << iVar+1 << " float 1\n";
@@ -1603,7 +1614,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       
     }
 
-    if (Kind_Solver == FEM_ELASTICITY) {
+    if ((Kind_Solver == FEM_ELASTICITY) || (Kind_Solver == ADJ_ELASTICITY)) {
 
         if (config->GetDynamic_Analysis() == DYNAMIC) {
 

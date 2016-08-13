@@ -217,35 +217,54 @@ void CIntegration::Space_Integration_FEM(CGeometry *geometry,
 	  /*--- Compute Mass Matrix ---*/
 	  /*--- The mass matrix is computed only once, at the beginning of the calculation, no matter whether the ---*/
 	  /*--- problem is linear or nonlinear. This is done in the preprocessing step. ---*/
-
-	  /*--- If the analysis is linear, only a the constitutive term of the stiffness matrix has to be computed ---*/
-	  /*--- This is done only once, at the beginning of the calculation. From then on, K is constant ---*/
-	  if ((linear_analysis && initial_calc) ||
-		  (linear_analysis && restart && initial_calc_restart)){
-		  solver_container[MainSolver]->Compute_StiffMatrix(geometry, solver_container, numerics, config);
-	  }
-	  else if (!linear_analysis){
-		  /*--- If the analysis is nonlinear, also the stress terms need to be computed ---*/
-		  /*--- If the method is full Newton-Raphson, the stiffness matrix and the nodal term are updated every time ---*/
-		  /*--- They are calculated together to avoid looping twice over the elements ---*/
-		  if (IterativeScheme == NEWTON_RAPHSON){
-			  /*--- The Jacobian is reinitialized every time in Preprocessing (before calling Space_Integration_FEM) */
-			  solver_container[MainSolver]->Compute_StiffMatrix_NodalStressRes(geometry, solver_container, numerics, config);
+	  if (RunTime_EqSystem != RUNTIME_ADJFEA_SYS){
+		  /*--- If the analysis is linear, only a the constitutive term of the stiffness matrix has to be computed ---*/
+		  /*--- This is done only once, at the beginning of the calculation. From then on, K is constant ---*/
+		  if ((linear_analysis && initial_calc) ||
+			  (linear_analysis && restart && initial_calc_restart)){
+			  solver_container[MainSolver]->Compute_StiffMatrix(geometry, solver_container, numerics, config);
 		  }
-
-		  /*--- If the method is modified Newton-Raphson, the stiffness matrix is only computed once at the beginning of the time-step ---*/
-		  /*--- Nevertheless, the Nodal Stress Term has to be computed for each iteration ---*/
-		  else if (IterativeScheme == MODIFIED_NEWTON_RAPHSON){
-
-			  if (first_iter){
+		  else if (!linear_analysis){
+			  /*--- If the analysis is nonlinear, also the stress terms need to be computed ---*/
+			  /*--- If the method is full Newton-Raphson, the stiffness matrix and the nodal term are updated every time ---*/
+			  /*--- They are calculated together to avoid looping twice over the elements ---*/
+			  if (IterativeScheme == NEWTON_RAPHSON){
+				  /*--- The Jacobian is reinitialized every time in Preprocessing (before calling Space_Integration_FEM) */
 				  solver_container[MainSolver]->Compute_StiffMatrix_NodalStressRes(geometry, solver_container, numerics, config);
 			  }
 
-			  else{
-				  solver_container[MainSolver]->Compute_NodalStressRes(geometry, solver_container, numerics, config);
+			  /*--- If the method is modified Newton-Raphson, the stiffness matrix is only computed once at the beginning of the time-step ---*/
+			  /*--- Nevertheless, the Nodal Stress Term has to be computed for each iteration ---*/
+			  else if (IterativeScheme == MODIFIED_NEWTON_RAPHSON){
+
+				  if (first_iter){
+					  solver_container[MainSolver]->Compute_StiffMatrix_NodalStressRes(geometry, solver_container, numerics, config);
+				  }
+
+				  else{
+					  solver_container[MainSolver]->Compute_NodalStressRes(geometry, solver_container, numerics, config);
+				  }
+
 			  }
 
 		  }
+	  }
+	  else {
+
+	    bool predicted_de = config->GetDE_Predicted();
+
+		  /*--- For linear problems, it is necessary to compute the stiffness matrix and multiply it by the solution. ---*/
+		  /*--- This function is (so far) empty for nonlinear problems ---*/
+		  if (linear_analysis)
+			  solver_container[MainSolver]->Compute_StiffMatrix(geometry, solver_container, numerics, config);
+
+		  /*--- For non-linear problems, the residual arises from a non-linear stress term. ---*/
+		  /*--- This function is (so far) empty for linear problems ---*/
+		  else if (!linear_analysis && predicted_de){
+		    /*--- Compute the predicted Jacobian ---*/
+		    solver_container[MainSolver]->Compute_StiffMatrix_NodalStressRes(geometry, solver_container, numerics, config);
+		  }
+
 
 	  }
 
@@ -282,7 +301,7 @@ void CIntegration::Space_Integration_FEM(CGeometry *geometry,
 
 void CIntegration::Adjoint_Setup(CGeometry ***geometry, CSolver ****solver_container, CConfig **config,
                                  unsigned short RunTime_EqSystem, unsigned long Iteration, unsigned short iZone) {
-  
+
 	unsigned short iMGLevel;
   
 	if ( ( (RunTime_EqSystem == RUNTIME_ADJFLOW_SYS) && (Iteration == 0) ) ) {
@@ -308,6 +327,17 @@ void CIntegration::Adjoint_Setup(CGeometry ***geometry, CSolver ****solver_conta
 			}
       
 		}
+  }
+
+	if ( ( (RunTime_EqSystem == RUNTIME_ADJFEA_SYS) && (Iteration == 0) ) ) {
+
+	    switch (config[iZone]->GetKind_ObjFunc()) {
+	    	case REFERENCE_GEOMETRY:
+	    		solver_container[iZone][MESH_0][ADJFEA_SOL]->RefGeom_Sensitivity(geometry[iZone][MESH_0],
+	    																		solver_container[iZone][MESH_0], config[iZone]);
+	    		break;
+	    }
+
   }
   
 }
@@ -381,8 +411,11 @@ void CIntegration::Time_Integration_FEM(CGeometry *geometry, CSolver **solver_co
 	  for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++)
 	    switch (config->GetMarker_All_KindBC(iMarker)) {
 	      case CLAMPED_BOUNDARY:
-			solver_container[MainSolver]->BC_Clamped(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
-			break;
+			  solver_container[MainSolver]->BC_Clamped(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
+			  break;
+        case DISP_DIR_BOUNDARY:
+        solver_container[MainSolver]->BC_DispDir(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
+        break;
 	      case DISPLACEMENT_BOUNDARY:
 	        solver_container[MainSolver]->BC_Normal_Displacement(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);
 	        break;
@@ -784,6 +817,65 @@ void CIntegration::Convergence_Monitoring_FEM(CGeometry *geometry, CConfig *conf
   
 #endif
   
+}
+
+void CIntegration::Convergence_Monitoring_FEM_Adj(CGeometry *geometry, CConfig *config, CSolver *solver, unsigned long iFSIIter) {
+
+  su2double val_I, Max_Val_I;
+
+#ifdef HAVE_MPI
+  int rank = MASTER_NODE;
+  int size = SINGLE_NODE;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
+  bool Already_Converged = Convergence;
+
+  Max_Val_I = config->GetCriteria_FEM_ADJ();
+  val_I     = log10(solver->Get_val_I());
+
+  //  cout << "Reference - UTOL: " << Reference_UTOL << " ETOL: " << Reference_ETOL << " RTOL: " << Reference_RTOL << endl;
+  //  cout << "Residual - UTOL: " << Residual_UTOL << " ETOL: " << Residual_ETOL << " RTOL: " << Residual_RTOL << endl;
+
+  if (val_I <= Max_Val_I){
+    Convergence = true;
+  }
+
+  if (Already_Converged) Convergence = true;
+
+
+  /*--- Apply the same convergence criteria to all the processors ---*/
+
+#ifdef HAVE_MPI
+
+  unsigned short *sbuf_conv = NULL, *rbuf_conv = NULL;
+  sbuf_conv = new unsigned short[1]; sbuf_conv[0] = 0;
+  rbuf_conv = new unsigned short[1]; rbuf_conv[0] = 0;
+
+  /*--- Convergence criteria ---*/
+
+  sbuf_conv[0] = Convergence;
+  SU2_MPI::Reduce(sbuf_conv, rbuf_conv, 1, MPI_UNSIGNED_SHORT, MPI_SUM, MASTER_NODE, MPI_COMM_WORLD);
+
+  /*-- Compute global convergence criteria in the master node --*/
+
+  sbuf_conv[0] = 0;
+  if (rank == MASTER_NODE) {
+    if (rbuf_conv[0] == size) sbuf_conv[0] = 1;
+    else sbuf_conv[0] = 0;
+  }
+
+  SU2_MPI::Bcast(sbuf_conv, 1, MPI_UNSIGNED_SHORT, MASTER_NODE, MPI_COMM_WORLD);
+
+  if (sbuf_conv[0] == 1) { Convergence = true; }
+  else { Convergence = false; }
+
+  delete [] sbuf_conv;
+  delete [] rbuf_conv;
+
+#endif
+
 }
 
 

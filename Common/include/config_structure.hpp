@@ -72,6 +72,7 @@ private:
 	su2double Res_FEM_UTOL; 		/*!< \brief UTOL criteria for structural FEM. */
 	su2double Res_FEM_RTOL; 		/*!< \brief RTOL criteria for structural FEM. */
 	su2double Res_FEM_ETOL; 		/*!< \brief ETOL criteria for structural FEM. */
+  su2double Res_FEM_ADJ;     /*!< \brief Convergence criteria for adjoint FEM. */
 	su2double EA_ScaleFactor; /*!< \brief Equivalent Area scaling factor */
 	su2double* EA_IntLimit; /*!< \brief Integration limits of the Equivalent Area computation */
   su2double AdjointLimit; /*!< \brief Adjoint variable limit */
@@ -175,6 +176,7 @@ private:
   nMarker_Displacement,					/*!< \brief Number of displacement surface markers. */
 	nMarker_Load,					/*!< \brief Number of load surface markers. */
 	nMarker_Load_Dir,					/*!< \brief Number of load surface markers defined by magnitude and direction. */
+  nMarker_Disp_Dir,         /*!< \brief Number of load surface markers defined by magnitude and direction. */
 	nMarker_Load_Sine,					/*!< \brief Number of load surface markers defined by magnitude and direction. */
 	nMarker_FlowLoad,					/*!< \brief Number of load surface markers. */
 	nMarker_Neumann,				/*!< \brief Number of Neumann flow markers. */
@@ -215,6 +217,7 @@ private:
 	*Marker_Displacement,					/*!< \brief Displacement markers. */
 	*Marker_Load,					/*!< \brief Load markers. */
 	*Marker_Load_Dir,					/*!< \brief Load markers defined in cartesian coordinates. */
+  *Marker_Disp_Dir,         /*!< \brief Load markers defined in cartesian coordinates. */
 	*Marker_Load_Sine,					/*!< \brief Sine-wave loaded markers defined in cartesian coordinates. */
 	*Marker_FlowLoad,					/*!< \brief Flow Load markers. */
 	*Marker_Neumann,					/*!< \brief Neumann flow markers. */
@@ -249,7 +252,10 @@ private:
 	su2double *Load_Value;    /*!< \brief Specified force for load boundaries. */
   su2double *Load_Dir_Value;    /*!< \brief Specified force for load boundaries defined in cartesian coordinates. */
 	su2double *Load_Dir_Multiplier;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
+  su2double *Disp_Dir_Value;    /*!< \brief Specified force for load boundaries defined in cartesian coordinates. */
+  su2double *Disp_Dir_Multiplier;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
 	su2double **Load_Dir;  /*!< \brief Specified flow direction vector (unit vector) for inlet boundaries. */
+  su2double **Disp_Dir;  /*!< \brief Specified structural displacement direction (unit vector). */
 	su2double *Load_Sine_Amplitude;    /*!< \brief Specified amplitude for a sine-wave load. */
 	su2double *Load_Sine_Frequency;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
 	su2double **Load_Sine_Dir;  /*!< \brief Specified flow direction vector (unit vector) for inlet boundaries. */
@@ -326,11 +332,14 @@ private:
 	Kind_Linear_Solver,		/*!< \brief Numerical solver for the implicit scheme. */
 	Kind_Linear_Solver_FSI_Struc,	 /*!< \brief Numerical solver for the structural part in FSI problems. */
 	Kind_Linear_Solver_Prec,		/*!< \brief Preconditioner of the linear solver. */
+	Kind_Deform_Linear_Solver_Prec,     /*!< \brief Preconditioner of the linear solver for the mesh deformation. */
 	Kind_Linear_Solver_Prec_FSI_Struc,		/*!< \brief Preconditioner of the linear solver for the structural part in FSI problems. */
 	Kind_AdjTurb_Linear_Solver,		/*!< \brief Numerical solver for the turbulent adjoint implicit scheme. */
 	Kind_AdjTurb_Linear_Prec,		/*!< \brief Preconditioner of the turbulent adjoint linear solver. */
   Kind_DiscAdj_Linear_Solver, /*!< \brief Linear solver for the discrete adjoint system. */
   Kind_DiscAdj_Linear_Prec,  /*!< \brief Preconditioner of the discrete adjoint linear solver. */
+  Kind_DiscAdj_Linear_Solver_FSI_Struc, /*!< \brief Linear solver for the discrete adjoint system in the structural side of FSI problems. */
+  Kind_DiscAdj_Linear_Prec_FSI_Struc,   /*!< \brief Preconditioner of the discrete adjoint linear solver in the structural side of FSI problems. */
 	Kind_SlopeLimit,				/*!< \brief Global slope limiter. */
 	Kind_SlopeLimit_Flow,		/*!< \brief Slope limiter for flow equations.*/
 	Kind_SlopeLimit_Turb,		/*!< \brief Slope limiter for the turbulence equation.*/
@@ -381,16 +390,20 @@ private:
 	SpatialOrder_AdjTurb,		/*!< \brief Order of the spatial numerical integration.*/
   SpatialOrder_AdjLevelSet;		/*!< \brief Order of the spatial numerical integration.*/
   bool FSI_Problem;			/*!< \brief Boolean to determine whether the simulation is FSI or not. */
+  unsigned short AD_FSI_Strategy;  /*!< \brief Strategy for AD FSI problems. */
   bool AD_Mode;         /*!< \brief Algorithmic Differentiation support. */
   unsigned short Kind_Material_Compress,	/*!< \brief Determines if the material is compressible or incompressible (structural analysis). */
   Kind_Material,			/*!< \brief Determines the material model to be used (structural analysis). */
-  Kind_Struct_Solver;		/*!< \brief Determines the geometric condition (small or large deformations) for structural analysis. */
+  Kind_Struct_Solver,		/*!< \brief Determines the geometric condition (small or large deformations) for structural analysis. */
+  Kind_DV_FEA;				/*!< \brief Kind of Design Variable for FEA problems.*/
   unsigned short Kind_Turb_Model;			/*!< \brief Turbulent model definition. */
   unsigned short Kind_Trans_Model,			/*!< \brief Transition model definition. */
 	Kind_Inlet, *Kind_Data_Riemann, *Kind_Data_NRBC;           /*!< \brief Kind of inlet boundary treatment. */
 	su2double Linear_Solver_Error;		/*!< \brief Min error of the linear solver for the implicit formulation. */
+  su2double Deform_Linear_Solver_Error;    /*!< \brief Min error of the linear solver for the implicit formulation. */
 	su2double Linear_Solver_Error_FSI_Struc;		/*!< \brief Min error of the linear solver for the implicit formulation in the structural side for FSI problems . */
 	unsigned long Linear_Solver_Iter;		/*!< \brief Max iterations of the linear solver for the implicit formulation. */
+  unsigned long Deform_Linear_Solver_Iter;   /*!< \brief Max iterations of the linear solver for the implicit formulation. */
 	unsigned long Linear_Solver_Iter_FSI_Struc;		/*!< \brief Max iterations of the linear solver for FSI applications and structural solver. */
 	unsigned long Linear_Solver_Restart_Frequency;   /*!< \brief Restart frequency of the linear solver for the implicit formulation. */
   su2double Roe_Kappa;		/*!< \brief Relaxation of the Roe scheme. */
@@ -508,10 +521,13 @@ private:
 	Solution_FlowFileName,			/*!< \brief Flow solution input file. */
 	Solution_LinFileName,			/*!< \brief Linearized flow solution input file. */
 	Solution_AdjFileName,			/*!< \brief Adjoint solution input file for drag functional. */
-	Solution_FEMFileName,			/*!< \brief Adjoint solution input file for drag functional. */
+	Solution_FEMFileName,			/*!< \brief Solution input file for structural problem. */
+  Solution_AdjFEMFileName,     /*!< \brief Adjoint solution input file for structural problem. */
 	Flow_FileName,					/*!< \brief Flow variables output file. */
 	Structure_FileName,					/*!< \brief Structure variables output file. */
 	SurfStructure_FileName,					/*!< \brief Surface structure variables output file. */
+  AdjStructure_FileName,         /*!< \brief Structure variables output file. */
+  AdjSurfStructure_FileName,         /*!< \brief Surface structure variables output file. */
   SurfWave_FileName,					/*!< \brief Surface structure variables output file. */
 	SurfHeat_FileName,					/*!< \brief Surface structure variables output file. */
 	Wave_FileName,					/*!< \brief Wave variables output file. */
@@ -526,6 +542,7 @@ private:
 	Restart_HeatFileName,			/*!< \brief Restart file for heat variables. */
 	Restart_AdjFileName,			/*!< \brief Restart file for adjoint variables, drag functional. */
 	Restart_FEMFileName,			/*!< \brief Restart file for FEM elasticity. */
+  Restart_AdjFEMFileName,      /*!< \brief Restart file for FEM elasticity. */
 	Adj_FileName,					/*!< \brief Output file with the adjoint variables. */
 	ObjFunc_Grad_FileName,			/*!< \brief Gradient of the objective function. */
 	ObjFunc_Value_FileName,			/*!< \brief Objective function. */
@@ -604,7 +621,14 @@ private:
 	su2double ElasticyMod,			/*!< \brief Young's modulus of elasticity. */
 	PoissonRatio,						/*!< \brief Poisson's ratio. */
 	MaterialDensity,								/*!< \brief Material density. */
-	Bulk_Modulus_Struct;				/*!< \brief Bulk modulus (on the structural side). */
+	DE_Modulus,							/*!< \brief Dielectric elastomer modulus. */
+	DE_Rate;							  /*!< \brief Dielectric elastomer maximum rate of change. */
+	bool DE_Effects; 						/*!< Application of DE effects to FE analysis */
+  bool DE_Predicted;            /*!< Application of DE effects to FE analysis */
+	bool RefGeom; 						/*!< Read a reference geometry for optimization purposes. */
+	bool Structural_Adj; 						/*!< Decide whether a structural adjoint iteration needs to be run (temporary). */
+	string RefGeom_FEMFileName;    			/*!< \brief File name for reference geometry. */
+	unsigned short RefGeom_FileFormat;	/*!< \brief Mesh input format. */
 	unsigned short Kind_2DElasForm;			/*!< \brief Kind of bidimensional elasticity solver. */
 	unsigned short nIterFSI;	/*!< \brief Number of maximum number of subiterations in a FSI problem. */
 	su2double AitkenStatRelax;			/*!< \brief Aitken's relaxation factor (if set as static) */
@@ -688,14 +712,33 @@ private:
   long Visualize_CV; /*!< \brief Node number for the CV to be visualized */
   bool ExtraOutput;
   bool DeadLoad; 		/*!< Application of dead loads to the FE analysis */
+  bool PseudoStatic;    /*!< Application of dead loads to the FE analysis */
   bool MatchingMesh; 	/*!< Matching mesh (while implementing interpolation procedures). */
   bool SteadyRestart; 	/*!< Restart from a steady state for FSI problems. */
   su2double Newmark_alpha,			/*!< \brief Parameter alpha for Newmark method. */
   Newmark_delta;				/*!< \brief Parameter delta for Newmark method. */
   unsigned short nIntCoeffs;	/*!< \brief Number of integration coeffs for structural calculations. */
   su2double *Int_Coeffs;		/*!< \brief Time integration coefficients for structural method. */
+  unsigned short nElectric_Field,	/*!< \brief Number of different values for the electric field in the membrane. */
+  nDim_Electric_Field;				/*!< \brief Dimensionality of the problem. */
+  unsigned short nElectric_Field_Max, /*!< \brief Number of different values for the max electric field in the membrane. */
+  nElectric_Field_Min;                  /*!< \brief Number of different values for the min electric field in the membrane. */
+  unsigned short nDel_EField;		/*!< \brief Number of delimiters for the electric field (must be nElectric_Field + 1). */
+  unsigned short Axis_EField;		/*!< \brief Axis along which the delimiters are set. */
+  su2double *Electric_Field_Mod, 	/*!< \brief Values of the modulus of the electric field. */
+  *Electric_Field_Dir;				/*!< \brief Direction of the electric field. */
+  su2double *Electric_Field_Max,  /*!< \brief Maximum value of the modulus of the electric field. */
+  *Electric_Field_Min;            /*!< \brief Minimum value of the modulus of the electric field. */
+  su2double *Electric_Field_Del;	/*!< \brief Values of the delimiters of the Electric Field (along axis Axis_EField). */
+  su2double *DV_Del_X,        /*!< \brief Values of the delimiters of the Electric Field (along axis X). */
+  *DV_Del_Y,                  /*!< \brief Values of the delimiters of the Electric Field (along axis Y). */
+  *DV_Del_Z;                  /*!< \brief Values of the delimiters of the Electric Field (along axis Z). */
+  unsigned short nDV_Del_X,   /*!< \brief Number of delimiters for the electric field (along axis X). */
+  nDV_Del_Y,                    /*!< \brief Number of delimiters for the electric field (along axis Y). */
+  nDV_Del_Z;                    /*!< \brief Number of delimiters for the electric field (along axis Z). */
   bool Sigmoid_Load,		/*!< \brief Apply the load using a sigmoid. */
   Ramp_Load;				/*!< \brief Apply the load with linear increases. */
+  unsigned short Dynamic_LoadTransfer;  /*!< \brief Method for dynamic load transferring. */
   bool IncrementalLoad;		/*!< \brief Apply the load in increments (for nonlinear structural analysis). */
   unsigned long IncLoad_Nincrements; /*!< \brief Number of increments. */
   su2double *IncLoad_Criteria;	/*!< \brief Criteria for the application of incremental loading. */
@@ -1574,10 +1617,62 @@ public:
 	su2double GetElasticyMod(void);
 
 	/*!
-	 * \brief Get the value of the bulk modulus on the structural side.
-	 * \return Value of the bulk modulus on the structural side.
+	  * \brief Decide whether to apply DE effects to the model.
+	  * \return <code>TRUE</code> if the DE effects are to be applied, <code>FALSE</code> otherwise.
+	  */
+
+	bool GetDE_Effects(void);
+
+  /*!
+    * \brief Decide whether to predict the DE effects for the next time step.
+    * \return <code>TRUE</code> if the DE effects are to be applied, <code>FALSE</code> otherwise.
+    */
+
+  bool GetDE_Predicted(void);
+
+	/*!
+	 * \brief Get the value of the DE modulus.
+	 * \return Value of the DE modulus.
 	 */
-	su2double GetBulk_Modulus_Struct(void);
+	su2double GetDE_Modulus(void);
+
+	/*!
+	 * \brief Get the value of the DE rate of change from one iter to the next.
+	 * \return Value of the DE rate of change from one iter to the next.
+	 */
+	su2double GetDE_Rate(void);
+
+	/*!
+	 * \brief Get the kind of design variable for FEA.
+	 * \return Value of the DE voltage.
+	 */
+	unsigned short GetDV_FEA(void);
+
+	/*!
+	  * \brief Decide whether to run a structural adjoint solution.
+	  * \return <code>TRUE</code> if it's necessary to run a structural adjoint solution, <code>FALSE</code> otherwise.
+	  */
+
+	bool GetStructural_Adj(void);
+
+	/*!
+	  * \brief Decide whether it's necessary to read a reference geometry.
+	  * \return <code>TRUE</code> if it's necessary to read a reference geometry, <code>FALSE</code> otherwise.
+	  */
+
+	bool GetRefGeom(void);
+
+	/*!
+	 * \brief Get the name of the file with the reference geometry of the structural problem.
+	 * \return Name of the file with the reference geometry of the structural problem.
+	 */
+	string GetRefGeom_FEMFileName(void);
+
+	/*!
+	 * \brief Get the format of the reference geometry file.
+	 * \return Format of the reference geometry file.
+	 */
+	unsigned short GetRefGeom_FileFormat(void);
 
     /*!
 	 * \brief Formulation for 2D elasticity (plane stress - strain)
@@ -2813,6 +2908,12 @@ public:
 	 */
 	unsigned short GetKind_Linear_Solver_Prec(void);
 
+  /*!
+   * \brief Get the kind of preconditioner for the linear solver for mesh deformation.
+   * \return Numerical preconditioner for implicit formulation (solving the linear system).
+   */
+  unsigned short GetKind_Deform_Linear_Solver_Prec(void);
+
 	/*!
 	 * \brief Set the kind of preconditioner for the implicit solver.
 	 * \return Numerical preconditioner for implicit formulation (solving the linear system).
@@ -2825,11 +2926,23 @@ public:
 	 */
 	su2double GetLinear_Solver_Error(void);
 
+  /*!
+   * \brief Get min error of the linear solver for the implicit formulation.
+   * \return Min error of the linear solver for the implicit formulation.
+   */
+  su2double GetDeform_Linear_Solver_Error(void);
+
 	/*!
 	 * \brief Get max number of iterations of the linear solver for the implicit formulation.
 	 * \return Max number of iterations of the linear solver for the implicit formulation.
 	 */
 	unsigned long GetLinear_Solver_Iter(void);
+
+  /*!
+   * \brief Get max number of iterations of the linear solver for the implicit formulation.
+   * \return Max number of iterations of the linear solver for the implicit formulation.
+   */
+  unsigned long GetDeform_Linear_Solver_Iter(void);
 
   /*!
    * \brief Get restart frequency of the linear solver for the implicit formulation.
@@ -3794,6 +3907,12 @@ public:
 	 */
 	string GetSolution_FEMFileName(void);
 
+  /*!
+   * \brief Get the name of the file with the solution of the adjoint structural problem.
+   * \return Name of the file with the solution of the structural problem.
+   */
+  string GetSolution_AdjFEMFileName(void);
+
 	/*!
 	 * \brief Get the name of the file with the residual of the problem.
 	 * \return Name of the file with the residual of the problem.
@@ -3847,6 +3966,18 @@ public:
 	 * \return Name of the file with the structure variables.
 	 */
 	string GetSurfStructure_FileName(void);
+
+  /*!
+   * \brief Get the name of the file with the adjoint structure variables.
+   * \return Name of the file with the adjoint structure variables.
+   */
+  string GetAdjStructure_FileName(void);
+
+  /*!
+   * \brief Get the name of the file with the adjoint structure variables.
+   * \return Name of the file with the adjoint structure variables.
+   */
+  string GetAdjSurfStructure_FileName(void);
 
   /*!
 	 * \brief Get the name of the file with the structure variables.
@@ -3909,10 +4040,16 @@ public:
 	string GetRestart_AdjFileName(void);
 
 	/*!
-	 * \brief Get the name of the restart file for the flow variables.
-	 * \return Name of the restart file for the flow variables.
+	 * \brief Get the name of the restart file for the structural variables.
+	 * \return Name of the restart file for the structural variables.
 	 */
 	string GetRestart_FEMFileName(void);
+
+  /*!
+   * \brief Get the name of the restart file for the structural adjoint variables.
+   * \return Name of the restart file for the structural adjoint variables.
+   */
+  string GetRestart_AdjFEMFileName(void);
 
 	/*!
 	 * \brief Get the name of the file with the adjoint variables.
@@ -4532,6 +4669,12 @@ public:
 	su2double GetResidual_FEM_ETOL(void);
 
   /*!
+   * \brief Value of the maximum objective function for FEM elasticity adjoint (log10 scale).
+   * \return Value of Res_FEM_ADJ (log10 scale).
+   */
+  su2double GetCriteria_FEM_ADJ(void);
+
+  /*!
    * \brief Value of the damping factor for the engine inlet bc.
    * \return Value of the damping factor.
    */
@@ -5018,12 +5161,34 @@ public:
 	 */
 	su2double GetLoad_Dir_Multiplier(string val_index);
 
+  /*!
+   * \brief Get the force value at a load boundary defined in cartesian coordinates.
+   * \param[in] val_index - Index corresponding to the load boundary.
+   * \return The load value.
+   */
+  su2double GetDisp_Dir_Value(string val_index);
+
+  /*!
+   * \brief Get the force multiplier at a load boundary in cartesian coordinates.
+   * \param[in] val_index - Index corresponding to the load boundary.
+   * \return The load multiplier.
+   */
+  su2double GetDisp_Dir_Multiplier(string val_index);
+
+
 	/*!
 	 * \brief Get the force direction at a loaded boundary in cartesian coordinates.
 	 * \param[in] val_index - Index corresponding to the load boundary.
 	 * \return The load direction.
 	 */
 	su2double* GetLoad_Dir(string val_index);
+
+  /*!
+   * \brief Get the force direction at a loaded boundary in cartesian coordinates.
+   * \param[in] val_index - Index corresponding to the load boundary.
+   * \return The load direction.
+   */
+  su2double* GetDisp_Dir(string val_index);
 
 	/*!
 	 * \brief Get the amplitude of the sine-wave at a load boundary defined in cartesian coordinates.
@@ -5401,6 +5566,13 @@ public:
 
 	bool GetDeadLoad(void);
 
+  /*!
+    * \brief Pseudo-static analysis (the density is 0 for inertial effects but nonzero for dead loads).
+    * \return <code>TRUE</code> if the inertial effects are not considered, <code>FALSE</code> otherwise.
+    */
+
+  bool GetPseudoStatic(void);
+
 	/*!
 	  * \brief Identifies if the mesh is matching or not (temporary, while implementing interpolation procedures).
 	  * \return <code>TRUE</code> if the mesh is matching, <code>FALSE</code> otherwise.
@@ -5476,6 +5648,113 @@ public:
 	su2double Get_Int_Coeffs(unsigned short val_coeff);
 
 	/*!
+	 * \brief Get the number of different values for the modulus of the electric field.
+	 * \return Number of different values for the modulus of the electric field.
+	 */
+	unsigned short GetnElectric_Field(void);
+
+	/*!
+	 * \brief Get the dimensionality of the electric field.
+	 * \return Number of integration coefficients.
+	 */
+	unsigned short GetnDim_Electric_Field(void);
+
+	/*!
+	 * \brief Get the values for the electric field modulus.
+	 * \param[in] val_coeff - Index of the coefficient.
+	 * \return Alpha coefficient for the Runge-Kutta integration scheme.
+	 */
+	su2double Get_Electric_Field_Mod(unsigned short val_coeff);
+
+  /*!
+   * \brief Get the maximum value allowed for the electric field modulus.
+   * \param[in] val_coeff - Index of the coefficient.
+   * \return Alpha coefficient for the Runge-Kutta integration scheme.
+   */
+  su2double Get_Electric_Field_Max(unsigned short val_coeff);
+
+  /*!
+   * \brief Get the minimum value allowed for the electric field modulus.
+   * \param[in] val_coeff - Index of the coefficient.
+   * \return Alpha coefficient for the Runge-Kutta integration scheme.
+   */
+  su2double Get_Electric_Field_Min(unsigned short val_coeff);
+
+
+	/*!
+	 * \brief Get the number of delimiters for the electric field.
+	 * \return Number of different values of the delimiters for the electric field.
+	 */
+	unsigned short GetnDel_EField(void);
+
+	/*!
+	 * \brief Get the axis along which the delimiters for the electric field are defined.
+	 * \return Axis (X, Y or Z).
+	 */
+	unsigned short GetAxis_EField(void);
+
+	/*!
+	 * \brief Get the values for the electric field modulus.
+	 * \param[in] val_coeff - Index of the coefficient.
+	 * \return Alpha coefficient for the Runge-Kutta integration scheme.
+	 */
+	su2double Get_Electric_Field_Del(unsigned short val_coeff);
+
+  /*!
+   * \brief Get the values that limit regions in the X axis.
+   * \param[in] val_coeff - Index of the coefficient.
+   * \return del_x - X coordinate.
+   */
+  su2double Get_DV_Del_X(unsigned short val_coeff);
+
+  /*!
+   * \brief Get the values that limit regions in the Y axis.
+   * \param[in] val_coeff - Index of the coefficient.
+   * \return del_y - Y coordinate.
+   */
+  su2double Get_DV_Del_Y(unsigned short val_coeff);
+
+  /*!
+   * \brief Get the values that limit regions in the Z axis.
+   * \param[in] val_coeff - Index of the coefficient.
+   * \return del_z - Z coordinate.
+   */
+  su2double Get_DV_Del_Z(unsigned short val_coeff);
+
+  /*!
+   * \brief Get the number of regions that are delimited in the X axis.
+   * \return nDV_Del_X-1 - number of REGIONS in X direction (delimiters - 1)
+   */
+  unsigned short GetnDV_X(void);
+
+  /*!
+   * \brief Get the number of regions that are delimited in the Y axis.
+   * \return nDV_Del_Y-1 - number of REGIONS in Y direction (delimiters - 1)
+   */
+  unsigned short GetnDV_Y(void);
+
+  /*!
+   * \brief Get the number of regions that are delimited in the Z axis.
+   * \return nDV_Del_Z-1 - Number of REGIONS in Z direction (delimiters - 1)
+   */
+  unsigned short GetnDV_Z(void);
+
+
+	/*!
+	 * \brief Set the values for the electric field modulus.
+	 * \param[in] val_coeff - Index of the electric field.
+	 * \param[in] val_el_field - Value of the electric field.
+	 */
+	void Set_Electric_Field_Mod(unsigned short val_coeff, su2double val_el_field);
+
+	/*!
+	 * \brief Get the direction of the electric field in reference configuration.
+	 * \param[in] val_coeff - Index of the coefficient.
+	 * \return Alpha coefficient for the Runge-Kutta integration scheme.
+	 */
+	su2double* Get_Electric_Field_Dir(void);
+
+	/*!
 	 * \brief Check if the user wants to apply the load gradually.
 	 * \return 	<code>TRUE</code> means that the load is to be applied gradually.
 	 */
@@ -5492,6 +5771,14 @@ public:
 	 * \return 	Value of the max time while the load is linearly increased
 	 */
 	 su2double GetRamp_Time(void);
+
+	 /*!
+	  * \brief Get the kind of load transfer method we want to use for dynamic problems
+	  * \note This value is obtained from the config file, and it is constant
+	  *       during the computation.
+	  * \return Kind of transfer method for multiphysics problems
+	  */
+	 unsigned short GetDynamic_LoadTransfer(void);
 
 	/*!
 	 * \brief Get the maximum time of the sigmoid.
@@ -5522,6 +5809,12 @@ public:
 	 * \return Value of the physical time in an unsteady simulation.
 	 */
 	 bool GetFSI_Simulation(void);
+
+	 /*!
+	  * \brief Get the AD strategy for FSI
+	  * \return Kind of strategy.
+	  */
+	 bool GetAD_FSI_Strategy(void);
 
 	/*!
 	 * \brief Check if we want to apply an incremental load to the nonlinear structural simulation

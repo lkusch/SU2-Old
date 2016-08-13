@@ -627,11 +627,35 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
 #endif
   }
 
+  bool print_output = config->GetDeform_Output();
+
+  if (print_output){
+
+  cout << "The direct solver runs a" ;
+  switch (config->GetKind_Linear_Solver()){
+  case CONJUGATE_GRADIENT: cout << " Conjugate Gradient "; break;
+  case FGMRES: cout << " FGMRES "; break;
+  case BCGSTAB: cout << " BCGSTAB "; break;
+  }
+  unsigned long nPoint = geometry->GetnPoint();
+  cout << "linear solver with nPoint = " << nPoint << endl;
+
+  cout << "The discrete adjoint solver for this problem is";
+  switch (config->GetKind_DiscAdj_Linear_Solver()){
+  case CONJUGATE_GRADIENT: cout << " Conjugate Gradient"; break;
+  case FGMRES: cout << " FGMRES"; break;
+  case BCGSTAB: cout << " BCGSTAB"; break;
+  }
+  cout << ". " << endl;
+
+  }
+
   /*--- Solve the linear system using a Krylov subspace method ---*/
   
   if (config->GetKind_Linear_Solver() == BCGSTAB ||
       config->GetKind_Linear_Solver() == FGMRES ||
-      config->GetKind_Linear_Solver() == RESTARTED_FGMRES) {
+      config->GetKind_Linear_Solver() == RESTARTED_FGMRES ||
+      config->GetKind_Linear_Solver() == CONJUGATE_GRADIENT) {
     
     mat_vec = new CSysMatrixVectorProduct(Jacobian, geometry, config);
     CPreconditioner* precond = NULL;
@@ -664,6 +688,9 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
         break;
       case FGMRES:
         IterLinSol = FGMRES_LinSolver(LinSysRes, LinSysSol, *mat_vec, *precond, SolverTol, MaxIter, &Residual, false);
+        break;
+      case CONJUGATE_GRADIENT:
+        IterLinSol = CG_LinSolver(LinSysRes, LinSysSol, *mat_vec, *precond, SolverTol, MaxIter, false);
         break;
       case RESTARTED_FGMRES:
         IterLinSol = 0;

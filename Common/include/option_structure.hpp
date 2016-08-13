@@ -186,13 +186,15 @@ enum ENUM_SOLVER {
   HEAT_EQUATION = 29,					/*!< \brief Definition of the heat solver. */
   FLUID_STRUCTURE_INTERACTION = 12,		/*!< \brief Definition of a FSI solver. */
   FEM_ELASTICITY = 13,					/*!< \brief Definition of a FEM solver. */
+  ADJ_ELASTICITY = 14,					/*!< \brief Definition of a FEM adjoint solver. */
   ADJ_EULER = 18,						/*!< \brief Definition of the continuous adjoint Euler's solver. */
   ADJ_NAVIER_STOKES = 19,				/*!< \brief Definition of the continuous adjoint Navier-Stokes' solver. */
   ADJ_RANS = 20,						/*!< \brief Definition of the continuous adjoint Reynolds-averaged Navier-Stokes' (RANS) solver. */
   TEMPLATE_SOLVER = 30,                 /*!< \brief Definition of template solver. */
   DISC_ADJ_EULER = 35,
   DISC_ADJ_RANS = 36,
-  DISC_ADJ_NAVIER_STOKES = 37
+  DISC_ADJ_NAVIER_STOKES = 37,
+  DISC_ADJ_FEM = 40
 };
 /* BEGIN_CONFIG_ENUMS */
 static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVER>
@@ -207,9 +209,11 @@ static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVE
 ("WAVE_EQUATION", WAVE_EQUATION)
 ("HEAT_EQUATION", HEAT_EQUATION)
 ("FEM_ELASTICITY", FEM_ELASTICITY)
+("ADJ_ELASTICITY", ADJ_ELASTICITY)
 ("DISC_ADJ_EULER", DISC_ADJ_EULER)
 ("DISC_ADJ_RANS", DISC_ADJ_RANS)
 ("DISC_ADJ_NAVIERSTOKES", DISC_ADJ_EULER)
+("DISC_ADJ_FEM", DISC_ADJ_FEM)
 ("FLUID_STRUCTURE_INTERACTION", FLUID_STRUCTURE_INTERACTION)
 
 ("TEMPLATE_SOLVER", TEMPLATE_SOLVER);
@@ -259,20 +263,26 @@ static const map<string, ENUM_STRUCT_SOLVER> Struct_Map = CCreateMap<string, ENU
 enum ENUM_MATERIAL_MODEL {
 	LINEAR_ELASTIC = 0,			/*!< \brief Definition of linear elastic material. */
 	NEO_HOOKEAN = 1,			/*!< \brief Definition of Neo-Hookean material. */
+	KNOWLES = 2,				/*!< \brief Definition of Knowles stored-energy potential */
+	IDEAL_DE = 3				/*!< \brief Definition of ideal Dielectric Elastomer */
 };
 static const map<string, ENUM_MATERIAL_MODEL> Material_Map = CCreateMap<string, ENUM_MATERIAL_MODEL>
 ("LINEAR_ELASTIC", LINEAR_ELASTIC)
-("NEO_HOOKEAN", NEO_HOOKEAN);
+("NEO_HOOKEAN", NEO_HOOKEAN)
+("KNOWLES", KNOWLES)
+("IDEAL_DE", IDEAL_DE);
 
 /*!
  * \brief Material compressibility
  */
 enum ENUM_MAT_COMPRESS {
-  COMPRESSIBLE_MAT = 0,			/*!< \brief Definition of compressible material. */
-  INCOMPRESSIBLE_MAT = 1,		/*!< \brief Definition of incompressible material. */
+  COMPRESSIBLE_MAT = 0,				/*!< \brief Definition of compressible material. */
+  NEARLY_INCOMPRESSIBLE_MAT = 1,	/*!< \brief Definition of nearly incompressible material. */
+  INCOMPRESSIBLE_MAT = 2			/*!< \brief Definition of incompressible material. */
 };
 static const map<string, ENUM_MAT_COMPRESS> MatComp_Map = CCreateMap<string, ENUM_MAT_COMPRESS>
 ("COMPRESSIBLE", COMPRESSIBLE_MAT)
+("NEARLY_INCOMPRESSIBLE", NEARLY_INCOMPRESSIBLE_MAT)
 ("INCOMPRESSIBLE", INCOMPRESSIBLE_MAT);
 
 
@@ -344,6 +354,7 @@ enum RUNTIME_TYPE {
   RUNTIME_WAVE_SYS = 8,		/*!< \brief One-physics case, the code is solving the wave equation. */
   RUNTIME_MULTIGRID_SYS = 14,   	/*!< \brief Full Approximation Storage Multigrid system of equations. */
   RUNTIME_FEA_SYS = 20,		/*!< \brief One-physics case, the code is solving the FEA equation. */
+  RUNTIME_ADJFEA_SYS = 30,		/*!< \brief One-physics case, the code is solving the adjoint FEA equation. */
   RUNTIME_HEAT_SYS = 21,		/*!< \brief One-physics case, the code is solving the heat equation. */
   RUNTIME_TRANS_SYS = 22,			/*!< \brief One-physics case, the code is solving the turbulence model. */
 };
@@ -358,7 +369,9 @@ const int TRANS_SOL = 4;	/*!< \brief Position of the transition model solution i
 const int POISSON_SOL = 2;		/*!< \brief Position of the electronic potential solution in the solver container array. */
 const int WAVE_SOL = 1;		/*!< \brief Position of the wave equation in the solution solver array. */
 const int HEAT_SOL = 2;		/*!< \brief Position of the heat equation in the solution solver array. */
-const int FEA_SOL = 1;		/*!< \brief Position of the FEA equation in the solution solver array. */
+
+const int FEA_SOL = 0;			/*!< \brief Position of the FEA equation in the solution solver array. */
+const int ADJFEA_SOL = 1;		/*!< \brief Position of the FEA adjoint equation in the solution solver array. */
 
 const int TEMPLATE_SOL = 0;     /*!< \brief Position of the template solution. */
 
@@ -370,7 +383,9 @@ const int CONV_BOUND_TERM = 4;       /*!< \brief Position of the convective boun
 const int VISC_BOUND_TERM = 5;       /*!< \brief Position of the viscous boundary terms in the numerics container array. */
 
 const int FEA_TERM = 0;			/*!< \brief Position of the finite element analysis terms in the numerics container array. */
-
+const int DE_TERM = 1;			/*!< \brief Position of the dielectric terms in the numerics container array. */
+const int FEA_ADJ = 2;     /*!< \brief Position of the finite element analysis terms in the numerics container array. */
+const int DE_ADJ = 3;			/*!< \brief Position of the dielectric adjoint terms in the numerics container array. */
 
 /*!
  * \brief types of finite elements (in 2D or 3D)
@@ -380,7 +395,9 @@ const int EL_TRIA = 0;		/*!< \brief Elements of three nodes (2D). */
 const int EL_QUAD = 1;		/*!< \brief Elements of four nodes (2D). */
 
 const int EL_TETRA = 0;		/*!< \brief Elements of four nodes (3D). */
-const int EL_HEXA = 1;		/*!< \brief Elements of eight nodes (3D). */
+const int EL_HEXA  = 1;		/*!< \brief Elements of eight nodes (3D). */
+const int EL_PYRAM = 2;    /*!< \brief Elements of five nodes (3D). */
+const int EL_PRISM = 3;    /*!< \brief Elements of six nodes (3D). */
 
 
 /*!
@@ -484,7 +501,7 @@ enum ENUM_GRIDMOVEMENT {
   NO_MOVEMENT = 0, /*!< \brief Simulation on a static mesh. */
   DEFORMING = 1,		/*!< \brief Simulation with dynamically deforming meshes (plunging/pitching/rotation). */
   RIGID_MOTION = 2,		/*!< \brief Simulation with rigid mesh motion (plunging/pitching/rotation). */
-  FLUID_STRUCTURE = 3,		/*!< \brief Fluid structure defromation. */
+  FLUID_STRUCTURE = 3,		/*!< \brief Fluid structure deformation. */
   EXTERNAL = 4,  /*!< \brief Arbitrary grid motion specified by external files at each time step. */
   EXTERNAL_ROTATION = 5,  /*!< \brief Arbitrary grid motion specified by external files at each time step with rigid rotation. */
   AEROELASTIC = 6,    /*!< \brief Simulation with aeroelastic motion. */
@@ -493,8 +510,8 @@ enum ENUM_GRIDMOVEMENT {
   ELASTICITY = 9,    /*!< \brief Linear Elasticity. */
   AEROELASTIC_RIGID_MOTION = 10, /*!< \brief Simulation with rotation and aeroelastic motion. */
   STEADY_TRANSLATION = 11,    /*!< \brief Simulation in a steadily translating frame. */
-  GUST = 12 /*!< \brief Simulation on a static mesh with a gust. */
-
+  GUST = 12, /*!< \brief Simulation on a static mesh with a gust. */
+  FLUID_STRUCTURE_STATIC = 13 /*!< \brief Fluid structure deformation with no grid velocity. */
 };
 
 static const map<string, ENUM_GRIDMOVEMENT> GridMovement_Map = CCreateMap<string, ENUM_GRIDMOVEMENT>
@@ -510,7 +527,8 @@ static const map<string, ENUM_GRIDMOVEMENT> GridMovement_Map = CCreateMap<string
 ("MOVING_WALL", MOVING_WALL)
 ("AEROELASTIC_RIGID_MOTION", AEROELASTIC_RIGID_MOTION)
 ("STEADY_TRANSLATION", STEADY_TRANSLATION)
-("GUST", GUST);
+("GUST", GUST)
+("FLUID_STRUCTURE_STATIC", FLUID_STRUCTURE_STATIC);
 
 /*!
  * \brief type of wind gusts
@@ -760,6 +778,7 @@ enum BC_TYPE {
   LOAD_DIR_BOUNDARY = 35,		/*!< \brief Boundary Load definition. */
   LOAD_SINE_BOUNDARY = 36,		/*!< \brief Sine-waveBoundary Load definition. */
   NRBC_BOUNDARY= 37,   /*!< \brief NRBC Boundary definition. */
+  DISP_DIR_BOUNDARY = 38,    /*!< \brief Boundary displacement definition. */
   SEND_RECEIVE = 99,		/*!< \brief Boundary send-receive definition. */
 };
 
@@ -777,7 +796,7 @@ static const map<string, ENUM_2DFORM> ElasForm_2D = CCreateMap<string, ENUM_2DFO
 
 
 /*!
- * \brief different regime modes
+ * \brief Kinds of relaxation for FSI problem
  */
 enum ENUM_AITKEN {
   NO_RELAXATION = 0,			/*!< \brief No relaxation in the strongly coupled approach. */
@@ -789,7 +808,38 @@ static const map<string, ENUM_AITKEN> AitkenForm_Map = CCreateMap<string, ENUM_A
 ("FIXED_PARAMETER", FIXED_PARAMETER)
 ("AITKEN_DYNAMIC", AITKEN_DYNAMIC);
 
+/*!
+ * \brief types of dynamic transfer methods
+ */
+enum ENUM_DYN_TRANSFER_METHOD {
+  INSTANTANEOUS = 1,   /*!< \brief No ramp, load is transfer instantaneously. */
+  POL_ORDER_1 = 2,     /*!< \brief The load is transferred using a ramp. */
+  POL_ORDER_3 = 3,     /*!< \brief The load is transferred using an order 3 polynomial function */
+  POL_ORDER_5 = 4,     /*!< \brief The load is transferred using an order 5 polynomial function */
+  SIGMOID_10 = 5,      /*!< \brief The load is transferred using a sigmoid with parameter 10 */
+  SIGMOID_20 = 6       /*!< \brief The load is transferred using a sigmoid with parameter 20 */
+};
+static const map<string, ENUM_DYN_TRANSFER_METHOD> Dyn_Transfer_Method_Map = CCreateMap<string, ENUM_DYN_TRANSFER_METHOD>
+("INSTANTANEOUS", INSTANTANEOUS)
+("RAMP", POL_ORDER_1)
+("CUBIC", POL_ORDER_3)
+("QUINTIC", POL_ORDER_5)
+("SIGMOID_10", SIGMOID_10)
+("SIGMOID_20", SIGMOID_20);
 
+
+/*!
+ * \brief Kinds of Design Variables for FEA problems (temporary)
+ */
+enum ENUM_DVFEA {
+  YOUNG_MODULUS = 0,		/*!< \brief Young modulus (E) as design variables. */
+  LAME_CONSTANTS = 1,  		/*!< \brief Lame constants (Lambda, mu) as design variables. */
+  ELECTRIC_FIELD = 2,       /*!< \brief Electric field (E) as design variable. */
+};
+static const map<string, ENUM_DVFEA> DVFEA_Map = CCreateMap<string, ENUM_DVFEA>
+("YOUNG_MODULUS", YOUNG_MODULUS)
+("LAME_CONSTANTS", LAME_CONSTANTS)
+("ELECTRIC_FIELD", ELECTRIC_FIELD);
 
 /*!
  * \brief types Riemann boundary treatments
@@ -915,7 +965,8 @@ enum ENUM_OBJECTIVE {
   AVG_TOTAL_PRESSURE = 28, 	    /*!< \brief Total Pressure objective function definition. */
   AVG_OUTLET_PRESSURE = 29,      /*!< \brief Static Pressure objective function definition. */
   MASS_FLOW_RATE = 30,           /*!< \brief Mass Flow Rate objective function definition. */
-  OUTFLOW_GENERALIZED=31          /*!<\brief Objective function defined via chain rule on primitive variable gradients. */
+  OUTFLOW_GENERALIZED=31,          /*!<\brief Objective function defined via chain rule on primitive variable gradients. */
+  REFERENCE_GEOMETRY=50          /*!<\brief Objective function defined as a function of a reference geometry. */
 };
 
 static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM_OBJECTIVE>
@@ -949,7 +1000,8 @@ static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM
 ("AVG_TOTAL_PRESSURE", AVG_TOTAL_PRESSURE)
 ("AVG_OUTLET_PRESSURE", AVG_OUTLET_PRESSURE)
 ("MASS_FLOW_RATE", MASS_FLOW_RATE)
-("OUTFLOW_GENERALIZED", OUTFLOW_GENERALIZED);
+("OUTFLOW_GENERALIZED", OUTFLOW_GENERALIZED)
+("REFERENCE_GEOMETRY", REFERENCE_GEOMETRY);
 
 /*!
  * \brief types of residual criteria equations
@@ -1264,14 +1316,16 @@ static const map<string, ENUM_CONVERGE_CRIT> Converge_Crit_Map = CCreateMap<stri
  * \brief types of element stiffnesses imposed for FEA mesh deformation
  */
 enum ENUM_DEFORM_STIFFNESS {
-  CONSTANT_STIFFNESS = 0,               /*!< \brief Impose a constant stiffness for each element (steel). */
-  INVERSE_VOLUME = 1,			/*!< \brief Impose a stiffness for each element that is inversely proportional to cell volume. */
-  WALL_DISTANCE = 2			/*!< \brief Impose a stiffness for each element that is proportional to the distance from the deforming surface. */
+  CONSTANT_STIFFNESS = 0,         /*!< \brief Impose a constant stiffness for each element (steel). */
+  INVERSE_VOLUME = 1,			        /*!< \brief Impose a stiffness for each element that is inversely proportional to cell volume. */
+  WALL_DISTANCE = 2,			        /*!< \brief Impose a stiffness for each element that is proportional to the distance from the deforming surface. */
+  PROPORTIONAL_STIFFNESS = 3      /*!< \brief Impose a stiffness for each element that is proportional to the ratio of Max/Min volume. */
 };
 static const map<string, ENUM_DEFORM_STIFFNESS> Deform_Stiffness_Map = CCreateMap<string, ENUM_DEFORM_STIFFNESS>
 ("CONSTANT_STIFFNESS", CONSTANT_STIFFNESS)
 ("INVERSE_VOLUME", INVERSE_VOLUME)
-("WALL_DISTANCE", WALL_DISTANCE);
+("WALL_DISTANCE", WALL_DISTANCE)
+("PROPORTIONAL_STIFFNESS", PROPORTIONAL_STIFFNESS);
 
 /*!
  * \brief The direct differentation variables.
@@ -1287,7 +1341,11 @@ enum ENUM_DIRECTDIFF_VAR {
   D_SIDESLIP = 7,
   D_VISCOSITY = 8,
   D_REYNOLDS = 9,
-  D_DESIGN = 10
+  D_DESIGN = 10,
+  D_YOUNG = 11,
+  D_POISSON = 12,
+  D_RHO = 13,
+  D_RHO_DL = 14
 };
 static const map<string, ENUM_DIRECTDIFF_VAR> DirectDiff_Var_Map = CCreateMap<string, ENUM_DIRECTDIFF_VAR>
 ("NONE", NO_DERIVATIVE)
@@ -1300,7 +1358,11 @@ static const map<string, ENUM_DIRECTDIFF_VAR> DirectDiff_Var_Map = CCreateMap<st
 ("SIDESLIP", D_SIDESLIP)
 ("VISCOSITY", D_VISCOSITY)
 ("REYNOLDS", D_REYNOLDS)
-("DESIGN_VARIABLES", D_DESIGN);
+("DESIGN_VARIABLES", D_DESIGN)
+("YOUNG_MODULUS", D_YOUNG)
+("POISSON_RATIO", D_POISSON)
+("STRUCTURAL_DENSITY", D_RHO)
+("STRUCTURAL_DEAD_LOAD", D_RHO_DL);
 
 /*!
  * \brief types of schemes for dynamic structural computations
@@ -1312,6 +1374,29 @@ enum ENUM_DYNAMIC {
 static const map<string, ENUM_DYNAMIC> Dynamic_Map = CCreateMap<string, ENUM_DYNAMIC>
 ("NO", STATIC)
 ("YES", DYNAMIC);
+
+/*!
+ * \brief types of criteria to determine when the solution is converged
+ */
+enum ENUM_FSI_STRAT {
+  PARTITIONED = 0,     /*!< \brief Partitioned strategy. */
+  MONOLITHIC = 1       /*!< \brief Monolithic strategy. */
+};
+static const map<string, ENUM_FSI_STRAT> FSI_Strategy_Map = CCreateMap<string, ENUM_FSI_STRAT>
+("PARTITIONED", PARTITIONED)
+("MONOLITHIC", MONOLITHIC);
+
+
+/*!
+ * \brief types of input file formats
+ */
+enum ENUM_INPUT_REF {
+  SU2_REF = 1,                     /*!< \brief SU2 input format (from a restart). */
+  CUSTOM_REF = 2                   /*!< \brief CGNS input format for the computational grid. */
+};
+static const map<string, ENUM_INPUT_REF> Input_Ref_Map = CCreateMap<string, ENUM_INPUT_REF>
+("SU2", SU2_REF)
+("CUSTOM", CUSTOM_REF);
 
 /* END_CONFIG_ENUMS */
 

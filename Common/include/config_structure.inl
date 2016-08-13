@@ -133,7 +133,23 @@ inline su2double CConfig::GetThermalDiffusivity(void) { return Thermal_Diffusivi
 
 inline su2double CConfig::GetElasticyMod(void) { return ElasticyMod; }
 
-inline su2double CConfig::GetBulk_Modulus_Struct(void) { return Bulk_Modulus_Struct; }
+inline bool CConfig::GetDE_Effects(void) { return DE_Effects; }
+
+inline bool CConfig::GetDE_Predicted(void) { return DE_Predicted; }
+
+inline su2double CConfig::GetDE_Modulus(void) { return DE_Modulus; }
+
+inline su2double CConfig::GetDE_Rate(void) { return DE_Rate; }
+
+inline unsigned short CConfig::GetDV_FEA(void) { return Kind_DV_FEA; }
+
+inline bool CConfig::GetStructural_Adj(void) { return Structural_Adj; }
+
+inline bool CConfig::GetRefGeom(void) { return RefGeom; }
+
+inline string CConfig::GetRefGeom_FEMFileName(void) { return RefGeom_FEMFileName; }
+
+inline unsigned short CConfig::GetRefGeom_FileFormat(void) { return RefGeom_FileFormat; }
 
 inline unsigned short CConfig::GetElas2D_Formulation(void) { return Kind_2DElasForm; }
 
@@ -573,11 +589,17 @@ inline unsigned short CConfig::GetDeform_Linear_Solver(void) { return Deform_Lin
 
 inline unsigned short CConfig::GetKind_Linear_Solver_Prec(void) { return Kind_Linear_Solver_Prec; }
 
+inline unsigned short CConfig::GetKind_Deform_Linear_Solver_Prec(void) { return Kind_Deform_Linear_Solver_Prec; }
+
 inline void CConfig::SetKind_Linear_Solver_Prec(unsigned short val_kind_prec) { Kind_Linear_Solver_Prec = val_kind_prec; }
 
 inline su2double CConfig::GetLinear_Solver_Error(void) { return Linear_Solver_Error; }
 
+inline su2double CConfig::GetDeform_Linear_Solver_Error(void) { return Deform_Linear_Solver_Error; }
+
 inline unsigned long CConfig::GetLinear_Solver_Iter(void) { return Linear_Solver_Iter; }
+
+inline unsigned long CConfig::GetDeform_Linear_Solver_Iter(void) { return Deform_Linear_Solver_Iter; }
 
 inline unsigned long CConfig::GetLinear_Solver_Restart_Frequency(void) { return Linear_Solver_Restart_Frequency; }
 
@@ -889,11 +911,17 @@ inline string CConfig::GetSolution_AdjFileName(void) { return Solution_AdjFileNa
 
 inline string CConfig::GetSolution_FEMFileName(void) { return Solution_FEMFileName; }
 
+inline string CConfig::GetSolution_AdjFEMFileName(void) { return Solution_AdjFEMFileName; }
+
 inline string CConfig::GetFlow_FileName(void) { return Flow_FileName; }
 
 inline string CConfig::GetStructure_FileName(void) { return Structure_FileName; }
 
 inline string CConfig::GetSurfStructure_FileName(void) { return SurfStructure_FileName; }
+
+inline string CConfig::GetAdjStructure_FileName(void) { return Structure_FileName; }
+
+inline string CConfig::GetAdjSurfStructure_FileName(void) { return SurfStructure_FileName; }
 
 inline string CConfig::GetSurfWave_FileName(void) { return SurfWave_FileName; }
 
@@ -914,6 +942,8 @@ inline string CConfig::GetRestart_HeatFileName(void) { return Restart_HeatFileNa
 inline string CConfig::GetRestart_AdjFileName(void) { return Restart_AdjFileName; }
 
 inline string CConfig::GetRestart_FEMFileName(void) { return Restart_FEMFileName; }
+
+inline string CConfig::GetRestart_AdjFEMFileName(void) { return Restart_AdjFEMFileName; }
 
 inline string CConfig::GetAdj_FileName(void) { return Adj_FileName; }
 
@@ -1159,6 +1189,8 @@ inline su2double CConfig::GetAitkenDynMinInit(void) { return AitkenDynMinInit; }
 
 inline bool CConfig::GetDeadLoad(void) { return DeadLoad; }
 
+inline bool CConfig::GetPseudoStatic(void) { return PseudoStatic; }
+
 inline bool CConfig::GetMatchingMesh(void) { return MatchingMesh; }
 
 inline bool CConfig::GetSteadyRestart(void) { return SteadyRestart; }
@@ -1180,6 +1212,38 @@ inline su2double CConfig::GetNewmark_delta(void) { return Newmark_delta; }
 inline unsigned short CConfig::GetnIntCoeffs(void) { return nIntCoeffs; }
 
 inline su2double CConfig::Get_Int_Coeffs(unsigned short val_coeff) { return Int_Coeffs[val_coeff]; }
+
+inline unsigned short CConfig::GetnElectric_Field(void) { return nElectric_Field; }
+
+inline unsigned short CConfig::GetnDim_Electric_Field(void) { return nDim_Electric_Field; }
+
+inline su2double CConfig::Get_Electric_Field_Mod(unsigned short val_coeff) { return Electric_Field_Mod[val_coeff]; }
+
+inline su2double CConfig::Get_Electric_Field_Max(unsigned short val_coeff) { return Electric_Field_Max[val_coeff]; }
+
+inline su2double CConfig::Get_Electric_Field_Min(unsigned short val_coeff) { return Electric_Field_Min[val_coeff]; }
+
+inline void CConfig::Set_Electric_Field_Mod(unsigned short val_coeff, su2double val_el_field) { Electric_Field_Mod[val_coeff] = val_el_field; }
+
+inline su2double* CConfig::Get_Electric_Field_Dir(void) { return Electric_Field_Dir; }
+
+inline unsigned short CConfig::GetAxis_EField(void) { return Axis_EField; }
+
+inline unsigned short CConfig::GetnDel_EField(void) { return nDel_EField; }
+
+inline su2double CConfig::Get_Electric_Field_Del(unsigned short val_coeff) { return Electric_Field_Del[val_coeff]; }
+
+inline su2double CConfig::Get_DV_Del_X(unsigned short val_coeff) { return DV_Del_X[val_coeff]; }
+
+inline su2double CConfig::Get_DV_Del_Y(unsigned short val_coeff) { return DV_Del_Y[val_coeff]; }
+
+inline su2double CConfig::Get_DV_Del_Z(unsigned short val_coeff) { return DV_Del_Z[val_coeff]; }
+
+inline unsigned short CConfig::GetnDV_X(void) { return nDV_Del_X - 1; }
+
+inline unsigned short CConfig::GetnDV_Y(void) { return nDV_Del_Y - 1; }
+
+inline unsigned short CConfig::GetnDV_Z(void) { return nDV_Del_Z - 1; }
 
 inline bool CConfig::GetSigmoid_Load(void) { return Sigmoid_Load; }
 
@@ -1203,6 +1267,8 @@ inline su2double CConfig::GetIncLoad_Criteria(unsigned short val_var) { return I
 
 inline bool CConfig::GetFSI_Simulation(void) { return FSI_Problem; }
 
+inline bool CConfig::GetAD_FSI_Strategy(void) { return AD_FSI_Strategy; }
+
 inline unsigned short CConfig::GetKindInterpolation(void) { return Kind_Interpolation; }
 
 inline unsigned short CConfig::GetRelaxation_Method_FSI(void) { return Kind_BGS_RelaxMethod; }
@@ -1216,6 +1282,10 @@ inline su2double CConfig::GetResidual_FEM_UTOL(void) { return Res_FEM_UTOL; }
 inline su2double CConfig::GetResidual_FEM_RTOL(void) { return Res_FEM_RTOL; }
 
 inline su2double CConfig::GetResidual_FEM_ETOL(void) { return Res_FEM_ETOL; }
+
+inline su2double CConfig::GetCriteria_FEM_ADJ(void) { return Res_FEM_ADJ; }
+
+inline unsigned short CConfig::GetDynamic_LoadTransfer(void) { return Dynamic_LoadTransfer; }
 
 inline unsigned short CConfig::GetDirectDiff(){ return DirectDiff;}
 

@@ -259,7 +259,14 @@ int main(int argc, char *argv[]) {
           (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS))
         geometry_container[iZone][MESH_0]->ComputeWall_Distance(config_container[iZone]);
     }
-    
+
+    if (config_container[iZone]->GetKind_GridMovement(iZone) == FLUID_STRUCTURE_STATIC){
+      if (rank == MASTER_NODE)
+        cout << "Setting moving mesh structure for static FSI problems." << endl;
+        /*--- Instantiate the container for the grid movement structure ---*/
+        grid_movement[iZone]    = new CElasticityMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
+    }
+
     
   }
   
@@ -293,10 +300,10 @@ int main(int argc, char *argv[]) {
     ExtIter = config_container[ZONE_0]->GetUnst_RestartIter();
   
   /*--- Check for a dynamic restart (structural analysis). Update ExtIter if necessary. ---*/
-  if (config_container[ZONE_0]->GetKind_Solver() == FEM_ELASTICITY
-      && config_container[ZONE_0]->GetWrt_Dynamic() && config_container[ZONE_0]->GetRestart())
-    ExtIter = config_container[ZONE_0]->GetDyn_RestartIter();
-  
+  if ((config_container[ZONE_0]->GetKind_Solver() == FEM_ELASTICITY || config_container[ZONE_0]->GetKind_Solver() == ADJ_ELASTICITY)
+		  && config_container[ZONE_0]->GetWrt_Dynamic() && config_container[ZONE_0]->GetRestart())
+	  	  ExtIter = config_container[ZONE_0]->GetDyn_RestartIter();
+
   /*--- Initiate value at each interface for the mixing plane ---*/
   if(config_container[ZONE_0]->GetBoolMixingPlane())
     for (iZone = 0; iZone < nZone; iZone++)
@@ -407,11 +414,15 @@ int main(int argc, char *argv[]) {
         StopCalc = integration_container[ZONE_0][WAVE_SOL]->GetConvergence(); break;
       case HEAT_EQUATION:
         StopCalc = integration_container[ZONE_0][HEAT_SOL]->GetConvergence(); break;
-      case FEM_ELASTICITY:
-        StopCalc = integration_container[ZONE_0][FEA_SOL]->GetConvergence(); break;
+	    case FEM_ELASTICITY:
+	      StopCalc = integration_container[ZONE_0][FEA_SOL]->GetConvergence(); break;
+	    case ADJ_ELASTICITY:
+	      StopCalc = integration_container[ZONE_0][ADJFEA_SOL]->GetConvergence(); break;
       case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS:
       case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
         StopCalc = integration_container[ZONE_0][ADJFLOW_SOL]->GetConvergence(); break;
+      case DISC_ADJ_FEM:
+        StopCalc = integration_container[ZONE_0][ADJFEA_SOL]->GetConvergence(); break;
     }
     
     /*--- Solution output. Determine whether a solution needs to be written

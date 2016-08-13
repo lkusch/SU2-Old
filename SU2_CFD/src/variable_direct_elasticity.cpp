@@ -60,99 +60,118 @@ CFEM_ElasVariable::CFEM_ElasVariable(void) : CVariable() {
   
   Prestretch              = NULL;   // Prestretch geometry
   
+  Reference_Geometry    = NULL;   // Reference geometry for optimization purposes
+  Solution_Adj      = NULL;   // Adjoint solution for structural problems (temporary)
+  Gradient_Adj      = NULL;   // Adjoint gradient dS/dv for structural problems (temporary)
+
+
 }
 
 CFEM_ElasVariable::CFEM_ElasVariable(su2double *val_fea, unsigned short val_nDim, unsigned short val_nvar, CConfig *config) : CVariable(val_nDim, val_nvar, config) {
-  
-  unsigned short iVar;
-  bool nonlinear_analysis = (config->GetGeometricConditions() == LARGE_DEFORMATIONS);	// Nonlinear analysis.
-  bool body_forces = config->GetDeadLoad();	// Body forces (dead loads).
-  bool incremental_load = config->GetIncrementalLoad();
-  bool gen_alpha = (config->GetKind_TimeIntScheme_FEA() == GENERALIZED_ALPHA);	// Generalized alpha method requires residual at previous time step.
-  bool prestretch_fem = config->GetPrestretch();    // Structure is prestretched
-  
-  VonMises_Stress = 0.0;
-  
-  dynamic_analysis = (config->GetDynamic_Analysis() == DYNAMIC);
-  fsi_analysis = config->GetFSI_Simulation();
-  
-  if (nDim == 2) Stress = new su2double [3];
-  else if (nDim == 3) Stress = new su2double [6];
-  
-  /*--- Initialization of variables ---*/
-  for (iVar = 0; iVar < nVar; iVar++) {
-    Solution[iVar] = val_fea[iVar];
-  }
-  
-  if (dynamic_analysis){
-    Solution_time_n			=  new su2double [nVar];
-    Solution_Vel 			=  new su2double [nVar];
-    Solution_Vel_time_n		=  new su2double [nVar];
-    Solution_Accel 			=  new su2double [nVar];
-    Solution_Accel_time_n	=  new su2double [nVar];
-    for (iVar = 0; iVar < nVar; iVar++){
-      Solution_time_n[iVar] 		= val_fea[iVar];
-      Solution_Vel[iVar] 			= val_fea[iVar+nVar];
-      Solution_Vel_time_n[iVar] 	= val_fea[iVar+nVar];
-      Solution_Accel[iVar] 		= val_fea[iVar+2*nVar];
-      Solution_Accel_time_n[iVar] = val_fea[iVar+2*nVar];
-    }
-  }
-  else {
-    Solution_time_n			=  NULL;
-    Solution_Vel 			=  NULL;
-    Solution_Vel_time_n		=  NULL;
-    Solution_Accel 			=  NULL;
-    Solution_Accel_time_n	=  NULL;
-  }
-  
-  if (fsi_analysis) {
-    FlowTraction 			=  new su2double [nVar];
-    Solution_Pred 			=  new su2double [nVar];
-    Solution_Pred_Old 		=  new su2double [nVar];
-    for (iVar = 0; iVar < nVar; iVar++){
-      FlowTraction[iVar] = 0.0;
-      Solution_Pred[iVar] = val_fea[iVar];
-      Solution_Pred_Old[iVar] = val_fea[iVar];
-    }
-  }
-  else {
-    FlowTraction 			=  NULL;
-    Solution_Pred 			=  NULL;
-    Solution_Pred_Old 		=  NULL;
-  }
+
+	unsigned short iVar;
+	bool nonlinear_analysis = (config->GetGeometricConditions() == LARGE_DEFORMATIONS);	// Nonlinear analysis.
+	bool body_forces = config->GetDeadLoad();	// Body forces (dead loads).
+	bool incremental_load = config->GetIncrementalLoad();
+	bool gen_alpha = (config->GetKind_TimeIntScheme_FEA() == GENERALIZED_ALPHA);	// Generalized alpha method requires residual at previous time step.
+	bool prestretch_fem = config->GetPrestretch();    // Structure is prestretched
+
+	bool refgeom = config->GetRefGeom();				// Reference geometry needs to be stored
+//	bool structural_adj = config->GetStructural_Adj();	// A structural adjoint simulation is to be run (temporary)
+
+	VonMises_Stress = 0.0;
+
+	dynamic_analysis = (config->GetDynamic_Analysis() == DYNAMIC);
+	fsi_analysis = config->GetFSI_Simulation();
+
+	if (nDim == 2) Stress = new su2double [3];
+	else if (nDim == 3) Stress = new su2double [6];
+
+	/*--- Initialization of variables ---*/
+	for (iVar = 0; iVar < nVar; iVar++) {
+		Solution[iVar] = val_fea[iVar];
+	}
+
+	if (dynamic_analysis){
+		Solution_time_n			=  new su2double [nVar];
+		Solution_Vel 			=  new su2double [nVar];
+		Solution_Vel_time_n		=  new su2double [nVar];
+		Solution_Accel 			=  new su2double [nVar];
+		Solution_Accel_time_n	=  new su2double [nVar];
+		for (iVar = 0; iVar < nVar; iVar++){
+			Solution_time_n[iVar] 		= val_fea[iVar];
+			Solution_Vel[iVar] 			= val_fea[iVar+nVar];
+			Solution_Vel_time_n[iVar] 	= val_fea[iVar+nVar];
+			Solution_Accel[iVar] 		= val_fea[iVar+2*nVar];
+			Solution_Accel_time_n[iVar] = val_fea[iVar+2*nVar];
+		}
+	}
+	else {
+		Solution_time_n			=  NULL;
+		Solution_Vel 			=  NULL;
+		Solution_Vel_time_n		=  NULL;
+		Solution_Accel 			=  NULL;
+		Solution_Accel_time_n	=  NULL;
+	}
+
+	if (fsi_analysis) {
+		FlowTraction 			=  new su2double [nVar];
+		Solution_Pred 			=  new su2double [nVar];
+		Solution_Pred_Old 		=  new su2double [nVar];
+		for (iVar = 0; iVar < nVar; iVar++){
+			FlowTraction[iVar] = 0.0;
+			Solution_Pred[iVar] = val_fea[iVar];
+			Solution_Pred_Old[iVar] = val_fea[iVar];
+		}
+	}
+	else {
+		FlowTraction 			=  NULL;
+		Solution_Pred 			=  NULL;
+		Solution_Pred_Old 		=  NULL;
+	}
   FlowTraction_n = NULL;
-  
-  /*--- If we are going to use incremental analysis, we need a way to store the old solution ---*/
-  if (incremental_load && nonlinear_analysis){
-    Solution_Old 			=  new su2double [nVar];
-  }
-  
-  /*--- If we are going to use a generalized alpha integration method, we need a way to store the old residuals ---*/
+
+	/*--- If we are going to use incremental analysis, we need a way to store the old solution ---*/
+	if (incremental_load && nonlinear_analysis){
+		Solution_Old 			=  new su2double [nVar];
+	}
+
+	/*--- If we are going to use a generalized alpha integration method, we need a way to store the old residuals ---*/
   Residual_Ext_Surf_n = NULL;
   FlowTraction_n = NULL;
-  if (gen_alpha){
-    Residual_Ext_Surf_n		= new su2double [nVar];
-    
-    if (fsi_analysis) FlowTraction_n = new su2double [nVar];
-    
-  }
-  
-  //	if (nonlinear_analysis) Residual_Int = new su2double [nVar];	else Residual_Int = NULL;
+	if (gen_alpha){
+		Residual_Ext_Surf_n		= new su2double [nVar];
+
+		if (fsi_analysis) FlowTraction_n = new su2double [nVar];
+
+	}
+
+//	if (nonlinear_analysis) Residual_Int = new su2double [nVar];	else Residual_Int = NULL;
   Residual_Ext_Body = NULL;
-  if (body_forces) Residual_Ext_Body = new su2double [nVar];
-  
-  Residual_Ext_Surf = new su2double [nVar];
-  
-  for (iVar = 0; iVar < nVar; iVar++){
-    Residual_Ext_Surf[iVar] = 0.0;
-    if (body_forces) Residual_Ext_Body[iVar] = 0.0;
-  }
-  
+	if (body_forces) Residual_Ext_Body = new su2double [nVar];
+
+	Residual_Ext_Surf = new su2double [nVar];
+
+	for (iVar = 0; iVar < nVar; iVar++){
+		Residual_Ext_Surf[iVar] = 0.0;
+		if (body_forces) Residual_Ext_Body[iVar] = 0.0;
+	}
+
+	Reference_Geometry = NULL;
+	if (refgeom)	Reference_Geometry = new su2double [nVar];
+
+//	if (structural_adj) 	{
+//		Solution_Adj = new su2double[nVar];
+//		Gradient_Adj = new su2double[nVar];
+//	}
+//	else{
+		Solution_Adj = NULL;
+		Gradient_Adj = NULL;
+//	}
+
   Prestretch = NULL;
   if (prestretch_fem)  Prestretch = new su2double [nVar];
-  
-  
+
 }
 
 CFEM_ElasVariable::~CFEM_ElasVariable(void) {
@@ -177,6 +196,10 @@ CFEM_ElasVariable::~CFEM_ElasVariable(void) {
   if (Solution_Pred 			!= NULL) delete [] Solution_Pred;
   if (Solution_Pred_Old 		!= NULL) delete [] Solution_Pred_Old;
   
+  if (Reference_Geometry    != NULL) delete [] Reference_Geometry;
+  if (Solution_Adj      != NULL) delete [] Solution_Adj;
+  if (Gradient_Adj      != NULL) delete [] Gradient_Adj;
+
   if (Prestretch            != NULL) delete [] Prestretch;
   
 }

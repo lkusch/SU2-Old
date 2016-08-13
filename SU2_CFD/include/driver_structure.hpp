@@ -632,3 +632,593 @@ public:
 			 CTransfer ***transfer_container, unsigned short zoneFlow, unsigned short zoneStruct);
 
 };
+
+/*!
+ * \class CFSIDriver
+ * \brief Overload: class for driving a steady-state BGS iteration for a fluid-structure interaction problem in multiple zones.
+ * \author R. Sanchez.
+ * \version 4.2.0 "Cardinal"
+ */
+class CFSIStatDriver : public CFSIDriver {
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_nZone - Total number of zones.
+   */
+  CFSIStatDriver(CIteration **iteration_container,
+             CSolver ****solver_container,
+             CGeometry ***geometry_container,
+             CIntegration ***integration_container,
+             CNumerics *****numerics_container,
+             CInterpolator ***interpolator_container,
+             CTransfer ***transfer_container,
+             CConfig **config,
+             unsigned short val_nZone,
+             unsigned short val_nDim);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~CFSIStatDriver(void);
+
+  /*!
+   * \brief Run a Block Gauss-Seidel iteration of the FSI problem.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+
+  void Run(CIteration **iteration_container,
+           COutput *output,
+           CIntegration ***integration_container,
+           CGeometry ***geometry_container,
+           CSolver ****solver_container,
+           CNumerics *****numerics_container,
+           CConfig **config_container,
+           CSurfaceMovement **surface_movement,
+           CVolumetricMovement **grid_movement,
+           CFreeFormDefBox*** FFDBox,
+           CInterpolator ***interpolator_container,
+           CTransfer ***transfer_container);
+
+};
+
+/*!
+ * \class CDiscAdjBlockFSIDriver
+ * \brief Class for driving a BLOCK discrete adjoint FSI iteration.
+ * \author R. Sanchez.
+ * \version 4.2.0 "Cardinal"
+ */
+class CDiscAdjFSIStatDriver : public CFSIStatDriver {
+
+  CIteration** direct_iteration;
+  unsigned short RecordingState;
+  unsigned short CurrentRecording;          /*!< \brief Stores the current status of the recording. */
+  unsigned short Kind_Objective_Function;   /*!< \brief Stores the kind of objective function of the recording. */
+
+  /*--- The first three are maintained so the values are the same as in the single-physics zone ---*/
+  enum RECORDING{
+    NONE = 0,               /*!< \brief Indicates that nothing is recorded. */
+    FLOW_VARIABLES = 1,     /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the flow problem with
+                                        respect to the conservative flow variables. */
+    GEOMETRY_VARIABLES = 2, /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the flow problem with respect
+                                        to the mesh geometry variables. */
+    FEM_VARIABLES = 3,      /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the structural problem with respect
+                                        to the structural displacements. */
+    ALL_VARIABLES = 4,      /*!< \brief All variables (monolithic solution) */
+    FLOW_CROSS_TERM = 5,    /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the structural problem
+                                        with respect to the flow variables. */
+    FEM_CROSS_TERM = 6,      /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the mesh problem
+                                        with respect to the structural displacements. */
+    GEOMETRY_CROSS_TERM = 7   /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the structural problem
+                                        with respect to the geometry variables. */
+  };
+
+  enum OF_KIND{
+    NO_OBJECTIVE_FUNCTION = 0,               /*!< \brief Indicates that there is no objective function. */
+    FLOW_OBJECTIVE_FUNCTION = 1,            /*!< \brief Indicates that the objective function is only flow-dependent. */
+    FEM_OBJECTIVE_FUNCTION = 2              /*!< \brief Indicates that the objective function is only structural-dependent. */
+  };
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_nZone - Total number of zones.
+   */
+  CDiscAdjFSIStatDriver(CIteration **iteration_container,
+                            CSolver ****solver_container,
+                            CGeometry ***geometry_container,
+                            CIntegration ***integration_container,
+                            CNumerics *****numerics_container,
+                            CInterpolator ***interpolator_container,
+                            CTransfer ***transfer_container,
+                            CConfig **config,
+                            unsigned short val_nZone,
+                            unsigned short val_nDim);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~CDiscAdjFSIStatDriver(void);
+
+  /*!
+   * \brief Run a Discrete Adjoint iteration for the FSI problem.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+
+  void Run(CIteration **iteration_container,
+           COutput *output,
+           CIntegration ***integration_container,
+           CGeometry ***geometry_container,
+           CSolver ****solver_container,
+           CNumerics *****numerics_container,
+           CConfig **config_container,
+           CSurfaceMovement **surface_movement,
+           CVolumetricMovement **grid_movement,
+           CFreeFormDefBox*** FFDBox,
+           CInterpolator ***interpolator_container,
+           CTransfer ***transfer_container);
+
+  /*!
+   * \brief Iterate the direct solver for recording.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+
+  void Iterate_Direct(CIteration **iteration_container, COutput *output, CIntegration ***integration_container,
+                                CGeometry ***geometry_container, CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                                CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox, CInterpolator ***interpolator_container,
+                                CTransfer ***transfer_container, unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT, unsigned short kind_recording);
+
+  /*!
+   * \brief Run a direct FSI iteration.
+   * \param[in] fluidZone - zone of the fluid solver.
+   * \param[in] structuralZone - zone of the structural solver.
+   */
+  void FSI_Iteration_Direct(CIteration **iteration_container, CTransfer ***transfer_container, COutput *output,
+      CIntegration ***integration_container, CGeometry ***geometry_container, CSolver ****solver_container,
+      CNumerics *****numerics_container, CConfig **config_container, CInterpolator ***interpolator_container,
+      CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox,
+      unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT);
+
+  /*!
+   * \brief Run a direct flow iteration.
+   * \param[in] fluidZone - zone of the fluid solver.
+   * \param[in] structuralZone - zone of the structural solver.
+   */
+  void Fluid_Iteration_Direct(CIteration **iteration_container, CTransfer ***transfer_container, COutput *output,
+      CIntegration ***integration_container, CGeometry ***geometry_container, CSolver ****solver_container,
+      CNumerics *****numerics_container, CConfig **config_container, CInterpolator ***interpolator_container,
+      CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox,
+      unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT);
+
+  /*!
+   * \brief Run a direct structural iteration.
+   * \param[in] fluidZone - zone of the fluid solver.
+   * \param[in] structuralZone - zone of the structural solver.
+   */
+  void Structural_Iteration_Direct(CIteration **iteration_container, CTransfer ***transfer_container, COutput *output,
+      CIntegration ***integration_container, CGeometry ***geometry_container, CSolver ****solver_container,
+      CNumerics *****numerics_container, CConfig **config_container, CInterpolator ***interpolator_container,
+      CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox,
+      unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT);
+
+  /*!
+   * \brief Run a direct mesh deformation.
+   * \param[in] fluidZone - zone of the fluid solver.
+   * \param[in] structuralZone - zone of the structural solver.
+   */
+  void Mesh_Deformation_Direct(CIteration **iteration_container, CTransfer ***transfer_container, COutput *output,
+      CIntegration ***integration_container, CGeometry ***geometry_container, CSolver ****solver_container,
+      CNumerics *****numerics_container, CConfig **config_container, CInterpolator ***interpolator_container,
+      CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox,
+      unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT);
+
+
+
+
+  /*!
+   * \brief Set the recording for a Discrete Adjoint iteration for the FSI problem.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+
+  void SetRecording(CIteration **iteration_container,
+                    COutput *output,
+                    CIntegration ***integration_container,
+                    CGeometry ***geometry_container,
+                    CSolver ****solver_container,
+                    CNumerics *****numerics_container,
+                    CConfig **config_container,
+                    CSurfaceMovement **surface_movement,
+                    CVolumetricMovement **grid_movement,
+                    CFreeFormDefBox*** FFDBox,
+                    CInterpolator ***interpolator_container,
+                    CTransfer ***transfer_container,
+                    unsigned short ZONE_FLOW,
+                    unsigned short ZONE_STRUCT,
+                    unsigned short kind_recording);
+
+  /*!
+   * \brief Load the restarts for fluid, structure and mesh.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void Preprocess(CIteration **iteration_container,
+                    COutput *output,
+                    CIntegration ***integration_container,
+                    CGeometry ***geometry_container,
+                    CSolver ****solver_container,
+                    CNumerics *****numerics_container,
+                    CConfig **config_container,
+                    CSurfaceMovement **surface_movement,
+                    CVolumetricMovement **grid_movement,
+                    CFreeFormDefBox*** FFDBox,
+                    CInterpolator ***interpolator_container,
+                    CTransfer ***transfer_container,
+                    unsigned short ZONE_FLOW,
+                    unsigned short ZONE_STRUCT,
+                    unsigned short kind_recording);
+
+  /*!
+   * \brief Iterate a certain block for adjoint FSI - may be the whole set of variables or independent and subiterate
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void Iterate_Block(CIteration **iteration_container,
+                       COutput *output,
+                       CIntegration ***integration_container,
+                       CGeometry ***geometry_container,
+                       CSolver ****solver_container,
+                       CNumerics *****numerics_container,
+                       CConfig **config_container,
+                       CSurfaceMovement **surface_movement,
+                       CVolumetricMovement **grid_movement,
+                       CFreeFormDefBox*** FFDBox,
+                       CInterpolator ***interpolator_container,
+                       CTransfer ***transfer_container,
+                       unsigned short ZONE_FLOW,
+                       unsigned short ZONE_STRUCT,
+                       unsigned short kind_recording);
+
+  /*!
+   * \brief Iterate a block for adjoint FSI with flow Objective Function
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void Iterate_Block_FlowOF(CIteration **iteration_container,
+                               COutput *output,
+                               CIntegration ***integration_container,
+                               CGeometry ***geometry_container,
+                               CSolver ****solver_container,
+                               CNumerics *****numerics_container,
+                               CConfig **config_container,
+                               CSurfaceMovement **surface_movement,
+                               CVolumetricMovement **grid_movement,
+                               CFreeFormDefBox*** FFDBox,
+                               CInterpolator ***interpolator_container,
+                               CTransfer ***transfer_container,
+                               unsigned short ZONE_FLOW,
+                               unsigned short ZONE_STRUCT,
+                               unsigned short kind_recording);
+
+  /*!
+   * \brief Iterate a block for adjoint FSI with structural Objective Function
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void Iterate_Block_StructuralOF(CIteration **iteration_container,
+                                      COutput *output,
+                                      CIntegration ***integration_container,
+                                      CGeometry ***geometry_container,
+                                      CSolver ****solver_container,
+                                      CNumerics *****numerics_container,
+                                      CConfig **config_container,
+                                      CSurfaceMovement **surface_movement,
+                                      CVolumetricMovement **grid_movement,
+                                      CFreeFormDefBox*** FFDBox,
+                                      CInterpolator ***interpolator_container,
+                                      CTransfer ***transfer_container,
+                                      unsigned short ZONE_FLOW,
+                                      unsigned short ZONE_STRUCT,
+                                      unsigned short kind_recording);
+
+  /*!
+   * \brief Initialize the adjoint - set the objective funcition and the output of the adjoint iteration
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config_container - Definition of the particular problem.
+   */
+  void InitializeAdjoint(CIteration **iteration_container,
+                            CGeometry ***geometry_container,
+                            CSolver ****solver_container,
+                            CConfig **config_container,
+                            unsigned short ZONE_FLOW,
+                            unsigned short ZONE_STRUCT,
+                            unsigned short kind_recording);
+
+  /*!
+   * \brief Extract the adjoint solution variables
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config_container - Definition of the particular problem.
+   */
+  void ExtractAdjoint(CIteration **iteration_container,
+                         CGeometry ***geometry_container,
+                         CSolver ****solver_container,
+                         CConfig **config_container,
+                         unsigned short ZONE_FLOW,
+                         unsigned short ZONE_STRUCT,
+                         unsigned short kind_recording);
+
+  /*!
+   * \brief Check the convergence of the problem
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config_container - Definition of the particular problem.
+   */
+  bool CheckConvergence(CIntegration ***integration_container,
+                          CGeometry ***geometry_container,
+                          CSolver ****solver_container,
+                          CConfig **config_container,
+                          unsigned long IntIter,
+                          unsigned short ZONE_FLOW,
+                          unsigned short ZONE_STRUCT,
+                          unsigned short kind_recording);
+
+  /*!
+   * \brief Check the convergence of BGS subiteration process
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] numerics_container -  Description of the numerical method (the way in which the equations are solved).
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config_container - Definition of the particular problem.
+   */
+  bool BGSConvergence(CIntegration ***integration_container,
+                         CGeometry ***geometry_container,
+                         CSolver ****solver_container,
+                         CNumerics *****numerics_container,
+                         CConfig **config_container,
+                         unsigned long IntIter,
+                         unsigned short ZONE_FLOW,
+                         unsigned short ZONE_STRUCT);
+
+
+  /*!
+   * \brief Output the convergence history
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config_container - Definition of the particular problem.
+   */
+  void ConvergenceHistory(CIntegration ***integration_container,
+                             CGeometry ***geometry_container,
+                             CSolver ****solver_container,
+                             CConfig **config_container,
+                             COutput *output,
+                             unsigned long IntIter,
+                             unsigned long nIntIter,
+                             unsigned short ZONE_FLOW,
+                             unsigned short ZONE_STRUCT,
+                             unsigned short kind_recording);
+
+  /*!
+   * \brief Load the restarts for fluid, structure and mesh.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] ZONE_FLOW - Zone of the flow solver
+   * \param[in] ZONE_STRUCT - Zone of the structural solver
+   * \param[in] kind_recording - Kind of recording we are doing
+   */
+  void PrintDirect_Residuals(CSolver ****solver_container,
+                                CConfig **config_container,
+                                unsigned short ZONE_FLOW,
+                                unsigned short ZONE_STRUCT,
+                                unsigned short kind_recording);
+
+  /*!
+   * \brief Restart the variables to the converged solution.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void PrepareRecording(CIteration **iteration_container,
+                    COutput *output,
+                    CIntegration ***integration_container,
+                    CGeometry ***geometry_container,
+                    CSolver ****solver_container,
+                    CNumerics *****numerics_container,
+                    CConfig **config_container,
+                    CSurfaceMovement **surface_movement,
+                    CVolumetricMovement **grid_movement,
+                    CFreeFormDefBox*** FFDBox,
+                    CInterpolator ***interpolator_container,
+                    CTransfer ***transfer_container,
+                    unsigned short ZONE_FLOW,
+                    unsigned short ZONE_STRUCT,
+                    unsigned short kind_recording);
+
+  /*!
+   * \brief Register the input variables for adjoint FSI problems: flow conservative, fluid mesh position and structural displacements.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void RegisterInput(CIteration **iteration_container,
+                    COutput *output,
+                    CIntegration ***integration_container,
+                    CGeometry ***geometry_container,
+                    CSolver ****solver_container,
+                    CNumerics *****numerics_container,
+                    CConfig **config_container,
+                    CSurfaceMovement **surface_movement,
+                    CVolumetricMovement **grid_movement,
+                    CFreeFormDefBox*** FFDBox,
+                    CInterpolator ***interpolator_container,
+                    CTransfer ***transfer_container,
+                    unsigned short ZONE_FLOW,
+                    unsigned short ZONE_STRUCT,
+                    unsigned short kind_recording);
+
+  /*!
+   * \brief Register the input variables for adjoint FSI problems: flow conservative, fluid mesh position and structural displacements.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void SetDependencies(CIteration **iteration_container,
+                    COutput *output,
+                    CIntegration ***integration_container,
+                    CGeometry ***geometry_container,
+                    CSolver ****solver_container,
+                    CNumerics *****numerics_container,
+                    CConfig **config_container,
+                    CSurfaceMovement **surface_movement,
+                    CVolumetricMovement **grid_movement,
+                    CFreeFormDefBox*** FFDBox,
+                    CInterpolator ***interpolator_container,
+                    CTransfer ***transfer_container,
+                    unsigned short ZONE_FLOW,
+                    unsigned short ZONE_STRUCT,
+                    unsigned short kind_recording);
+
+  /*!
+   * \brief Restart the output variables for adjoint FSI problems: flow conservative, fluid mesh position and structural displacements.
+   * \param[in] iteration_container - Container vector with all the iteration methods.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void RegisterOutput(CIteration **iteration_container,
+                    COutput *output,
+                    CIntegration ***integration_container,
+                    CGeometry ***geometry_container,
+                    CSolver ****solver_container,
+                    CNumerics *****numerics_container,
+                    CConfig **config_container,
+                    CSurfaceMovement **surface_movement,
+                    CVolumetricMovement **grid_movement,
+                    CFreeFormDefBox*** FFDBox,
+                    CInterpolator ***interpolator_container,
+                    CTransfer ***transfer_container,
+                    unsigned short ZONE_FLOW,
+                    unsigned short ZONE_STRUCT,
+                    unsigned short kind_recording);
+
+
+};
+

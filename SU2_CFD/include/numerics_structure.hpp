@@ -1461,6 +1461,45 @@ public:
   virtual void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
 
   /*!
+   * \brief A virtual member to compute the eigenvalues and eigenvectors of b
+   * \param[in] element_container - Element structure for the particular element integrated.
+   */
+  virtual void Compute_Eigenproblem(CElement *element_container, CConfig *config);
+
+  /*!
+   * \brief A virtual member to add the Maxwell stress contribution
+   * \param[in] element_container - Element structure for the particular element integrated.
+   */
+  virtual void Add_MaxwellStress(CElement *element_container, CConfig *config);
+
+  /*!
+   * \brief A virtual member to set the electric field
+   * \param[in] EField_DV - New electric field computed by adjoint methods.
+   */
+  virtual void Set_ElectricField(unsigned short i_DV, su2double val_EField);
+
+  /*!
+   * \brief A virtual member to set the young modulus
+   * \param[in] val_Young - Value of the Young Modulus.
+   */
+  virtual void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
+
+  /*!
+   * \brief A virtual member to set the material properties
+   * \param[in] val_E - Value of the Young Modulus.
+   * \param[in] val_Nu - Value of the Poisson's ratio.
+   */
+  virtual void SetMaterial_Properties(su2double val_E, su2double val_Nu);
+
+  /*!
+   * \brief A virtual member to set the material properties
+   * \param[in] pseudo_static - Controls whether we consider inertial effects or not
+   * \param[in] val_Rho - Value of the density (inertial effects).
+   * \param[in] val_Rho_DL - Value of the density (dead load effects).
+   */
+  virtual void SetMaterial_Density(su2double val_Rho, su2double val_Rho_DL);
+
+  /*!
    * \brief A virtual member to compute the mass matrix
    * \param[in] element_container - Element structure for the particular element integrated.
    */
@@ -3933,7 +3972,8 @@ protected:
 
 	su2double E;				/*!< \brief Young's modulus of elasticity. */
 	su2double Nu;			/*!< \brief Poisson's ratio. */
-	su2double Rho_s;		/*!< \brief Structural density. */
+	su2double Rho_s;		    /*!< \brief Structural density. */
+  su2double Rho_s_DL;     /*!< \brief Structural density (for dead loads). */
 	su2double Mu;			/*!< \brief Lame's coeficient. */
 	su2double Lambda;		/*!< \brief Lame's coeficient. */
 	su2double Kappa;		/*!< \brief Compressibility constant. */
@@ -3964,9 +4004,15 @@ public:
 	 */
 	virtual ~CFEM_Elasticity(void);
 
+  void SetMaterial_Properties(su2double val_E, su2double val_Nu);
+
+  void SetMaterial_Density(su2double val_Rho, su2double val_Rho_DL);
+
 	void Compute_Mass_Matrix(CElement *element_container, CConfig *config);
 
 	void Compute_Dead_Load(CElement *element_container, CConfig *config);
+
+  void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
 
 	virtual void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
@@ -3981,6 +4027,12 @@ public:
 	virtual void Compute_Constitutive_Matrix(CElement *element_container, CConfig *config);
   
 	virtual void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
+
+	virtual void Compute_Eigenproblem(CElement *element_container, CConfig *config);
+
+	virtual void Add_MaxwellStress(CElement *element_container, CConfig *config);
+
+  virtual void Set_ElectricField(unsigned short i_DV, su2double val_EField);
 
 };
 
@@ -4013,15 +4065,37 @@ public:
 	void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
 	void Compute_Constitutive_Matrix(void);
-  using CNumerics::Compute_Constitutive_Matrix;
+  using CNumerics::Compute_Constitutive_Matrix; //??
 
 	void Compute_Averaged_NodalStress(CElement *element_container, CConfig *config);
 
-//	virtual void Compute_Stress_Tensor(void);
+};
 
-//	virtual void Compute_MeanDilatation_Term(CElement *element_container, CConfig *config);
+/*!
+ * \class CFEM_LinearElasticity_Adj
+ * \brief Class for computing the stiffness matrix of a linear, elastic problem.
+ * \ingroup FEM_Discr
+ * \author R.Sanchez
+ * \version 4.0.0 "Cardinal"
+ */
+class CFEM_LinearElasticity_Adj : public CFEM_LinearElasticity {
 
-//	virtual void Compute_NodalStress_Term(CElement *element_container, CConfig *config);
+public:
+
+	/*!
+	 * \brief Constructor of the class.
+	 * \param[in] val_nDim - Number of dimensions of the problem.
+	 * \param[in] val_nVar - Number of variables of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_LinearElasticity_Adj(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_LinearElasticity_Adj(void);
+
+	void Compute_Constitutive_Matrix(void);
 
 };
 
@@ -4041,12 +4115,36 @@ protected:
 	su2double **currentCoord;	 	/*!< \brief Current coordinates. */
 	su2double **Stress_Tensor;		/*!< \brief Cauchy stress tensor */
 
+	su2double **FmT_Mat;	 			/*!< \brief Deformation gradient inverse and transpose. */
+
 	su2double **KAux_P_ab;			/*!< \brief Auxiliar matrix for the pressure term */
 	su2double *KAux_t_a;			/*!< \brief Auxiliar matrix for the pressure term */
 
 	su2double J_F;		 			/*!< \brief Jacobian of the transformation (determinant of F) */
 
 	su2double f33;		 			/*!< \brief Plane stress term for non-linear 2D plane stress analysis */
+
+	bool nearly_incompressible;		/*!< \brief Boolean to consider nearly_incompressible effects */
+	bool incompressible;			/*!< \brief Boolean to consider Hu-Washizu incompressible effects */
+
+	su2double **F_Mat_Iso;	 			/*!< \brief Isocoric component of the deformation gradient. */
+	su2double **b_Mat_Iso;	 			/*!< \brief Isocoric component of the left Cauchy-Green tensor. */
+
+	su2double C10, D1;					/*!< \brief C10 = Mu/2. D1 = Kappa/2. */
+	su2double J_F_Iso;					/*!< \brief J_F_Iso: det(F)^-1/3. */
+
+	su2double ****cijkl;			/*!< \brief Constitutive tensor i,j,k,l (defined only for incompressibility - near inc.). */
+
+	bool maxwell_stress;			/*!< \brief Consider the effects of the dielectric loads */
+
+	su2double *EField_Ref_Unit,			/*!< \brief Electric Field, unitary, in the reference configuration. */
+	*EField_Ref_Mod;					      /*!< \brief Electric Field, modulus, in the reference configuration. */
+	su2double *EField_Curr_Unit;		/*!< \brief Auxiliary vector for the unitary Electric Field in the current configuration. */
+	unsigned short nElectric_Field,
+	nDim_Electric_Field;
+
+	su2double ke_DE;					/*!< \brief Electric Constant for Dielectric Elastomers. */
+
 
 public:
 
@@ -4070,6 +4168,26 @@ public:
 	void Compute_NodalStress_Term(CElement *element_container, CConfig *config);
 
 	void Compute_Averaged_NodalStress(CElement *element_container, CConfig *config);
+
+	void Compute_Eigenproblem(CElement *element_container, CConfig *config);
+
+	void Add_MaxwellStress(CElement *element_container, CConfig *config);
+
+	void Compute_FmT_Mat(void);
+
+	void Compute_Isochoric_F_b(void);
+
+	void Assign_cijkl_D_Mat(void);
+
+  void Set_ElectricField(unsigned short i_DV, su2double val_EField);
+
+  void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
+
+  void SetMaterial_Properties(su2double val_E, su2double val_Nu);
+
+  void SetMaterial_Density(su2double val_Rho, su2double val_Rho_DL);
+
+	su2double deltaij(unsigned short iVar, unsigned short jVar);
 
 	virtual void Compute_Plane_Stress_Term(CElement *element_container, CConfig *config);
 
@@ -4146,6 +4264,193 @@ public:
 
 };
 
+/*!
+ * \class CFEM_IdealDE
+ * \brief Class for computing the constitutive and stress tensors for a nearly-incompressible ideal DE.
+ * \ingroup FEM_Discr
+ * \author R.Sanchez
+ * \version 4.0.0 "Cardinal"
+ */
+class CFEM_IdealDE : public CFEM_NonlinearElasticity {
+
+	su2double trbbar, Eg, Eg23, Ek, Pr;	/*!< \brief Variables of the model calculation. */
+
+public:
+
+	/*!
+	 * \brief Constructor of the class.
+	 * \param[in] val_nDim - Number of dimensions of the problem.
+	 * \param[in] val_nVar - Number of variables of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_IdealDE(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_IdealDE(void);
+
+	void Compute_Plane_Stress_Term(CElement *element_container, CConfig *config);
+
+	void Compute_Constitutive_Matrix(CElement *element_container, CConfig *config);
+
+	void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
+
+};
+
+/*!
+ * \class CFEM_NeoHookean_Comp
+ * \brief Class for computing the constitutive and stress tensors for a Knowles stored-energy function, nearly incompressible.
+ * \ingroup FEM_Discr
+ * \author R.Sanchez
+ * \version 4.0.0 "Cardinal"
+ */
+class CFEM_Knowles_NearInc : public CFEM_NonlinearElasticity {
+
+	su2double trbbar, term1, term2, Ek, Pr;	/*!< \brief Variables of the model calculation. */
+	su2double Bk, Nk;						/*!< \brief Parameters b and n of the model. */
+
+public:
+
+	/*!
+	 * \brief Constructor of the class.
+	 * \param[in] val_nDim - Number of dimensions of the problem.
+	 * \param[in] val_nVar - Number of variables of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_Knowles_NearInc(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_Knowles_NearInc(void);
+
+	void Compute_Plane_Stress_Term(CElement *element_container, CConfig *config);
+
+	void Compute_Constitutive_Matrix(CElement *element_container, CConfig *config);
+  using CNumerics::Compute_Constitutive_Matrix;
+
+	void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
+
+};
+
+/*!
+ * \class CFEM_DielectricElastomer
+ * \brief Class for computing the constitutive and stress tensors for a dielectric elastomer.
+ * \ingroup FEM_Discr
+ * \author R.Sanchez
+ * \version 4.0.0 "Cardinal"
+ */
+class CFEM_DielectricElastomer : public CFEM_NonlinearElasticity {
+
+public:
+
+	/*!
+	 * \brief Constructor of the class.
+	 * \param[in] val_nDim - Number of dimensions of the problem.
+	 * \param[in] val_nVar - Number of variables of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_DielectricElastomer(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_DielectricElastomer(void);
+
+	void Compute_Plane_Stress_Term(CElement *element_container, CConfig *config);
+
+	void Compute_Constitutive_Matrix(CElement *element_container, CConfig *config);
+  using CNumerics::Compute_Constitutive_Matrix;
+
+	void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
+
+};
+
+/*!
+ * \class CFEM_NeoHookean_Comp
+ * \brief Class for computing the constitutive and stress tensors for a neo-Hookean material model, compressible.
+ * \ingroup FEM_Discr
+ * \author R.Sanchez
+ * \version 4.0.0 "Cardinal"
+ */
+class CFEM_NeoHookean_Comp_Adj : public CFEM_NonlinearElasticity {
+
+	su2double Mu_E;			/*!< \brief Lame's coeficient, derived respect to E. */
+	su2double Lambda_E;		/*!< \brief Lame's coeficient, derived respect to E. */
+
+public:
+
+	/*!
+	 * \brief Constructor of the class.
+	 * \param[in] val_nDim - Number of dimensions of the problem.
+	 * \param[in] val_nVar - Number of variables of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_NeoHookean_Comp_Adj(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_NeoHookean_Comp_Adj(void);
+
+	void Compute_Plane_Stress_Term(CElement *element_container, CConfig *config);
+
+	void Compute_Constitutive_Matrix(CElement *element_container, CConfig *config);
+
+	void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
+
+  void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
+
+};
+
+
+/*!
+ * \class CFEM_DielectricElastomer_Adj
+ * \brief Class for computing the constitutive and stress tensors for a dielectric elastomer - Adjoint.
+ * \ingroup FEM_Discr
+ * \author R.Sanchez
+ * \version 4.0.0 "Cardinal"
+ */
+class CFEM_DielectricElastomer_Adj : public CFEM_NonlinearElasticity {
+
+	su2double *EField_Ref_Unit,			/*!< \brief Electric Field, unitary, in the reference configuration. */
+	*EField_Ref_Mod;					/*!< \brief Electric Field, modulus, in the reference configuration. */
+	su2double *EField_Curr_Unit;		/*!< \brief Auxiliary vector for the unitary Electric Field in the current configuration. */
+	unsigned short nElectric_Field,
+	nDim_Electric_Field;
+
+	su2double **FmT_Mat;	 			/*!< \brief Deformation gradient inverse and transpose. */
+
+	su2double ke_DE;					/*!< \brief Electric Constant for Dielectric Elastomers. */
+
+public:
+
+	/*!
+	 * \brief Constructor of the class.
+	 * \param[in] val_nDim - Number of dimensions of the problem.
+	 * \param[in] val_nVar - Number of variables of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_DielectricElastomer_Adj(unsigned short val_nDim, unsigned short val_nVar, CConfig *config);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_DielectricElastomer_Adj(void);
+
+	void Compute_Plane_Stress_Term(CElement *element_container, CConfig *config);
+
+	void Compute_Constitutive_Matrix(CElement *element_container, CConfig *config);
+  using CNumerics::Compute_Constitutive_Matrix;
+
+	void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
+
+  void Set_ElectricField(unsigned short i_DV, su2double val_EField);
+
+	void Compute_FmT_Mat(void);
+
+};
 
 
 /*!

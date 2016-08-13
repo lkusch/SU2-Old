@@ -86,8 +86,12 @@ protected:
 	*Residual,						/*!< \brief Auxiliary nVar vector. */
 	*Residual_i,					/*!< \brief Auxiliary nVar vector for storing the residual at point i. */
 	*Residual_j;					/*!< \brief Auxiliary nVar vector for storing the residual at point j. */
+	su2double *Residual_BGS,  /*!< \brief Vector with the mean residual for each variable for BGS subiterations. */
+	*Residual_Max_BGS;        /*!< \brief Vector with the maximal residual for each variable for BGS subiterations. */
   unsigned long *Point_Max; /*!< \brief Vector with the maximal residual for each variable. */
+  unsigned long *Point_Max_BGS; /*!< \brief Vector with the maximal residual for each variable. */
   su2double **Point_Max_Coord; /*!< \brief Vector with pointers to the coords of the maximal residual for each variable. */
+  su2double **Point_Max_Coord_BGS; /*!< \brief Vector with pointers to the coords of the maximal residual for each variable. */
 	su2double *Solution,		/*!< \brief Auxiliary nVar vector. */
 	*Solution_i,				/*!< \brief Auxiliary nVar vector for storing the solution at point i. */
 	*Solution_j;				/*!< \brief Auxiliary nVar vector for storing the solution at point j. */
@@ -167,6 +171,24 @@ public:
 	 * \param[in] val_iterlinsolver - Number of linear iterations.
 	 */
 	void SetResidual_RMS(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief Communicate the value of the max residual and RMS residual.
+	 * \param[in] val_iterlinsolver - Number of linear iterations.
+	 */
+	void SetResidual_BGS(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Set the value of the max residual and RMS residual.
+   * \param[in] val_iterlinsolver - Number of linear iterations.
+   */
+  virtual void ComputeResidual_BGS(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Store the BGS solution in the previous subiteration in the corresponding vector.
+   * \param[in] val_iterlinsolver - Number of linear iterations.
+   */
+  virtual void UpdateSolution_BGS(CGeometry *geometry, CConfig *config);
     
     /*!
 	 * \brief Set number of linear solver iterations.
@@ -194,6 +216,13 @@ public:
 	 * \param[in] config - Definition of the particular problem.
 	 */
 	virtual void Set_MPI_Solution_Pred_Old(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief Impose the send-receive boundary condition for reference geometry (adjoint FEM).
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	virtual void Set_MPI_RefGeom(CGeometry *geometry, CConfig *config);
     
   /*!
 	 * \brief Impose the send-receive boundary condition.
@@ -346,6 +375,50 @@ public:
 	su2double GetRes_Max(unsigned short val_var);
 
 	/*!
+	 * \brief Set the residual for BGS subiterations.
+	 * \param[in] val_var - Index of the variable.
+	 * \param[in] val_residual - Value of the residual to store in the position <i>val_var</i>.
+	 */
+	void SetRes_BGS(unsigned short val_var, su2double val_residual);
+
+	/*!
+	 * \brief Adds the residual for BGS subiterations.
+	 * \param[in] val_var - Index of the variable.
+	 * \param[in] val_residual - Value of the residual to store in the position <i>val_var</i>.
+	 */
+	void AddRes_BGS(unsigned short val_var, su2double val_residual);
+
+	/*!
+	 * \brief Get the residual for BGS subiterations.
+	 * \param[in] val_var - Index of the variable.
+	 * \return Value of the biggest residual for the variable in the position <i>val_var</i>.
+	 */
+	su2double GetRes_BGS(unsigned short val_var);
+
+	/*!
+	 * \brief Set the maximal residual for BGS subiterations.
+	 * \param[in] val_var - Index of the variable.
+	 * \param[in] val_residual - Value of the residual to store in the position <i>val_var</i>.
+	 */
+	void SetRes_Max_BGS(unsigned short val_var, su2double val_residual, unsigned long val_point);
+
+	/*!
+	 * \brief Adds the maximal residual for BGS subiterations.
+	 * \param[in] val_var - Index of the variable.
+	 * \param[in] val_residual - Value of the residual to store in the position <i>val_var</i>.
+	 * \param[in] val_point - Value of the point index for the max residual.
+	 * \param[in] val_coord - Location (x, y, z) of the max residual point.
+	 */
+	void AddRes_Max_BGS(unsigned short val_var, su2double val_residual, unsigned long val_point, su2double* val_coord);
+
+	/*!
+	 * \brief Get the maximal residual for BGS subiterations.
+	 * \param[in] val_var - Index of the variable.
+	 * \return Value of the biggest residual for the variable in the position <i>val_var</i>.
+	 */
+	su2double GetRes_Max_BGS(unsigned short val_var);
+
+	/*!
 	 * \brief Get the residual for FEM structural analysis.
 	 * \param[in] val_var - Index of the variable.
 	 * \return Value of the residual for the variable in the position <i>val_var</i>.
@@ -366,6 +439,20 @@ public:
    */
   su2double* GetPoint_Max_Coord(unsigned short val_var);
   
+  /*!
+   * \brief Get the maximal residual, this is useful for the convergence history.
+   * \param[in] val_var - Index of the variable.
+   * \return Value of the biggest residual for the variable in the position <i>val_var</i>.
+   */
+  unsigned long GetPoint_Max_BGS(unsigned short val_var);
+
+  /*!
+   * \brief Get the location of the maximal residual, this is useful for the convergence history.
+   * \param[in] val_var - Index of the variable.
+   * \return Pointer to the location (x, y, z) of the biggest residual for the variable <i>val_var</i>.
+   */
+  su2double* GetPoint_Max_Coord_BGS(unsigned short val_var);
+
 	/*!
 	 * \brief Set Value of the residual if there is a grid movement.
 	 * \param[in] geometry - Geometrical definition of the problem.
@@ -617,6 +704,18 @@ public:
 
 	virtual void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                  unsigned short val_marker);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics - Description of the numerical method.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_marker - Surface marker where the boundary condition is applied.
+   */
+
+  virtual void BC_DispDir(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                             unsigned short val_marker);
 
 	/*!
 	 * \brief A virtual member.
@@ -1876,6 +1975,12 @@ public:
 	 * \return Value of the Near-Field Pressure coefficient (inviscid + viscous contribution).
 	 */
 	virtual su2double GetTotal_CNearFieldOF(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the objective function for a reference geometry.
+   */
+  virtual su2double GetTotal_OFRefGeom(void);
     
 	/*!
 	 * \brief A virtual member.
@@ -1906,6 +2011,12 @@ public:
 	 * \param[in] val_cfea - Value of the FEA coefficient.
 	 */
 	virtual void SetTotal_CFEA(su2double val_cfea);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] val_ofrefgeom - Value of the objective function for a reference geometry.
+   */
+  virtual void SetTotal_OFRefGeom(su2double val_ofrefgeom);
     
 	/*!
 	 * \brief A virtual member.
@@ -2278,7 +2389,55 @@ public:
 	 * \return Value of the turbulent kinetic energy.
 	 */
 	virtual su2double GetTke_Inf(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the sensitivity coefficient for the Young Modulus E
+   */
+  virtual su2double GetTotal_Sens_E(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the Mach sensitivity for the Poisson's ratio Nu
+   */
+  virtual su2double GetTotal_Sens_Nu(void);
   
+  /*!
+   * \brief A virtual member.
+   * \return Value of the sensitivity coefficient for the Young Modulus E
+   */
+  virtual su2double GetGlobal_Sens_E(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the Mach sensitivity for the Poisson's ratio Nu
+   */
+  virtual su2double GetGlobal_Sens_Nu(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the Young modulus from the adjoint solver
+   */
+  virtual su2double GetVal_Young(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the Poisson's ratio from the adjoint solver
+   */
+  virtual su2double GetVal_Poisson(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the density for inertial effects, from the adjoint solver
+   */
+  virtual su2double GetVal_Rho(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the density for dead loads, from the adjoint solver
+   */
+  virtual su2double GetVal_Rho_DL(void);
+
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] val_marker - Surface marker where the coefficient is computed.
@@ -2520,6 +2679,14 @@ public:
             						  CConfig *fea_config,
             						  CSolver ***fea_solution);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config - Definition of the particular problem.
+   */
+	virtual void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] geometry - Geometrical definition of the problem.
@@ -2539,7 +2706,70 @@ public:
 	 */
 	virtual void LoadRestart_FSI(CGeometry *geometry, CSolver ***solver,
                            	   CConfig *config, int val_iter);
-    
+
+	/*!
+	 * \brief A virtual member.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] numerics - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	virtual void RefGeom_Sensitivity(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
+	/*!
+	 * \brief A virtual member.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] numerics - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	virtual void DE_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics_container, CConfig *config);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics - Description of the numerical method.
+   * \param[in] config - Definition of the particular problem.
+   */
+  virtual void Stiffness_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics_container, CConfig *config);
+
+	/*!
+	 * \brief A virtual member.
+	 * \param[in] iElem - element parameter.
+	 * \param[out] iElem_iDe - ID of the Dielectric Elastomer region.
+	 */
+	virtual unsigned short Get_iElem_iDe(unsigned long iElem);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] i_DV - number of design variable.
+   * \param[in] val_EField - value of the design variable.
+   */
+  virtual void Set_DV_Val(su2double val_EField, unsigned short i_DV);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] i_DV - number of design variable.
+   * \param[out] DV_Val - value of the design variable.
+   */
+  virtual su2double Get_DV_Val(unsigned short i_DV);
+
+  /*!
+   * \brief A virtual member.
+   * \param[out] val_I - value of the objective function.
+   */
+  virtual su2double Get_val_I(void);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] iPoint - Point i of the Mass Matrix.
+   * \param[in] jPoint - Point j of the Mass Matrix.
+   * \param[in] iVar - Variable i of the Mass Matrix submatrix.
+   * \param[in] iVar - Variable j of the Mass Matrix submatrix.
+   */
+  virtual su2double Get_MassMatrix(unsigned long iPoint, unsigned long jPoint, unsigned short iVar, unsigned short jVar);
+
 	/*!
 	 * \brief Gauss method for solving a linear system.
 	 * \param[in] A - Matrix Ax = b.
@@ -2630,6 +2860,13 @@ public:
    */
   virtual void SetAdjoint_Output(CGeometry *geometry, CConfig *config);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  virtual void SetAdjoint_OutputMesh(CGeometry *geometry, CConfig *config);
+
    /*!
    * \brief A virtual member.
    * \param[in] geometry - The geometrical definition of the problem.
@@ -2637,6 +2874,30 @@ public:
    * \param[in] config - The particular config.
    */
   virtual void ExtractAdjoint_Solution(CGeometry *geometry,  CConfig *config);
+
+  /*!
+  * \brief A virtual member.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+ virtual void ExtractAdjoint_Geometry(CGeometry *geometry, CConfig *config);
+
+  /*!
+  * \brief A virtual member.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+ virtual void ExtractAdjoint_CrossTerm(CGeometry *geometry,  CConfig *config);
+
+ /*!
+  * \brief A virtual member.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+ virtual void ExtractAdjoint_CrossTerm_Geometry(CGeometry *geometry,  CConfig *config);
 
   /*!
   * \brief A virtual member
@@ -2660,6 +2921,8 @@ public:
 
   virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
 
+  virtual void SetZeroAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] Set value of interest: 0 - Initial value, 1 - Current value.
@@ -2679,6 +2942,13 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   virtual void Set_Prestretch(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief A virtual member.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	virtual void Set_ReferenceGeometry(CGeometry *geometry, CConfig *config);
 
 	/*!
 	 * \brief A virtual member.
@@ -2816,6 +3086,13 @@ public:
    * \param[in] kind_recording - Kind of AD recording.
    */
   virtual void SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] kind_recording - Kind of AD recording.
+   */
+  virtual void SetMesh_Recording(CGeometry **geometry, CVolumetricMovement *grid_movement,
+                                   CConfig *config, unsigned short kind_recording);
 
   /*!
    * \brief A virtual member.
@@ -6757,10 +7034,10 @@ class CFEM_ElasticitySolver : public CSolver {
 private:
 
 	su2double  Total_CFEA;				/*!< \brief Total FEA coefficient for all the boundaries. */
-									/*!< We maintain the name to avoid defining a new function... */
 
 	unsigned long nElement;
 	unsigned short nMarker;
+	int nFEA_Terms;
 
 	su2double *GradN_X,
 	*GradN_x;
@@ -6791,6 +7068,12 @@ private:
 	su2double **mZeros_Aux;			/*!< \brief Submatrix to make zeros and impose clamped boundary conditions. */
 	su2double **mId_Aux;				/*!< \brief Diagonal submatrix to impose clamped boundary conditions. */
 
+	unsigned short *iElem_iDe;			/*!< \brief For DE cases, ID of the region considered for each iElem. */
+	su2double *DV_Val;          /*!< \brief For DE cases, value of the modulus of the electric field (design variable). */
+	unsigned short n_DV;          /*!< \brief For DE cases, number of design variables. */
+
+//	su2double **Design_Parameters;  /*!< \brief For DE cases, array of design parameters. */
+
 	su2double a_dt[9];					/*!< \brief Integration constants. */
 
 	su2double Conv_Ref[3];				/*!< \brief Reference values for convergence check: DTOL, RTOL, ETOL */
@@ -6807,6 +7090,11 @@ private:
 	CSysVector TimeRes;				/*!< \brief Vector for adding mass and damping contributions to the residual */
 	CSysVector LinSysReact;			/*!< \brief Vector to store the residual before applying the BCs */
 
+	CSysVector LinSysSol_Adj;		/*!< \brief Vector to store the solution of the adjoint problem */
+	CSysVector LinSysRes_Adj;		/*!< \brief Vector to store the residual of the adjoint problem */
+
+  su2double Total_OFRefGeom;        /*!< \brief Total FEA coefficient for all the boundaries. */
+  su2double Total_ForwardGradient;  /*!< \brief Vector of the total forward gradient. */
 
 public:
 
@@ -6905,6 +7193,13 @@ public:
                       unsigned short iMesh, unsigned long Iteration);
 
 	/*!
+	 * \brief Set a reference geometry for .
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Set_ReferenceGeometry(CGeometry *geometry, CConfig *config);
+
+	/*!
 	 * \brief Compute the stiffness matrix of the problem.
 	 * \param[in] geometry - Geometrical definition of the problem.
 	 * \param[in] solver_container - Container vector with all the solutions.
@@ -6993,6 +7288,18 @@ public:
 	 */
 	void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                          unsigned short val_marker);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics - Description of the numerical method.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_marker - Surface marker where the boundary condition is applied.
+   */
+
+  void BC_DispDir(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                    unsigned short val_marker);
 
 	/*!
 	 * \brief Impose a displacement (constraint) boundary condition.
@@ -7146,11 +7453,23 @@ public:
 	 */
 	su2double GetTotal_CFEA(void);
 
+  /*!
+   * \brief Retrieve the value of the objective function for a reference geometry
+   * \param[out] OFRefGeom - value of the objective function.
+   */
+  su2double GetTotal_OFRefGeom(void);
+
 	/*!
 	 * \brief Set the value of the FEA coefficient.
 	 * \param[in] val_cfea - Value of the FEA coefficient.
 	 */
 	void SetTotal_CFEA(su2double val_cfea);
+
+  /*!
+   * \brief Set the value of the objective function for a reference geometry.
+   * \param[in] val_ofrefgeom - Value of the objective function for a reference geometry.
+   */
+  void SetTotal_OFRefGeom(su2double val_ofrefgeom);
 
 	/*!
 	 * \brief Set the the tractions in the in the FEA solver (matching mesh).
@@ -7210,6 +7529,14 @@ public:
             				  CConfig *fea_config,
             				  CSolver ***fea_solution);
 
+  /*!
+   * \brief Compute the objective function for a reference geometry
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
 	/*!
 	 * \brief Get the value of the FSI convergence.
 	 * \param[in] Set value of interest: 0 - Initial value, 1 - Current value.
@@ -7259,6 +7586,297 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void Set_Prestretch(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief Retrieve the iDe index for DE computations
+	 * \param[in] iElem - element parameter.
+	 * \param[out] iElem_iDe - ID of the Dielectric Elastomer region.
+	 */
+	unsigned short Get_iElem_iDe(unsigned long iElem);
+
+  /*!
+   * \brief Set the value of the Electric Field modulus, design variable for DE computations
+   * \param[in] i_DV - number of design variable.
+   * \param[in] val_EField - value of the design variable.
+   */
+  void Set_DV_Val(su2double val_EField, unsigned short i_DV);
+
+  /*!
+   * \brief Retrieve the Electric Field modulus, design variable for DE computations
+   * \param[in] i_DV - number of design variable.
+   * \param[out] DV_Val - value of the design variable.
+   */
+  su2double Get_DV_Val(unsigned short i_DV);
+
+  /*!
+   * \brief Retrieve the Mass Matrix term (to add to the Jacobian of the adjoint problem)
+   * \param[in] iPoint - Point i of the Mass Matrix.
+   * \param[in] jPoint - Point j of the Mass Matrix.
+   * \param[in] iVar - Variable i of the Mass Matrix submatrix.
+   * \param[in] iVar - Variable j of the Mass Matrix submatrix.
+   */
+  su2double Get_MassMatrix(unsigned long iPoint, unsigned long jPoint, unsigned short iVar, unsigned short jVar);
+
+  /*!
+   * \brief Load a solution from a restart file.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver - Container vector with all of the solvers.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_iter - Current external iteration number.
+   */
+  void LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *config, int val_iter);
+
+};
+
+/*! \class CFEM_ElasticitySolver_Adj
+ *  \brief Main class for defining an adjoint FEM solver for elastic structural problems.
+ *  \author R. Sanchez.
+ *  \version 4.0.0 "Cardinal"
+ *  \date July 10, 2015.
+ */
+class CFEM_ElasticitySolver_Adj : public CSolver {
+private:
+
+	CSolver *direct_solver; 			/*!< \brief Submatrix to store the constitutive term for node ij. */
+
+	unsigned long nElement;
+	unsigned short nMarker;
+	int nFEA_Terms;
+
+	su2double val_I;
+
+	su2double *GradN_X, *GradN_x;
+
+	su2double **Jacobian_c_ij;			/*!< \brief Submatrix to store the constitutive term for node ij. */
+	su2double **Jacobian_s_ij;			/*!< \brief Submatrix to store the stress contribution of node ij (diagonal). */
+
+	su2double **mZeros_Aux;			/*!< \brief Submatrix to make zeros and impose clamped boundary conditions. */
+	su2double **mId_Aux;				/*!< \brief Diagonal submatrix to impose clamped boundary conditions. */
+
+	unsigned short n_DV;				    /*!< \brief Number of Design Variables. */
+	su2double *sensI_adjoint;			  /*!< \brief Adjoint sensitivities for the number of design variables. */
+  su2double *DV_Val;              /*!< \brief Value of the Design Variable. */
+  su2double *DV_Val_Max,          /*!< \brief Maximum value for the DV. */
+  *DV_Val_Min;                    /*!< \brief Minimum value for the DV. */
+
+	CSysVector LinSysSol_Direct;		/*!< \brief Vector structure for storing the solution of the direct problem. */
+	CSysVector LinSysRes_dSdv;			/*!< \brief Vector structure for storing the sensitivity of the FEA equations respect to the design dS/dv. */
+	CSysVector LinSysRes_FSens_DV;		/*!< \brief Vector structure for storing the sensitivity of the External Forces respect to the design variables dF/dv. */
+
+	CSysVector LinSysRes_Aux;			/*!< \brief Auxiliary vector structure to do intermediate steps. */
+
+	CSysMatrix Jacobian_ISens;			/*!< \brief Vector structure for storing the sensitivity of the Interest Function dI/dx. */
+	CSysMatrix Jacobian_Pred;      /*!< \brief Vector structure for storing the sensitivity of the Interest Function dI/dx. */
+
+
+public:
+
+	CElement*** element_container; 	/*!< \brief Vector which the define the finite element structure for each problem. */
+
+	/*!
+	 * \brief Constructor of the class.
+	 */
+	CFEM_ElasticitySolver_Adj(void);
+
+	/*!
+	 * \overload
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	CFEM_ElasticitySolver_Adj(CGeometry *geometry, CConfig *config, CSolver* solver);
+
+	/*!
+	 * \brief Destructor of the class.
+	 */
+	~CFEM_ElasticitySolver_Adj(void);
+
+    /*!
+	 * \brief Impose the send-receive boundary condition.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Set_MPI_Solution(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief Impose the send-receive boundary condition for reference geometry (adjoint FEM).
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Set_MPI_RefGeom(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief Set residuals to zero.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 * \param[in] iRKStep - Current step of the Runge-Kutta iteration.
+     * \param[in] RunTime_EqSystem - System of equations which is going to be solved.
+	 */
+	void Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, CNumerics **numerics, unsigned short iMesh, unsigned long Iteration, unsigned short RunTime_EqSystem, bool Output);
+
+
+	/*!
+	 * \brief Set the initial condition for the FEM structural problem.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container with all the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 * \param[in] ExtIter - External iteration.
+	 */
+	void SetInitialCondition(CGeometry **geometry, CSolver ***solver_container, CConfig *config, unsigned long ExtIter);
+
+	/*!
+	 * \brief Set a reference geometry for optimization purposes.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Set_ReferenceGeometry(CGeometry *geometry, CConfig *config);
+
+	/*!
+	 * \brief Compute the stiffness matrix of the problem.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] solver - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Compute_StiffMatrix(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics, CConfig *config);
+
+	/*!
+	 * \brief Compute the stiffness matrix of the problem and the nodal stress terms at the same time (more efficient if full Newton Raphson).
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] solver - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Compute_StiffMatrix_NodalStressRes(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics, CConfig *config);
+
+	/*!
+	 * \brief Compute the nodal stress terms and add them to the residual.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] solver - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Compute_NodalStressRes(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics, CConfig *config);
+
+	/*!
+	 * \brief Initializes the matrices/residuals in the solution process (avoids adding over previous values).
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] solver - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Initialize_SystemMatrix(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
+	/*!
+	 * \brief Clamped boundary conditions.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] solver - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void BC_Clamped(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker);
+
+	/*!
+	 * \brief Enforce the solution to be 0 in the clamped nodes - Avoids accumulation of numerical error.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] solver - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 * \param[in] val_marker - Surface marker where the boundary condition is applied.
+	 */
+	void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                         unsigned short val_marker);
+
+	/*!
+	 * \brief Update the solution using an implicit solver.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void ImplicitEuler_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void ImplicitNewmark_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
+	/*!
+	 * \brief Postprocessing.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 * \param[in] iMesh - Index of the mesh in multigrid computations.
+	 */
+	void Postprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config,  CNumerics **numerics,
+			unsigned short iMesh);
+
+	/*!
+	 * \brief Routine to solve the Jacobian-Residual linearized system.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void Solve_System(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
+
+	/*!
+	 * \brief A virtual member.
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] numerics - Description of the numerical method.
+	 * \param[in] config - Definition of the particular problem.
+	 * \param[in] val_marker - Surface marker where the boundary condition is applied.
+	 */
+
+	void BC_Clamped_Adj(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
+	/*!
+	 * \brief Compute the sensitivity vector for an objective function I=f(x,x_ref)
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void RefGeom_Sensitivity(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+
+	/*!
+	 * \brief Compute the sensitivity matrix for the DE
+	 * \param[in] geometry - Geometrical definition of the problem.
+	 * \param[in] solver_container - Container vector with all the solutions.
+	 * \param[in] config - Definition of the particular problem.
+	 */
+	void DE_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics, CConfig *config);
+
+  /*!
+   * \brief Compute the sensitivity vector for the Young modulus
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void Stiffness_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics **numerics_container, CConfig *config);
+
+  /*!
+   * \brief Set the value of the Electric Field modulus, design variable for DE computations
+   * \param[in] i_DV - number of design variable.
+   * \param[in] val_EField - value of the design variable.
+   */
+  void Set_DV_Val(su2double val_EField, unsigned short i_DV);
+
+  /*!
+   * \brief Retrieve the Electric Field modulus, design variable for DE computations
+   * \param[in] i_DV - number of design variable.
+   * \param[out] DV_Val - value of the design variable.
+   */
+  su2double Get_DV_Val(unsigned short i_DV);
+
+  /*!
+   * \brief Retrieve the value of the interest function for adjoint optimizations in FEM
+   * \param[out] val_I - value of the objective function.
+   */
+  su2double Get_val_I(void);
 
 
 };
@@ -7684,6 +8302,8 @@ private:
   su2double Mach, Alpha, Beta, Pressure, Temperature;
   unsigned long nMarker;				/*!< \brief Total number of markers using the grid information. */
 
+  su2double *Solution_Geometry; /*!< \brief Auxiliary vector for the geometry solution (dimension nDim instead of nVar). */
+
 public:
 
   /*!
@@ -7739,12 +8359,44 @@ public:
   void SetAdjoint_Output(CGeometry *geometry, CConfig *config);
 
   /*!
+   * \brief Sets the adjoint values of the output of the mesh deformation iteration
+   *        before evaluation of the tape.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  void SetAdjoint_OutputMesh(CGeometry *geometry, CConfig *config);
+
+  /*!
   * \brief Sets the adjoint values of the input variables of the flow (+turb.) iteration
   *        after tape has been evaluated.
   * \param[in] geometry - The geometrical definition of the problem.
   * \param[in] config - The particular config.
   */
   void ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config);
+
+  /*!
+  * \brief A virtual member.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+  void ExtractAdjoint_Geometry(CGeometry *geometry, CConfig *config);
+
+  /*!
+  * \brief Sets the adjoint values of the flow variables due to cross term contributions
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+ void ExtractAdjoint_CrossTerm(CGeometry *geometry,  CConfig *config);
+
+ /*!
+  * \brief A virtual member.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+ void ExtractAdjoint_CrossTerm_Geometry(CGeometry *geometry,  CConfig *config);
 
   /*!
   * \brief Register the objective function as output.
@@ -7773,6 +8425,12 @@ public:
    */
   void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
 
+  /*!
+   * \brief Set the objective function.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void SetZeroAdj_ObjFunc(CGeometry *geometry, CConfig* config);
 
   /*!
    * \brief Provide the total shape sensitivity coefficient.
@@ -7832,6 +8490,13 @@ public:
   void SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
 
   /*!
+   * \brief Prepare the solver for a new recording.
+   * \param[in] kind_recording - Kind of AD recording.
+   */
+  void SetMesh_Recording(CGeometry **geometry, CVolumetricMovement *grid_movement,
+                          CConfig *config, unsigned short kind_recording);
+
+  /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
@@ -7856,5 +8521,264 @@ public:
 	* \param[in] Output - boolean to determine whether to print output.
 	 */
   void Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output);
+
+  /*!
+   * \brief Set the value of the max residual and RMS residual.
+   * \param[in] val_iterlinsolver - Number of linear iterations.
+   */
+  void ComputeResidual_BGS(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Store the BGS solution in the previous subiteration in the corresponding vector.
+   * \param[in] val_iterlinsolver - Number of linear iterations.
+   */
+  void UpdateSolution_BGS(CGeometry *geometry, CConfig *config);
+};
+
+/*!
+ * \class CDiscAdjFEASolver
+ * \brief Main class for defining the discrete adjoint solver for FE structural problems.
+ * \ingroup Discrete_Adjoint
+ * \author T. Albring, R. Sanchez
+ * \version 4.2.0 "Cardinal"
+ */
+class CDiscAdjFEASolver : public CSolver {
+private:
+  unsigned short KindDirect_Solver;
+  CSolver *direct_solver;
+  su2double *Sens_E,            /*!< \brief Young modulus sensitivity coefficient for each boundary. */
+  *Sens_Nu,                     /*!< \brief Poisson's ratio sensitivity coefficient for each boundary. */
+  *Sens_nL,                     /*!< \brief Normal pressure sensitivity coefficient for each boundary. */
+  **CSensitivity;               /*!< \brief Shape sensitivity coefficient for each boundary and vertex. */
+
+  su2double *Solution_Vel,      /*!< \brief Velocity componenent of the solution. */
+  *Solution_Accel;              /*!< \brief Acceleration componenent of the solution. */
+
+  su2double Total_Sens_E;       /*!< \brief Total Young modulus sensitivity coefficient for all the boundaries. */
+  su2double Total_Sens_Nu;      /*!< \brief Total Poisson's ratio sensitivity coefficient for all the boundaries. */
+  su2double Total_Sens_Rho;     /*!< \brief Total density sensitivity coefficient for all the boundaries. */
+  su2double Total_Sens_Rho_DL;  /*!< \brief Total density sensitivity coefficient for all the boundaries. */
+  su2double Total_Sens_nL;      /*!< \brief Total normal pressure sensitivity coefficient for all the boundaries. */
+
+  /*!< \brief Global sensitivities. */
+  su2double Global_Sens_E,
+  Global_Sens_Nu,
+  Global_Sens_Rho,
+  Global_Sens_Rho_DL;
+
+  su2double ObjFunc_Value;      /*!< \brief Value of the objective function. */
+  su2double E, Nu, Rho, Rho_DL; /*!< \brief Value of the extra variables we want to obtain the adjoint for. */
+  su2double *normalLoads;       /*!< \brief Values of the normal loads for each marker iMarker_nL. */
+  unsigned long nMarker;        /*!< \brief Total number of markers using the grid information. */
+  unsigned long nMarker_nL;     /*!< \brief Total number of markers that have a normal load applied. */
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   */
+  CDiscAdjFEASolver(void);
+
+  /*!
+   * \overload
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] iMesh - Index of the mesh in multigrid computations.
+   */
+  CDiscAdjFEASolver(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \overload
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] solver - Initialize the discrete adjoint solver with the corresponding direct solver.
+   * \param[in] Kind_Solver - The kind of direct solver.
+   */
+  CDiscAdjFEASolver(CGeometry *geometry, CConfig *config, CSolver* solver, unsigned short Kind_Solver, unsigned short iMesh);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~CDiscAdjFEASolver(void);
+
+  /*!
+   * \brief Performs the preprocessing of the adjoint AD-based solver.
+   *        Registers all necessary variables on the tape. Called while tape is active.
+   * \param[in] geometry_container - The geometry container holding all grid levels.
+   * \param[in] config_container - The particular config.
+   */
+  void RegisterSolution(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Performs the preprocessing of the adjoint AD-based solver.
+   *        Registers all necessary variables that are output variables on the tape.
+   *        Called while tape is active.
+   * \param[in] geometry_container - The geometry container holding all grid levels.
+   * \param[in] config_container - The particular config.
+   */
+  void RegisterOutput(CGeometry *geometry, CConfig *config);
+
+  /*!
+  * \brief Sets the adjoint values of the output of the flow (+turb.) iteration
+  *         before evaluation of the tape.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] config - The particular config.
+  */
+  void SetAdjoint_Output(CGeometry *geometry, CConfig *config);
+
+  /*!
+  * \brief Sets the adjoint values of the input variables of the flow (+turb.) iteration
+  *        after tape has been evaluated.
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] config - The particular config.
+  */
+  void ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config);
+
+  /*!
+  * \brief Sets the adjoint values of the structural variables due to cross term contributions
+  * \param[in] geometry - The geometrical definition of the problem.
+  * \param[in] solver_container - The solver container holding all solutions.
+  * \param[in] config - The particular config.
+  */
+ void ExtractAdjoint_CrossTerm(CGeometry *geometry,  CConfig *config);
+
+  /*!
+  * \brief Register the objective function as output.
+  * \param[in] geometry - The geometrical definition of the problem.
+  */
+  void RegisterObj_Func(CConfig *config);
+
+  /*!
+   * \brief Set the surface sensitivity.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void SetSurface_Sensitivity(CGeometry *geometry, CConfig* config);
+
+  /*!
+   * \brief Extract and set the geometrical sensitivity.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void SetSensitivity(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Set the objective function.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+
+  /*!
+   * \brief Set the objective function to 0 contribution.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void SetZeroAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+
+  /*!
+   * \brief Provide the total Young's modulus sensitivity
+   * \return Value of the total Young's modulus sensitivity
+   *         (inviscid + viscous contribution).
+   */
+  su2double GetTotal_Sens_E(void);
+
+  /*!
+   * \brief Set the total Poisson's ratio sensitivity.
+   * \return Value of the Poisson's ratio sensitivity
+   */
+  su2double GetTotal_Sens_Nu(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the sensitivity coefficient for the Young Modulus E
+   */
+  su2double GetGlobal_Sens_E(void);
+
+  /*!
+   * \brief A virtual member.
+   * \return Value of the Mach sensitivity for the Poisson's ratio Nu
+   */
+  su2double GetGlobal_Sens_Nu(void);
+
+  /*!
+   * \brief Get the value of the Young modulus from the adjoint solver
+   * \return Value of the Young modulus from the adjoint solver
+   */
+  su2double GetVal_Young(void);
+
+  /*!
+   * \brief Get the value of the Poisson's ratio from the adjoint solver
+   * \return Value of the Poisson's ratio from the adjoint solver
+   */
+  su2double GetVal_Poisson(void);
+
+  /*!
+   * \brief Get the value of the density from the adjoint solver, for inertial effects
+   * \return Value of the density from the adjoint solver
+   */
+  su2double GetVal_Rho(void);
+
+  /*!
+   * \brief Get the value of the density from the adjoint solver, for dead loads
+   * \return Value of the density for dead loads, from the adjoint solver
+   */
+  su2double GetVal_Rho_DL(void);
+
+  /*!
+   * \brief Set the value of the max residual and RMS residual.
+   * \param[in] val_iterlinsolver - Number of linear iterations.
+   */
+  void ComputeResidual_BGS(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Store the BGS solution in the previous subiteration in the corresponding vector.
+   * \param[in] val_iterlinsolver - Number of linear iterations.
+   */
+  void UpdateSolution_BGS(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Prepare the solver for a new recording.
+   * \param[in] kind_recording - Kind of AD recording.
+   */
+  void SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void RegisterVariables(CGeometry *geometry, CConfig *config, bool reset = false);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Update the dual-time derivatives.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] iMesh - Index of the mesh in multigrid computations.
+   * \param[in] iRKStep - Current step of the Runge-Kutta iteration.
+  * \param[in] RunTime_EqSystem - System of equations which is going to be solved.
+  * \param[in] Output - boolean to determine whether to print output.
+   */
+  void Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output);
+
+  /*!
+   * \brief Enforce the solution to be 0 in the clamped nodes - Avoids accumulation of numerical error.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] solver - Description of the numerical method.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_marker - Surface marker where the boundary condition is applied.
+   */
+  void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                         unsigned short val_marker);
+
 };
 #include "solver_structure.inl"
