@@ -62,7 +62,8 @@ protected:
                                  correspond with a boundary element is stored. */
 	bool Divide;                  /*!< \brief Marker used to know if we are going to divide this element
                                  in the adaptation proccess. */
-  su2double Volume;    /*!< \brief Volume of the element. */
+    su2double Volume;    /*!< \brief Volume of the element. */
+    su2double *Density;
 
 public:
 	
@@ -123,6 +124,9 @@ public:
    * \return Coordinates of the center of gravity.
    */
   su2double GetVolume(void);
+
+  su2double *GetDensity(void);
+  void SetDensity(su2double dens);
 
 	/*!
 	 * \brief Get the CG of a face of an element.

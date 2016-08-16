@@ -412,6 +412,8 @@ inline su2double CSolver::GetVal_Rho(void) { return 0.0; }
 
 inline su2double CSolver::GetVal_Rho_DL(void) { return 0.0; }
 
+inline su2double CSolver::GetDensity(unsigned short val_elem) { return 0.0; }
+
 inline su2double* CSolver::GetConstants() {return NULL;}
 
 inline su2double CSolver::GetOneD_TotalPress(void) {return 0;}
@@ -1234,6 +1236,10 @@ inline void CSolver::SetSurface_Sensitivity(CGeometry *geometry, CConfig *config
 
 inline void CSolver::SetSensitivity(CGeometry *geometry, CConfig *config){}
 
+inline void CSolver::SetSensDensity(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::InitializeDensity(CGeometry *geometry, CConfig *config){}
+
 inline void CSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetZeroAdj_ObjFunc(CGeometry *geometry, CConfig *config){}
@@ -1261,6 +1267,8 @@ inline su2double CDiscAdjFEASolver::GetGlobal_Sens_E(void) { return Global_Sens_
 inline su2double CDiscAdjFEASolver::GetGlobal_Sens_Nu(void) { return Global_Sens_Nu; }
 
 inline su2double CDiscAdjFEASolver::GetVal_Young(void) { return E; }
+
+inline su2double CDiscAdjFEASolver::GetDensity(unsigned short val_elem) { return Density[val_elem]; }
 
 inline su2double CDiscAdjFEASolver::GetVal_Poisson(void) { return Nu; }
 

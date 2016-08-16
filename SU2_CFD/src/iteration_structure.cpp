@@ -2473,6 +2473,8 @@ void CDiscAdjFEAIteration::Preprocess(COutput *output,
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
+//  solver_container[val_iZone][MESH_0][ADJFEA_SOL]->InitializeDensity(geometry_container[val_iZone][MESH_0], config_container[val_iZone]);
+
   /*--- For the dynamic adjoint, load direct solutions from restart files. ---*/
 
   if (dynamic) {
@@ -2641,6 +2643,8 @@ void CDiscAdjFEAIteration::Iterate(COutput *output,
     solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
                                                                                config_container[val_iZone]);
 
+    //solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetSensDensity(geometry_container[val_iZone][MESH_0],config_container[val_iZone]);
+
     /*--- Clear all adjoints to re-use the stored computational graph in the next iteration ---*/
 
     AD::ClearAdjoints();
@@ -2668,6 +2672,7 @@ void CDiscAdjFEAIteration::Iterate(COutput *output,
 
   /*--- Global sensitivities ---*/
   solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetSensitivity(geometry_container[val_iZone][MESH_0],config_container[val_iZone]);
+//  solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetSensDensity(geometry_container[val_iZone][MESH_0],config_container[val_iZone]);
 
 //  if (((ExtIter+1 >= config_container[val_iZone]->GetnExtIter()) || (integration_container[val_iZone][ADJFEA_SOL]->GetConvergence()) ||
 //      ((ExtIter % config_container[val_iZone]->GetWrt_Sol_Freq() == 0))) || (dynamic)){
@@ -2796,6 +2801,7 @@ void CDiscAdjFEAIteration::RegisterInput(CSolver ****solver_container, CGeometry
     /*--- Register variables as input ---*/
 
     solver_container[iZone][MESH_0][ADJFEA_SOL]->RegisterVariables(geometry_container[iZone][MESH_0], config_container[iZone]);
+    //geometry_container[iZone][MESH_0]->RegisterDensity(config_container[iZone]);
 
   }
 
@@ -2822,6 +2828,12 @@ void CDiscAdjFEAIteration::SetDependencies(CSolver ****solver_container, CGeomet
     /*--- Add dependencies for Rho and Rho_DL ---*/
 
     numerics_container[iZone][MESH_0][FEA_SOL][FEA_TERM]->SetMaterial_Density(solver_container[iZone][MESH_0][ADJFEA_SOL]->GetVal_Rho(), solver_container[iZone][MESH_0][ADJFEA_SOL]->GetVal_Rho_DL());
+
+    unsigned long iElem;
+
+    for (iElem = 0; iElem < geometry_container[iZone][MESH_0]->GetnElem(); iElem++){
+      geometry_container[iZone][MESH_0]->elem[iElem]->SetDensity(solver_container[iZone][MESH_0][ADJFEA_SOL]->GetDensity(iElem));
+    }
 
 //  }
 //  /*--- If we are recording the crossed flow terms of a fluid problem, we need to set the dependencies with E, Nu, Rho and Rho_DL ---*/

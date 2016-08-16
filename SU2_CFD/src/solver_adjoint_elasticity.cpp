@@ -1937,6 +1937,15 @@ CDiscAdjFEASolver::CDiscAdjFEASolver(CGeometry *geometry, CConfig *config, CSolv
   Total_Sens_Rho      = 0.0;
   Total_Sens_Rho_DL   = 0.0;
 
+  Density = new su2double[geometry->GetnElem()];
+  Global_Sens_Density=new su2double[geometry->GetnElem()];
+
+  unsigned long iElem;
+  for (iElem=0;iElem<geometry->GetnElem();iElem++){
+      Global_Sens_Density[iElem]=0.0;
+      Density[iElem]=0.0;
+  }
+
 }
 
 CDiscAdjFEASolver::~CDiscAdjFEASolver(void){
@@ -2066,12 +2075,23 @@ void CDiscAdjFEASolver::RegisterVariables(CGeometry *geometry, CConfig *config, 
     Rho_DL      = config->GetMaterialDensity();     // For dead loads
     if (pseudo_static) Rho = 0.0;                   // Pseudo-static: no inertial effects considered
 
+    unsigned long iElem;
+
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+          Density[iElem]=0.9;
+    }
+
     if (!reset){
       AD::RegisterInput(E);
       AD::RegisterInput(Nu);
       AD::RegisterInput(Rho);
       AD::RegisterInput(Rho_DL);
+      for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+          AD::RegisterInput(Density[iElem]);
+      }
     }
+
+
 
   }
 
@@ -2079,6 +2099,8 @@ void CDiscAdjFEASolver::RegisterVariables(CGeometry *geometry, CConfig *config, 
     /*--- Here it is possible to register other variables as input that influence the flow solution
      * and thereby also the objective function. The adjoint values (i.e. the derivatives) can be
      * extracted in the ExtractAdjointVariables routine. ---*/
+
+
 }
 
 void CDiscAdjFEASolver::RegisterOutput(CGeometry *geometry, CConfig *config){
@@ -2304,11 +2326,19 @@ void CDiscAdjFEASolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *co
   }
 
   SetResidual_RMS(geometry, config);
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    for (iVar = 0; iVar < nVar; iVar++){
+        std::cout<<"Solution "<<direct_solver->node[iPoint]->GetSolution(iVar)<<" Adjoint "<<node[iPoint]->GetSolution(iVar)<<" ";
+    }
+    std::cout<<std::endl;
+  }
 }
 
 void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config){
 
   su2double Local_Sens_E, Local_Sens_Nu, Local_Sens_Rho, Local_Sens_Rho_DL;
+  //su2double* Local_Sens_Density;
 
   /*--- Extract the adjoint values of the farfield values ---*/
 
@@ -2329,6 +2359,10 @@ void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *c
     Global_Sens_Rho      = Local_Sens_Rho;
     Global_Sens_Rho_DL   = Local_Sens_Rho_DL;
 #endif
+    unsigned long iElem;
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        Global_Sens_Density[iElem] = SU2_TYPE::GetDerivative(Density[iElem]);
+    }
 
   }
 
@@ -2377,6 +2411,7 @@ void CDiscAdjFEASolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){
     }
 
   }
+
 }
 
 void CDiscAdjFEASolver::Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config_container, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output){
@@ -2443,7 +2478,49 @@ void CDiscAdjFEASolver::SetSensitivity(CGeometry *geometry, CConfig *config){
   Total_Sens_Nu       += Global_Sens_Nu;
   Total_Sens_Rho      += Global_Sens_Rho;
   Total_Sens_Rho_DL   += Global_Sens_Rho_DL;
+  std::cout<<"Sens: "<<Total_Sens_E<<" "<<Total_Sens_Nu<<" "<<Total_Sens_Rho<<" "<<Total_Sens_Rho_DL<<std::endl;
+  std::cout<<"Density: ";
+  unsigned short iElem;
+  for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
+      std::cout<<Global_Sens_Density[iElem]<<" ";
+  }
+  std::cout<<std::endl;
 
+}
+
+void CDiscAdjFEASolver::SetSensDensity(CGeometry *geometry, CConfig *config){
+
+  unsigned long iElem;
+  unsigned short iDim;
+  su2double Density, Sensitivity;
+
+  std::cout<<"Density: ";
+  for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
+    Density = geometry->elem[iElem]->GetDensity()[0];
+
+   // for (iDim = 0; iDim < nDim; iDim++){
+
+      Sensitivity = SU2_TYPE::GetDerivative(Density);
+      std::cout<<Sensitivity<<" ";
+
+      /*--- Set the index manually to zero. ---*/
+
+       AD::ResetInput(Density);
+
+      /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
+
+  //  }
+  }
+  std::cout<<std::endl;
+}
+
+void CDiscAdjFEASolver::InitializeDensity(CGeometry *geometry, CConfig *config){
+
+  unsigned long iElem;
+
+  for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
+    geometry->elem[iElem]->SetDensity(0.9);
+  }
 }
 
 void CDiscAdjFEASolver::SetSurface_Sensitivity(CGeometry *geometry, CConfig *config){

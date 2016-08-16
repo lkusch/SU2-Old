@@ -327,7 +327,7 @@ void CFEM_NonlinearElasticity::Compute_Tangent_Matrix(CElement *element, CConfig
 		for (iNode = 0; iNode < nNode; iNode++){
 
 			for (iDim = 0; iDim < nDim; iDim++){
-				GradNi_Ref_Mat[iNode][iDim] = element->GetGradNi_X(iNode,iGauss,iDim);
+                GradNi_Ref_Mat[iNode][iDim] = element->GetGradNi_X(iNode,iGauss,iDim);
 				GradNi_Curr_Mat[iNode][iDim] = element->GetGradNi_x(iNode,iGauss,iDim);
 				currentCoord[iNode][iDim] = element->GetCurr_Coord(iNode, iDim);
 			}
@@ -381,7 +381,7 @@ void CFEM_NonlinearElasticity::Compute_Tangent_Matrix(CElement *element, CConfig
 		for (iVar = 0; iVar < 3; iVar++){
 			for (jVar = 0; jVar < 3; jVar++){
 				for (kVar = 0; kVar < 3; kVar++){
-					b_Mat[iVar][jVar] += F_Mat[iVar][kVar]*F_Mat[jVar][kVar];
+                    b_Mat[iVar][jVar] += F_Mat[iVar][kVar]*F_Mat[jVar][kVar];
 				}
 			}
 		}

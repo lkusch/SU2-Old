@@ -2419,6 +2419,7 @@ public:
    * \return Value of the Young modulus from the adjoint solver
    */
   virtual su2double GetVal_Young(void);
+    virtual su2double GetDensity(unsigned short val_elem);
 
   /*!
    * \brief A virtual member.
@@ -2918,6 +2919,10 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   virtual void SetSensitivity(CGeometry *geometry, CConfig *config);
+
+  virtual void SetSensDensity(CGeometry *geometry, CConfig *config);
+
+  virtual void InitializeDensity(CGeometry *geometry, CConfig *config);
 
   virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
 
@@ -8571,6 +8576,8 @@ private:
   su2double *normalLoads;       /*!< \brief Values of the normal loads for each marker iMarker_nL. */
   unsigned long nMarker;        /*!< \brief Total number of markers using the grid information. */
   unsigned long nMarker_nL;     /*!< \brief Total number of markers that have a normal load applied. */
+  su2double* Density;
+  su2double* Global_Sens_Density;
 
 public:
 
@@ -8662,6 +8669,10 @@ public:
    */
   void SetSensitivity(CGeometry *geometry, CConfig *config);
 
+  void SetSensDensity(CGeometry *geometry, CConfig *config);
+
+  void InitializeDensity(CGeometry *geometry, CConfig *config);
+
   /*!
    * \brief Set the objective function.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -8706,6 +8717,7 @@ public:
    * \return Value of the Young modulus from the adjoint solver
    */
   su2double GetVal_Young(void);
+  su2double GetDensity(unsigned short val_elem);
 
   /*!
    * \brief Get the value of the Poisson's ratio from the adjoint solver

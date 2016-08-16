@@ -1776,7 +1776,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix(CGeometry *geometry, CSolver **s
 
         for (iVar = 0; iVar < nVar; iVar++){
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_ij[iVar][jVar] = Kab[iVar*nVar+jVar];
+            Jacobian_ij[iVar][jVar] = pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];//(Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(E - Emin))*Kab[iVar*nVar+jVar];
           }
         }
 
@@ -1896,7 +1896,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix_NodalStressRes(CGeometry *geomet
         for (iVar = 0; iVar < nVar; iVar++){
           Jacobian_s_ij[iVar][iVar] = Ks_ab;
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_c_ij[iVar][jVar] = Kab[iVar*nVar+jVar];
+            Jacobian_c_ij[iVar][jVar] = pow(geometry->elem[iElem]->GetDensity()[0],1)*Kab[iVar*nVar+jVar];//pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];
             if (incompressible) Jacobian_k_ij[iVar][jVar] = Kk_ab[iVar*nVar+jVar];
           }
         }
@@ -5004,7 +5004,7 @@ void CFEM_ElasticitySolver::Compute_OFRefGeom(CGeometry *geometry, CSolver **sol
   }
   else {
 
-    if (!fsi) cout << "Objective function: " << Total_OFRefGeom << "." << endl;
+    if (!fsi) cout <<std::setprecision(12)<< "Objective function: " << Total_OFRefGeom << "." << endl;
 
   }
 

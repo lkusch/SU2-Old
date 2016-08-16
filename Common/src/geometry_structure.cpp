@@ -897,6 +897,14 @@ void CGeometry::RegisterOutput_Coordinates(CConfig *config){
   }
 }
 
+void CGeometry::RegisterDensity(CConfig *config){
+  unsigned long iElem;
+
+  for (iElem = 0; iElem < nElem; iElem++) {
+      AD::RegisterInput(elem[iElem]->GetDensity()[0]);
+  }
+}
+
 void CGeometry::UpdateGeometry(CGeometry **geometry_container, CConfig *config){
 
     unsigned short iMesh;

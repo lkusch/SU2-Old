@@ -49,6 +49,10 @@ inline su2double CPrimalGrid::GetVolume(void) { return Volume; }
 
 inline void CPrimalGrid::SetVolume(su2double val_volume) { Volume = val_volume; }
 
+inline su2double* CPrimalGrid::GetDensity (void) {return Density;}
+
+inline void CPrimalGrid::SetDensity (su2double dens) {  Density[0] = dens; }
+
 inline su2double CPrimalGrid::GetCG(unsigned short val_dim) { return Coord_CG[val_dim]; }
 
 inline su2double CPrimalGrid::GetFaceCG(unsigned short val_face, unsigned short val_dim) { return Coord_FaceElems_CG[val_face][val_dim]; }

@@ -37,9 +37,11 @@ CPrimalGrid::CPrimalGrid(void) {
   
   /*--- Set the default values for the pointers ---*/
   Nodes = NULL;
-	Neighbor_Elements = NULL;
-	Coord_CG = NULL;
-	Coord_FaceElems_CG = NULL;
+  Neighbor_Elements = NULL;
+  Coord_CG = NULL;
+  Coord_FaceElems_CG = NULL;
+  Density = new su2double[1];
+  Density[0]=0.9;//0.5;
   
 }
 
