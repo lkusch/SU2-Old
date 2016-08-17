@@ -1483,6 +1483,7 @@ public:
    * \param[in] val_Young - Value of the Young Modulus.
    */
   virtual void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
+  virtual su2double Get_YoungModulus();
 
   /*!
    * \brief A virtual member to set the material properties
@@ -4014,6 +4015,8 @@ public:
 
   void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
 
+  su2double Get_YoungModulus();
+
 	virtual void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
 	virtual void Compute_MeanDilatation_Term(CElement *element_container, CConfig *config);
@@ -4061,6 +4064,8 @@ public:
 	 * \brief Destructor of the class.
 	 */
 	~CFEM_LinearElasticity(void);
+
+    void SetMaterial_Properties(su2double val_E, su2double val_Nu);
 
 	void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
@@ -4182,6 +4187,7 @@ public:
   void Set_ElectricField(unsigned short i_DV, su2double val_EField);
 
   void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
+//  su2double Get_YoungModulus();
 
   void SetMaterial_Properties(su2double val_E, su2double val_Nu);
 
@@ -4401,6 +4407,7 @@ public:
 	void Compute_Stress_Tensor(CElement *element_container, CConfig *config);
 
   void Set_YoungModulus(unsigned short i_DV, su2double val_Young);
+ // su2double Get_YoundModulus();
 
 };
 

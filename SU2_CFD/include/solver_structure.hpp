@@ -705,6 +705,32 @@ public:
 	virtual void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                  unsigned short val_marker);
 
+    /*!
+     * \brief A virtual member.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] numerics - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     * \param[in] val_marker - Surface marker where the boundary condition is applied.
+     */
+
+
+    virtual void BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
+    /*!
+     * \brief A virtual member.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] solver - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     * \param[in] val_marker - Surface marker where the boundary condition is applied.
+     */
+
+
+    virtual void BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -1981,6 +2007,7 @@ public:
    * \return Value of the objective function for a reference geometry.
    */
   virtual su2double GetTotal_OFRefGeom(void);
+      virtual su2double GetMinimumCompliance(void);
     
 	/*!
 	 * \brief A virtual member.
@@ -2686,7 +2713,8 @@ public:
    * \param[in] solver_container - Container vector with all the solutions.
    * \param[in] config - Definition of the particular problem.
    */
-	virtual void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+    virtual void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+    virtual void Compute_MinimumCompliance(CGeometry *geometry, CSolver **solver_container, CConfig *config);
 
 	/*!
 	 * \brief A virtual member.
@@ -7100,6 +7128,7 @@ private:
 
   su2double Total_OFRefGeom;        /*!< \brief Total FEA coefficient for all the boundaries. */
   su2double Total_ForwardGradient;  /*!< \brief Vector of the total forward gradient. */
+  su2double MinimumCompliance;
 
 public:
 
@@ -7294,6 +7323,26 @@ public:
 	void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                          unsigned short val_marker);
 
+    /*!
+     * \brief Roller bearings boundary conditions.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] solver - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     */
+    void BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker);
+
+    /*!
+     * \brief Enforce the solution to be 0 in the nodes for roller bearings - Avoids accumulation of numerical error.
+     * \param[in] geometry - Geometrical definition of the problem.
+     * \param[in] solver_container - Container vector with all the solutions.
+     * \param[in] solver - Description of the numerical method.
+     * \param[in] config - Definition of the particular problem.
+     * \param[in] val_marker - Surface marker where the boundary condition is applied.
+     */
+    void BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                         unsigned short val_marker);
+
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -7463,6 +7512,7 @@ public:
    * \param[out] OFRefGeom - value of the objective function.
    */
   su2double GetTotal_OFRefGeom(void);
+    su2double GetMinimumCompliance(void);
 
 	/*!
 	 * \brief Set the value of the FEA coefficient.
@@ -7541,6 +7591,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+  void Compute_MinimumCompliance(CGeometry *geometry, CSolver **solver_container, CConfig *config);
 
 	/*!
 	 * \brief Get the value of the FSI convergence.

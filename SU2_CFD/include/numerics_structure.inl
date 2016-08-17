@@ -95,6 +95,8 @@ inline void CFEM_DielectricElastomer_Adj::Set_ElectricField(unsigned short i_DV,
 
 inline void CNumerics::Set_YoungModulus(unsigned short i_DV, su2double val_Young){ }
 
+inline su2double CNumerics::Get_YoungModulus(){ return 0.0; }
+
 inline void CNumerics::SetMaterial_Properties(su2double val_E, su2double val_Nu){ }
 
 inline void CNumerics::SetMaterial_Density(su2double val_Rho, su2double val_Rho_DL){ }
@@ -111,7 +113,15 @@ inline void CFEM_NeoHookean_Comp_Adj::Set_YoungModulus(unsigned short i_DV, su2d
   E = val_Young; Mu = E / (2.0*(1.0 + Nu)); Lambda = Nu*E/((1.0+Nu)*(1.0-2.0*Nu)); Kappa = Lambda + (2/3)*Mu;
 }
 
+inline su2double CFEM_Elasticity::Get_YoungModulus(){
+    return E;
+}
+
 inline void CFEM_Elasticity::SetMaterial_Properties(su2double val_E, su2double val_Nu){ 
+  E = val_E; Nu = val_Nu; Mu = E / (2.0*(1.0 + Nu)); Lambda = Nu*E/((1.0+Nu)*(1.0-2.0*Nu)); Kappa = Lambda + (2/3)*Mu;
+}
+
+inline void CFEM_LinearElasticity::SetMaterial_Properties(su2double val_E, su2double val_Nu){
   E = val_E; Nu = val_Nu; Mu = E / (2.0*(1.0 + Nu)); Lambda = Nu*E/((1.0+Nu)*(1.0-2.0*Nu)); Kappa = Lambda + (2/3)*Mu;
 }
 

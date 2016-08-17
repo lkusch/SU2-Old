@@ -1147,6 +1147,10 @@ void CFEM_StructuralAnalysis::Iterate(COutput *output,
   switch (config_container[val_iZone]->GetKind_ObjFunc()){
     case REFERENCE_GEOMETRY:
       solver_container[val_iZone][MESH_0][FEA_SOL]->Compute_OFRefGeom(geometry_container[val_iZone][MESH_0],solver_container[val_iZone][MESH_0], config_container[val_iZone]);
+      break;
+    case MINIMUM_COMPLIANCE:
+      solver_container[val_iZone][MESH_0][FEA_SOL]->Compute_MinimumCompliance(geometry_container[val_iZone][MESH_0],solver_container[val_iZone][MESH_0], config_container[val_iZone]);
+      break;
   }
 
 }

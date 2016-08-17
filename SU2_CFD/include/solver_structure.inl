@@ -98,6 +98,8 @@ inline void CSolver::Update_StructSolution(CGeometry **fea_geometry, CConfig *fe
 
 inline void CSolver::Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
 
+inline void CSolver::Compute_MinimumCompliance(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
+
 inline void CSolver::SetCSensitivity(unsigned short val_marker, unsigned long val_vertex, su2double val_sensitivity) { }
 
 inline void CSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config) { }
@@ -289,6 +291,8 @@ inline su2double CSolver::GetTotal_CFEA() { return 0; }
 inline su2double CSolver::GetTotal_CNearFieldOF() { return 0; }
 
 inline su2double CSolver::GetTotal_OFRefGeom() { return 0; }
+
+inline su2double CSolver::GetMinimumCompliance() { return 0; }
 
 inline void CSolver::SetTotal_CEquivArea(su2double val_cequivarea) { }
 
@@ -527,6 +531,12 @@ inline void CSolver::BC_DispDir(CGeometry *geometry, CSolver **solver_container,
 
 inline void CSolver::BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }
+
+inline void CSolver::BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
+
+inline void CSolver::BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
 									 
 inline void CSolver::BC_Normal_Displacement(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }
@@ -1203,6 +1213,8 @@ inline void CFEM_ElasticitySolver::SetFSI_ConvValue(unsigned short val_index, su
 inline su2double CFEM_ElasticitySolver::GetFSI_ConvValue(unsigned short val_index){ return FSI_Conv[val_index]; }
 
 inline su2double CFEM_ElasticitySolver::GetTotal_OFRefGeom(void){ return Total_OFRefGeom; }
+
+inline su2double CFEM_ElasticitySolver::GetMinimumCompliance(void){ return MinimumCompliance; }
 
 inline void CFEM_ElasticitySolver_Adj::Set_DV_Val(su2double val_EField, unsigned short i_DV){ DV_Val[i_DV] = val_EField;}
 

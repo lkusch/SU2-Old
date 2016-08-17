@@ -332,6 +332,33 @@ void CSysMatrix::AddBlock(unsigned long block_i, unsigned long block_j, su2doubl
   
 }
 
+void CSysMatrix::SetEntry(unsigned long block_i, unsigned long block_j, unsigned short iVar, unsigned short jVar, su2double val_entry) {
+
+  unsigned long index, step = 0;
+
+  for (index = row_ptr[block_i]; index < row_ptr[block_i+1]; index++) {
+    step++;
+    if (col_ind[index] == block_j) {
+          matrix[(row_ptr[block_i]+step-1)*nVar*nEqn+iVar*nEqn+jVar] = SU2_TYPE::GetValue(val_entry);
+      break;
+    }
+  }
+
+}
+
+su2double CSysMatrix::GetEntry(unsigned long block_i, unsigned long block_j, unsigned short iVar, unsigned short jVar) {
+
+  unsigned long index, step = 0;
+
+  for (index = row_ptr[block_i]; index < row_ptr[block_i+1]; index++) {
+    step++;
+    if (col_ind[index] == block_j) {
+         return matrix[(row_ptr[block_i]+step-1)*nVar*nEqn+iVar*nEqn+jVar];
+    }
+  }
+
+}
+
 void CSysMatrix::SubtractBlock(unsigned long block_i, unsigned long block_j, su2double **val_block) {
   
   unsigned long iVar, jVar, index, step = 0;

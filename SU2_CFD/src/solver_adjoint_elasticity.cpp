@@ -1829,7 +1829,6 @@ CDiscAdjFEASolver::CDiscAdjFEASolver(CGeometry *geometry, CConfig *config, CSolv
     filename = config->GetObjFunc_Extension(mesh_filename);
 
     restart_file.open(filename.data(), ios::in);
-
     /*--- In case there is no file ---*/
     if (restart_file.fail()) {
       if (rank == MASTER_NODE)
@@ -2078,7 +2077,7 @@ void CDiscAdjFEASolver::RegisterVariables(CGeometry *geometry, CConfig *config, 
     unsigned long iElem;
 
     for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
-          Density[iElem]=0.9;
+          Density[iElem]=config->GetInitialElemDensity();
     }
 
     if (!reset){
@@ -2143,6 +2142,9 @@ void CDiscAdjFEASolver::RegisterObj_Func(CConfig *config){
   switch (config->GetKind_ObjFunc()){
   case REFERENCE_GEOMETRY:
       ObjFunc_Value = direct_solver->GetTotal_OFRefGeom();
+      break;
+  case MINIMUM_COMPLIANCE:
+      ObjFunc_Value = direct_solver->GetMinimumCompliance();
       break;
   default:
       ObjFunc_Value = 0.0;  // If the objective function is computed in a different physical problem

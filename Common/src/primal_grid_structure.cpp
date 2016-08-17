@@ -41,7 +41,7 @@ CPrimalGrid::CPrimalGrid(void) {
   Coord_CG = NULL;
   Coord_FaceElems_CG = NULL;
   Density = new su2double[1];
-  Density[0]=0.9;//0.5;
+  Density[0]=0.95;//0.5;
   
 }
 

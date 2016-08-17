@@ -779,6 +779,7 @@ enum BC_TYPE {
   LOAD_SINE_BOUNDARY = 36,		/*!< \brief Sine-waveBoundary Load definition. */
   NRBC_BOUNDARY= 37,   /*!< \brief NRBC Boundary definition. */
   DISP_DIR_BOUNDARY = 38,    /*!< \brief Boundary displacement definition. */
+  ROLLER_BOUNDARY = 39,     /*!< \brief Roller Bearings boundary definition. */
   SEND_RECEIVE = 99,		/*!< \brief Boundary send-receive definition. */
 };
 
@@ -966,7 +967,8 @@ enum ENUM_OBJECTIVE {
   AVG_OUTLET_PRESSURE = 29,      /*!< \brief Static Pressure objective function definition. */
   MASS_FLOW_RATE = 30,           /*!< \brief Mass Flow Rate objective function definition. */
   OUTFLOW_GENERALIZED=31,          /*!<\brief Objective function defined via chain rule on primitive variable gradients. */
-  REFERENCE_GEOMETRY=50          /*!<\brief Objective function defined as a function of a reference geometry. */
+  REFERENCE_GEOMETRY=50,          /*!<\brief Objective function defined as a function of a reference geometry. */
+  MINIMUM_COMPLIANCE=51
 };
 
 static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM_OBJECTIVE>
@@ -1001,6 +1003,7 @@ static const map<string, ENUM_OBJECTIVE> Objective_Map = CCreateMap<string, ENUM
 ("AVG_OUTLET_PRESSURE", AVG_OUTLET_PRESSURE)
 ("MASS_FLOW_RATE", MASS_FLOW_RATE)
 ("OUTFLOW_GENERALIZED", OUTFLOW_GENERALIZED)
+("MINIMUM_COMPLIANCE", MINIMUM_COMPLIANCE)
 ("REFERENCE_GEOMETRY", REFERENCE_GEOMETRY);
 
 /*!
@@ -1999,6 +2002,7 @@ public:
       this->disc_adjoint = true;
       this->cont_adjoint= false;
       this->restart = true;
+      //this->restart=false;
       return "";
     }
     return "option in math problem map not considered in constructor";
@@ -2476,6 +2480,57 @@ public:
       su2double val;
       if (!(is >> val)) {
         return badValue(option_value, "string su2double", this->name);
+      }
+      this->d_f[i] = val;
+    }
+    // Need to return something...
+    return "";
+  }
+
+  void SetDefault() {
+    this->size = 0; // There is no default value for list
+  }
+};
+
+// Class where the option is represented by (String, unsigned short, string, unsigned short, ...)
+class COptionStringUShortList : public COptionBase{
+  string name; // identifier for the option
+  unsigned short & size; // how many strings are there (same as number of su2doubles)
+
+  string * & s_f; // Reference to the string fields
+  unsigned short* & d_f; // reference to the ushort fields
+
+public:
+  COptionStringUShortList(string option_field_name, unsigned short & list_size, string * & string_field, unsigned short* & double_field) : size(list_size), s_f(string_field), d_f(double_field) {
+    this->name = option_field_name;
+  }
+
+  ~COptionStringUShortList() {};
+  string SetValue(vector<string> option_value) {
+    // There must be an even number of entries (same number of strings and shorts
+    unsigned short totalVals = option_value.size();
+    if ((totalVals % 2) != 0) {
+      if ((totalVals == 1) && (option_value[0].compare("NONE") == 0)) {
+        // It's okay to say its NONE
+        this->size = 0;
+        return "";
+      }
+      string newstring;
+      newstring.append(this->name);
+      newstring.append(": must have an even number of entries");
+      return newstring;
+    }
+    unsigned short nVals = totalVals / 2;
+    this->size = nVals;
+    this->s_f = new string[nVals];
+    this->d_f = new unsigned short[nVals];
+
+    for (unsigned long i = 0; i < nVals; i++) {
+      this->s_f[i].assign(option_value[2*i]); // 2 because have short and string
+      istringstream is(option_value[2*i + 1]);
+      unsigned short val;
+      if (!(is >> val)) {
+        return badValue(option_value, "string short", this->name);
       }
       this->d_f[i] = val;
     }

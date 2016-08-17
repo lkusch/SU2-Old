@@ -173,6 +173,7 @@ private:
 	nMarker_EngineInflow,					/*!< \brief Number of nacelle inflow flow markers. */
   nMarker_EngineBleed,					/*!< \brief Number of nacelle inflow flow markers. */
   nMarker_Clamped,						/*!< \brief Number of clamped markers in the FEM. */
+    nMarker_Roller,                       /*!< \brief Number of roller markers in the FEM. */
   nMarker_Displacement,					/*!< \brief Number of displacement surface markers. */
 	nMarker_Load,					/*!< \brief Number of load surface markers. */
 	nMarker_Load_Dir,					/*!< \brief Number of load surface markers defined by magnitude and direction. */
@@ -214,6 +215,7 @@ private:
   *Marker_EngineBleed,					/*!< \brief Engine Inflow flow markers. */
   *Marker_EngineExhaust,					/*!< \brief Engine Exhaust flow markers. */
 	*Marker_Clamped,						/*!< \brief Clamped markers. */
+    *Marker_Roller,                                             /*!< \brief Roller markers. */
 	*Marker_Displacement,					/*!< \brief Displacement markers. */
 	*Marker_Load,					/*!< \brief Load markers. */
 	*Marker_Load_Dir,					/*!< \brief Load markers defined in cartesian coordinates. */
@@ -266,6 +268,7 @@ private:
   su2double *ActDisk_PressJump;
   su2double *ActDisk_TempJump;
   su2double *ActDisk_Omega;
+  unsigned short *Comp_Roller; /*!< \brief Component of acting roller bearing. */
   unsigned short *ActDisk_Distribution;
   su2double **Periodic_RotCenter;  /*!< \brief Rotational center for each periodic boundary. */
 	su2double **Periodic_RotAngles;      /*!< \brief Rotation angles for each periodic boundary. */
@@ -618,6 +621,7 @@ private:
 	Tke_FreeStreamND,    /*!< \brief Farfield kinetic energy (external flow). */
   Omega_FreeStreamND, /*!< \brief Specific dissipation (external flow). */
   Omega_FreeStream; /*!< \brief Specific dissipation (external flow). */
+    su2double InitialElemDensity;
 	su2double ElasticyMod,			/*!< \brief Young's modulus of elasticity. */
 	PoissonRatio,						/*!< \brief Poisson's ratio. */
 	MaterialDensity,								/*!< \brief Material density. */
@@ -961,6 +965,14 @@ private:
     assert(option_map.find(name) == option_map.end());
     all_options.insert(pair<string, bool>(name, true));
     COptionBase* val = new COptionStringDoubleList(name, list_size, string_field, double_field);
+    option_map.insert(pair<string, COptionBase *>(name, val));
+  }
+
+  void addStringUShortListOption(const string name, unsigned short & list_size, string * & string_field,
+                        unsigned short* & double_field) {
+    assert(option_map.find(name) == option_map.end());
+    all_options.insert(pair<string, bool>(name, true));
+    COptionBase* val = new COptionStringUShortList(name, list_size, string_field, double_field);
     option_map.insert(pair<string, COptionBase *>(name, val));
   }
 
@@ -1615,6 +1627,7 @@ public:
 	 * \return Value of the Young's modulus of elasticity.
 	 */
 	su2double GetElasticyMod(void);
+    su2double GetInitialElemDensity(void);
 
 	/*!
 	  * \brief Decide whether to apply DE effects to the model.
@@ -5146,6 +5159,13 @@ public:
 	 * \return The load value.
 	 */
 	su2double GetLoad_Value(string val_index);
+
+    /*!
+     * \brief Get component of the roller bearings.
+     * \param[in] val_index - Index corresponding to the roller boundary.
+     * \return The component.
+     */
+    unsigned short GetComp_Roller(string val_index);
 
 	/*!
 	 * \brief Get the force value at a load boundary defined in cartesian coordinates.

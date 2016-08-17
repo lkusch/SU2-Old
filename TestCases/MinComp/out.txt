@@ -1,0 +1,154 @@
+
+-------------------------------------------------------------------------
+|    ___ _   _ ___                                                      |
+|   / __| | | |_  )   Release 4.2.0  "Cardinal"                         |
+|   \__ \ |_| |/ /                                                      |
+|   |___/\___//___|   Suite (Computational Fluid Dynamics Code)         |
+|                                                                       |
+-------------------------------------------------------------------------
+| SU2 Lead Dev.: Dr. Francisco Palacios, Francisco.D.Palacios@boeing.com|
+|                Dr. Thomas D. Economon, economon@stanford.edu          |
+-------------------------------------------------------------------------
+| SU2 Developers:                                                       |
+| - Prof. Juan J. Alonso's group at Stanford University.                |
+| - Prof. Piero Colonna's group at Delft University of Technology.      |
+| - Prof. Nicolas R. Gauger's group at Kaiserslautern U. of Technology. |
+| - Prof. Alberto Guardone's group at Polytechnic University of Milan.  |
+| - Prof. Rafael Palacios' group at Imperial College London.            |
+-------------------------------------------------------------------------
+| Copyright (C) 2012-2016 SU2, the open-source CFD code.                |
+|                                                                       |
+| SU2 is free software; you can redistribute it and/or                  |
+| modify it under the terms of the GNU Lesser General Public            |
+| License as published by the Free Software Foundation; either          |
+| version 2.1 of the License, or (at your option) any later version.    |
+|                                                                       |
+| SU2 is distributed in the hope that it will be useful,                |
+| but WITHOUT ANY WARRANTY; without even the implied warranty of        |
+| MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU      |
+| Lesser General Public License for more details.                       |
+|                                                                       |
+| You should have received a copy of the GNU Lesser General Public      |
+| License along with SU2. If not, see <http://www.gnu.org/licenses/>.   |
+-------------------------------------------------------------------------
+
+------------------------ Physical Case Definition -----------------------
+Geometrically linear elasticity solver.
+Linear elastic material.
+No restart solution, use the values at infinity (freestream).
+Dimensional simulation.
+The reference length/area (force coefficient) is 1.
+The reference length (moment computation) is 1.
+Reference origin (moment computation) is (2.44692e-316, 2.44421e-316, 2.44259e-316).
+Surface(s) where the force coefficients are evaluated: Surface(s) plotted in the output file: 
+Surface(s) belonging to the Fluid-Structure Interaction problem: 
+Input mesh file name: meshBeam_2d.su2
+
+---------------------- Space Numerical Integration ----------------------
+Gradient Computation using weighted Least-Squares method.
+
+---------------------- Time Numerical Integration -----------------------
+Static structural analysis.
+Euler implicit method for the flow equations.
+A Conjugate Gradient method is used for solving the linear system.
+Convergence criteria of the linear solver: 1e-08.
+Max number of iterations: 1000.
+
+------------------------- Convergence Criteria --------------------------
+Maximum number of iterations: 1.
+Reduce the density residual 3 orders of magnitude.
+The minimum bound for the density residual is 10^(-8).
+Start convergence criteria at iteration 5.
+
+-------------------------- Output Information ---------------------------
+Writing a flow solution every 1 iterations.
+Writing the convergence history every 1 iterations.
+The output file format is Paraview ASCII (.vtk).
+Convergence history file name: history.
+Forces breakdown file name: forces_breakdown.dat.
+Surface structure coefficients file name: surface_structure.
+Structure variables file name: beam.
+Restart structure file name: restart_beam.dat.
+
+------------------- Config File Boundary Information --------------------
+Roller boundary marker(s): left, lowerright.
+Load boundary marker(s) in cartesian coordinates: upperleft.
+
+---------------------- Read Grid File Information -----------------------
+Two dimensional problem.
+689 points.
+3 surface markers.
+12 boundary elements in index 0 (Marker = left).
+1 boundary elements in index 1 (Marker = upperleft).
+1 boundary elements in index 2 (Marker = lowerright).
+624 quadrilaterals.
+
+------------------------- Geometry Preprocessing ------------------------
+Setting point connectivity.
+Renumbering points (Reverse Cuthill McKee Ordering).
+Recomputing point connectivity.
+Setting element connectivity.
+Checking the numerical grid orientation.
+Identifying edges and vertices.
+Computing centers of gravity.
+Setting the control volume structure.
+Area of the computational grid: 624.
+Searching for the closest normal neighbors to the surfaces.
+Compute the surface curvature.
+Max K: 1.41421. Mean K: 0.166378. Standard deviation K: 0.455645.
+Checking for periodicity.
+Computing wall distances.
+Area projection in the y-plane = 0.
+
+------------------------- Driver Preprocessing --------------------------
+Instantiating a single zone driver for the problem. 
+
+------------------------ Iteration Preprocessing ------------------------
+Zone 1: FEM iteration.
+
+------------------------- Solver Preprocessing --------------------------
+Initialize Jacobian structure (Non-Linear Elasticity).
+
+----------------- Integration and Numerics Preprocessing ----------------
+Integration Preprocessing.
+Numerics Preprocessing.
+
+------------------------------ Begin Solver -----------------------------
+The direct solver runs a Conjugate Gradient linear solver with nPoint = 689
+The discrete adjoint solver for this problem is Conjugate Gradient. 
+Objective function: 0.588956868907.
+
+ Iter    Time(s)    Res[Displx]    Res[Disply]   CFEM(Total)
+    0   0.039998      -6.770765      -6.747271    7.7644e+03
+
+-------------------------- File Output Summary --------------------------
+Writing comma-separated values (CSV) surface files.
+Merging connectivities in the Master node.
+Merging coordinates in the Master node.
+Merging solution in the Master node.
+Writing SU2 native restart file.
+Writing Paraview ASCII volume solution file.
+-------------------------------------------------------------------------
+
+History file closed.
+
+------------------------- Solver Postprocessing -------------------------
+Deleted CNumerics container.
+Deleted CIntegration container.
+Deleted CSolver container.
+Deleted CIteration container.
+Deleted CInterpolator container.
+Deleted CTransfer container.
+Deleted CDriver class.
+Deleted CGeometry container.
+Deleted CFreeFormDefBox class.
+Deleted CSurfaceMovement class.
+Deleted CVolumetricMovement class.
+Deleted CConfig container.
+Deleted COuput class.
+-------------------------------------------------------------------------
+
+Completed execution in 0.0481 seconds on 1 core.
+
+------------------------- Exit Success (SU2_CFD) ------------------------
+

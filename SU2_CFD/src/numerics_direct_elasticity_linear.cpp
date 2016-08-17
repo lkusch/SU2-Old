@@ -69,6 +69,8 @@ void CFEM_LinearElasticity::Compute_Tangent_Matrix(CElement *element, CConfig *c
 
 	su2double AuxMatrix[3][6];
 
+    Compute_Constitutive_Matrix();
+
 	/*--- Initialize auxiliary matrices ---*/
 
 	if (nDim == 2) bDim = 3;

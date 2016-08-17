@@ -133,6 +133,8 @@ inline su2double CConfig::GetThermalDiffusivity(void) { return Thermal_Diffusivi
 
 inline su2double CConfig::GetElasticyMod(void) { return ElasticyMod; }
 
+inline su2double CConfig::GetInitialElemDensity(void) { return InitialElemDensity; }
+
 inline bool CConfig::GetDE_Effects(void) { return DE_Effects; }
 
 inline bool CConfig::GetDE_Predicted(void) { return DE_Predicted; }
