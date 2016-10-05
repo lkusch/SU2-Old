@@ -1034,6 +1034,13 @@ public:
   void OneShotStep(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                        CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                        CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short whilecounter);
+  void MoreThuenteLineSearch(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                                                      CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                                                      CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox);
+  su2double mcstep(su2double& stx, su2double& fx, su2double& dx,
+                                           su2double& sty, su2double& fy, su2double& dy,
+                                           su2double& stp, su2double& fp, su2double& dp,
+                                           bool& brackt_mcstep, su2double stmin_mcstep, su2double stmax_mcstep);
   void OneShotStepTrial(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                        CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                        CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short whilecounter);

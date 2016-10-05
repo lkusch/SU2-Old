@@ -151,7 +151,7 @@ void CConfig::SetPointersNull(void) {
   Heat_Flux = NULL;               Displ_Value = NULL;               Load_Value = NULL;
   FlowLoad_Value = NULL;
   
-  Periodic_Translate=NULL;    Periodic_Rotation=NULL;    Periodic_Center=NULL;
+  Periodic_Translate=NULL;    Periodic_Rotation=NULL;    Periodic_Center=NULL; Comp_Roller = NULL;
   Periodic_Translation=NULL;   Periodic_RotAngles=NULL;   Periodic_RotCenter=NULL;
 
   Load_Dir = NULL;	          Load_Dir_Value = NULL;          Load_Dir_Multiplier = NULL;
@@ -1189,6 +1189,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addDoubleOption("OS_STEP_SIZE", OneShotStepSize, 1E-4);
   addBoolOption("OS_CONSTRAINT", OneShotConstraint, false);
   addBoolOption("ONE_SHOT", OneShot, false);
+  addUnsignedLongOption("OS_STOP", OneShotStop, 5000);
   addBoolOption("EX_BOUNDS", BoundsExact, true); 
   addDoubleOption("CONS_START", ConstraintStart, 1.0);
   addUnsignedShortOption("CONS_NUM", ConstraintNum, 1);
@@ -1219,6 +1220,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
    addBoolOption("NORM_HB", NormHB, true);
    addDoubleOption("DAMP_GAMMA", DampedGamma, 0.1);
    addBoolOption("CHECK_DESC", CheckDescent, false);
+   addBoolOption("SECOND_ORDER", SecondOrder, false);
+   addBoolOption("LOAD_MESH", LoadMesh, false);
 
    addDoubleOption("MIN_ELAS", TopOptMinElasticity, 1E-3);
    addDoubleOption("DENS_PENALTY", TopOptPenalty, 3);

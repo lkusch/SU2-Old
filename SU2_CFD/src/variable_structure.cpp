@@ -191,12 +191,12 @@ CVariable::~CVariable(void) {
   //ROBUST
   if (SolutionVec_Old != NULL) {
     for (iVar = 0; iVar < 4; iVar++)
-      delete SolutionVec_Old[iVar];
+      delete [] SolutionVec_Old[iVar];
     delete [] SolutionVec_Old;
   }
   if (SolutionVec != NULL) {
     for (iVar = 0; iVar < 4; iVar++)
-      delete SolutionVec[iVar];
+      delete [] SolutionVec[iVar];
     delete [] SolutionVec;
   }
   //ROBUST

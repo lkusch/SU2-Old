@@ -630,6 +630,7 @@ inline su2double CConfig::GetTopOptVolumeFraction(void) {return TopOptVolumeFrac
 inline su2double CConfig::GetOneShotAlpha(void){ return OneShotAlpha;}
 inline su2double CConfig::GetOneShotBeta(void){ return OneShotBeta;}
 inline unsigned long CConfig::GetOneShotStart(void){return OneShotStart;}
+inline unsigned long CConfig::GetOneShotStop(void){return OneShotStop;}
 inline bool CConfig::GetOSStepAdaptive(void){ return OneShotStepAdaptive;}
 inline su2double CConfig::GetOSStepSize(void){ return OneShotStepSize;}
 inline bool CConfig::GetOneShotConstraint(void){ return OneShotConstraint;}
@@ -644,6 +645,8 @@ inline unsigned long CConfig::GetSearchCounterMax(void){ return SearchCounterMax
 inline bool CConfig::GetLineSearch(void){ return LineSearch;}
 inline bool CConfig::GetCheckVk(void){ return CheckVk;}
 inline bool CConfig::GetArmijo(void){ return Armijo;}
+inline bool CConfig::GetSecondOrder(void){ return SecondOrder;}
+inline bool CConfig::GetLoadMesh(void){ return LoadMesh;}
 
 inline bool CConfig::GetPosConstraint(void){ return posconstraint;}
 inline bool CConfig::GetPosUpdate(void){ return posupdate;}

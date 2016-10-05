@@ -2742,8 +2742,6 @@ public:
 
   virtual void ApplyDesignVar();
 
-  virtual void SetDesignVariable();
-
   virtual void DesignMinus();
 
   virtual void DesignStep(su2double values);
@@ -7476,18 +7474,23 @@ public:
 	 */
 	void SetLoad_Increment(su2double val_loadIncrement);
 
+<<<<<<< HEAD
     /*!
      * \brief Return the value of the minimum compliance objective function.
      * \return Value of minimum compliance / maximum stiffness.
      */
     su2double GetMinimumCompliance(void);
 
-    /*!
-    * \brief Set a reference geometry for prestretched conditions.
-    * \param[in] geometry - Geometrical definition of the problem.
-    * \param[in] config - Definition of the particular problem.
-    */
-    void Set_Prestretch(CGeometry *geometry, CConfig *config);
+||||||| merged common ancestors
+=======
+  /*!
+   * \brief Set a reference geometry for prestretched conditions.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void Set_Prestretch(CGeometry *geometry, CConfig *config);
+
+>>>>>>> github/develop
 
 };
 
@@ -8176,8 +8179,6 @@ public:
   su2double getDVValue(unsigned long iDV);
 
   void ApplyDesignVar();
-
-  void SetDesignVariable();
 
   void UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor);
 

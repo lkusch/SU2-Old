@@ -2,7 +2,7 @@
  * \file codi_reverse_structure.hpp
  * \brief Header for codi reverse type definition.
  * \author T. Albring
- * \version 4.2.0 "Cardinal"
+ * \version 4.1.2 "Cardinal"
  *
  * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
  *                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -33,9 +33,21 @@
 #include "codi.hpp"
 #include "tools/dataStore.hpp"
 
+<<<<<<< HEAD
+//typedef codi::RealReverse su2double;
+
+typedef codi::RealReverse su2double;
+namespace AD{
+  typedef codi::DataStore CheckpointHandler;
+  struct TapePosition{
+    typename codi::ChunkTape<double, int>::Position start;
+    typename codi::ChunkTape<double, int>::Position end;
+  };
+}
+=======
 #ifdef CODI_INDEX_TAPE
 typedef codi::RealReverseIndex su2double;
 #else
-//typedef codi::RealReverseOverForward su2double;
 typedef codi::RealReverse su2double;
 #endif
+>>>>>>> github/develop

@@ -2524,7 +2524,7 @@ void CDiscOneShotIteration::Iterate(COutput *output,
                                         CVolumetricMovement **volume_grid_movement,
                                         CFreeFormDefBox*** FFDBox,
                                         unsigned short val_iZone) {
-    DiscAdjMeanFlowIterationConstraint(output, integration_container, geometry_container, solver_container, numerics_container, config_container,
+    MoreThuenteLineSearch(output, integration_container, geometry_container, solver_container, numerics_container, config_container,
                               surface_movement, volume_grid_movement, FFDBox);
 }
 
@@ -3594,7 +3594,9 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
     for (iZone = 0; iZone < nZone; iZone++){
             solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreOldSolution();
     }
-    solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->StoreMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+    if(config_container[0]->GetLoadMesh()){
+      solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->StoreMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+    }
 
     unsigned short whilecounter=0;
     do{
@@ -3625,13 +3627,21 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
 
       //  for (iZone = 0; iZone < nZone; iZone++){
                 solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadOldSolution();
-                solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+                if(config_container[0]->GetLoadMesh()){
+                  solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+                }
      //   }
 
-        if(ExtIter>config_container[0]->GetOneShotStart()){
+        /*if(ExtIter==0){
+            std::cout<<"---------------------------Initialize Design-----------------------------"<<std::endl;
+            solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->SetDesignVariable();
+            deformOneShot(output, geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+        }*/
+
+        if((ExtIter>config_container[0]->GetOneShotStart())&&(ExtIter<config_container[0]->GetOneShotStop())){
             for (iZone = 0; iZone < nZone; iZone++){
               solver_container[iZone][MESH_0][ADJFLOW_SOL]->DesignUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone], ExtIter, steplen);
-              //if(whilecounter>1) solver_container[iZone][MESH_0][ADJFLOW_SOL]->DesignMinus();
+              if((whilecounter>1)&&(!config_container[0]->GetLoadMesh())) solver_container[iZone][MESH_0][ADJFLOW_SOL]->DesignMinus();
               if(config_container[0]->GetOneShotConstraint()==true && whilecounter==1) solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateMultiplier(config_container[0]);
             }
             deformOneShot(output, geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
@@ -3640,20 +3650,25 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
         OneShotStep(output, integration_container, geometry_container,
                solver_container, numerics_container, config_container,
                 surface_movement, volume_grid_movement, FFDBox, whilecounter);
-
-
+        //CHANGED!
+        if((ExtIter>=config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[0]->GetOneShotStop())){
+            for (iZone = 0; iZone < nZone; iZone++){
+        solver_container[iZone][MESH_0][ADJFLOW_SOL]->OverwriteSensitivityProjected(geometry_container[iZone][MESH_0]);
+        projectOneShot(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+            }}
+        //CHANGED!
     }
-    while(ExtIter>config_container[0]->GetOneShotStart()&&solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(steplen)&&(whilecounter<config_container[0]->GetSearchCounterMax())&&config_container[0]->GetLineSearch()&&steplen>1E-15);
+    while(ExtIter>config_container[0]->GetOneShotStart()&&(ExtIter<config_container[0]->GetOneShotStop())&&solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(steplen)&&(whilecounter<config_container[0]->GetSearchCounterMax())&&config_container[0]->GetLineSearch()&&steplen>1E-15);
 
-/*    for (iZone = 0; iZone < nZone; iZone++){
+    /*for (iZone = 0; iZone < nZone; iZone++){
             solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreOldSolution();
     }*/
 
-    if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
+    if((ExtIter>=config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[0]->GetOneShotStop())){
         for (iZone = 0; iZone < nZone; iZone++){
           /*--- Project Sensitivities ---*/
-          solver_container[iZone][MESH_0][ADJFLOW_SOL]->OverwriteSensitivityProjected(geometry_container[iZone][MESH_0]);
-          projectOneShot(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+     //CHANGED     solver_container[iZone][MESH_0][ADJFLOW_SOL]->OverwriteSensitivityProjected(geometry_container[iZone][MESH_0]);
+     //CHANGED     projectOneShot(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
 
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->OverwriteGradientProjected(geometry_container[iZone][MESH_0]);
           projectGradient(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
@@ -3663,31 +3678,54 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
         }
     }
+}
 
-    /*--- Deform the Grid according to Design Variable ---*/
-/*    su2double steplen=config_container[0]->GetOSStepSize();
+void CDiscOneShotIteration::MoreThuenteLineSearch(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                                                    CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                                                    CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox) {
+    unsigned short iZone, ExtIter = config_container[ZONE_0]->GetExtIter();
+    unsigned short nZone = config_container[ZONE_0]->GetnZone();
+
+    su2double steplen=config_container[0]->GetOSStepSize();
+
+    //print residuals!
+       cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))<<std::endl;
+       cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
+
+    for (iZone = 0; iZone < nZone; iZone++){
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreOldSolution();
+    }
+    if(config_container[0]->GetLoadMesh()){
+      solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->StoreMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+    }
+
     unsigned short whilecounter=0;
 
     bool linesearch=false;
 
+    su2double alpha_next=steplen;
+
     su2double ftol=1E-4;
-    su2double gtol=0.9;
+    su2double gtol=0.9; //or c1 and c2
 
     su2double stpmin = 0.0;
-    su2double stpmax = 4;
-    su2double xtol= 1E-15;
+    su2double stpmax = 4*alpha_next;
 
+    su2double xtol= 1E-15;
     su2double xtrapu = 4.0;
     su2double xtrapl = 1.1;
     //or xtrapf=4.0
 
-    bool    brackt = false; //
+    bool    brackt = false;
     bool    stage = true;
     su2double    width = stpmax - stpmin;
     su2double    width1= width/0.5;
 
     su2double alpha0=0.0;
-    su2double phi_alpha0, dPhi_alpha0; //finit und ginit
+    su2double alpha_help;
+    su2double phi_alpha0, dPhi_alpha0; //finit und dginit
+    su2double phi_next, dPhi_next;
+    su2double phi_test, dPhi_test;
     solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CalculatePhi(alpha0, phi_alpha0, dPhi_alpha0);
 
     if(ExtIter>config_container[0]->GetOneShotStart()){
@@ -3698,53 +3736,302 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
     su2double alpha_lo = alpha0; //current best (x)
     su2double alpha_hi= alpha0; //current endpoint (y)
     su2double phi_lo, phi_hi, dPhi_lo, dPhi_hi;
+    su2double psi_lo, psi_hi, dPsi_lo, dPsi_hi;
+    su2double psi_next, dPsi_next;
     phi_lo = phi_hi= phi_alpha0;
     dPhi_lo = dPhi_hi = dPhi_alpha0;
 
     su2double stmin, stmax;
-    su2double alpha_next=steplen;
-    bool infoc=true;
 
+    //bool infoc=true;
+    unsigned short info=0;
+    stmin = 0.0;
+    stmax = alpha_next + xtrapu*alpha_next;
+
+    su2double p5 = .5;
+    su2double p66 = .66;
+    //wa = x; x is current design
+    dPhi_test = ftol * dPhi_alpha0;
 
     do{
-        if(brackt){
-            stmin=std::min(alpha_lo,alpha_hi);
-            stmax=std::max(alpha_lo, alpha_hi);
-        }else{
-            stmin=alpha_lo;
-            stmax=alpha_next+xtrapu*(alpha_next-alpha_lo);
-        }
-        alpha_next = std::max(alpha_next, stpmin);
-        alpha_next = std::min(alpha_next, stpmax);
-        if ((brackt && (alpha_next <= stmin || alpha_next >= stmax)) || infoc == false || (brackt && stmax-stmin <= xtol*stmax)) {
-            alpha_next=alpha_lo;
-        }
-        if ( whilecounter >0 ){
-              #if defined CODI_REVERSE_TYPE
-               if (config_container[ZONE_0]->GetOne_Shot()) AD::globalTape.reset();
-              #endif
-        }
-        //call function with alpha_next
         whilecounter=whilecounter+1;
 
-        solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadOldSolution();
+      if(ExtIter>config_container[0]->GetOneShotStart()){
 
-        if(ExtIter>config_container[0]->GetOneShotStart()){
-            for (iZone = 0; iZone < nZone; iZone++){
+        alpha_help = 0.0;
+
+        solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadOldSolution();
+        if(config_container[0]->GetLoadMesh()){
+            solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+        }
+        for (iZone = 0; iZone < nZone; iZone++){
               solver_container[iZone][MESH_0][ADJFLOW_SOL]->DesignUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone], ExtIter, alpha_next);
-              if(whilecounter>1) solver_container[iZone][MESH_0][ADJFLOW_SOL]->DesignMinus();
+              if((whilecounter>1)&&(!config_container[0]->GetLoadMesh())) solver_container[iZone][MESH_0][ADJFLOW_SOL]->DesignMinus();
               if(config_container[0]->GetOneShotConstraint()==true && whilecounter==1) solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateMultiplier(config_container[0]);
-            }
-            deformOneShot(output, geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+        }
+        deformOneShot(output, geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+        OneShotStep(output, integration_container, geometry_container,
+               solver_container, numerics_container, config_container,
+                surface_movement, volume_grid_movement, FFDBox, whilecounter);
+        solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->OverwriteSensitivityProjected(geometry_container[ZONE_0][MESH_0]);
+        projectOneShot(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+        solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CalculatePhi(alpha_next, phi_next, dPhi_next);
+
+        phi_test = phi_alpha0 + alpha_next * dPhi_test;
+
+        if(stage && (phi_next <= phi_test) && (dPhi_next >= 0.0)){
+            stage = false;
         }
 
- /*
-    while(ExtIter>config_container[0]->GetOneShotStart()&&solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(steplen)&&config_container[0]->GetLineSearch()&&steplen>1E-15);
-*/
+        info = 0;
+        if (( brackt && ((alpha_next <= stmin) || (alpha_next >= stmax)))){
+            info = -6;
+        }
+        if ((alpha_next == stpmax ) && (phi_next <= phi_test) && (dPhi_next <= dPhi_test)) {
+            info = -5;
+        }
+        if ((alpha_next == stpmin) && ((phi_next >= phi_test) || (dPhi_next >= dPhi_test))) {
+            info = -4;
+        }
+        if (brackt && (stmax - stmin <= xtol * stmax)) {
+            info = -2;
+        }
+        if ((phi_next <= phi_test) && (abs(dPhi_next) <= gtol * ((-1.0)*dPhi_alpha0))) {
+            info = 1;
+        }
+        std::cout << "info = " << info << std::endl;
+        if (info != 0) {
+            break;
+        }
+
+        // if (stage == true), values and derivatives of psi at alpha_lo, alpha_next and alpha_hi have to be computed
+        if(stage && (phi_next <= phi_lo) && (phi_next > phi_test)){
+            psi_next = phi_next - alpha_next * dPhi_test;
+            psi_lo = phi_lo - alpha_lo * dPhi_test;
+            psi_hi = phi_hi - alpha_hi * dPhi_test;
+            dPsi_next = dPhi_next - dPhi_test;
+            dPsi_lo = dPhi_lo - dPhi_test;
+            dPsi_hi = dPhi_hi - dPhi_test;
+
+            alpha_help = mcstep(alpha_lo, psi_lo, dPsi_lo, alpha_hi, psi_hi, dPsi_hi, alpha_next, psi_next, dPsi_next, brackt, stmin, stmax);
+            alpha_next = alpha_help;
+
+            phi_lo = psi_lo + phi_alpha0 + alpha_lo * dPhi_test;
+            phi_hi = psi_hi + phi_alpha0 + alpha_hi * dPhi_test;
+            dPhi_lo = dPsi_lo + ftol * dPhi_test;
+            dPhi_hi = dPsi_hi + ftol * dPhi_test;
+
+        }
+        else{
+            alpha_help= mcstep(alpha_lo, phi_lo, dPhi_lo, alpha_hi, phi_hi, dPhi_hi, alpha_next, phi_next, dPhi_next, brackt, stmin, stmax);
+            alpha_next = alpha_help;
+        }
+
+        if(brackt){
+            if(abs(alpha_hi-alpha_lo)>= p66* width1){
+                alpha_next = alpha_lo + p5*(alpha_hi-alpha_lo);
+            }
+            width1 = width;
+            width = abs(alpha_hi-alpha_lo);
+        }
+
+        if(brackt){
+            stmin = std::min(alpha_lo, alpha_hi);
+            stmax = std::max(alpha_lo, alpha_hi);
+        }
+        else{
+            stmin = alpha_next + xtrapl *(alpha_next-alpha_lo);
+            stmax = alpha_next + xtrapu *(alpha_next-alpha_lo);
+
+        }
+
+        alpha_next = std::max(alpha_next, stpmin);
+        alpha_next = std::min(alpha_next, stpmax);
 
 
+        if( (brackt && (alpha_next <= stmin || alpha_next >= stmax)) ||
+            (brackt && (stmax - stmin <= xtol * stmax)) ){
+            alpha_next = alpha_lo;
+        }
+      }else{
+          solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadOldSolution();
+          if(config_container[0]->GetLoadMesh()){
+              solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[ZONE_0], geometry_container[ZONE_0][MESH_0]);
+          }
+          OneShotStep(output, integration_container, geometry_container,
+                 solver_container, numerics_container, config_container,
+                  surface_movement, volume_grid_movement, FFDBox, whilecounter);
+          if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
+              for (iZone = 0; iZone < nZone; iZone++){
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->OverwriteSensitivityProjected(geometry_container[iZone][MESH_0]);
+          projectOneShot(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
+          }
+      }
+      }
+    }while(ExtIter>config_container[0]->GetOneShotStart()&&config_container[0]->GetLineSearch()&&(whilecounter<config_container[0]->GetSearchCounterMax()));
+    if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
+        for (iZone = 0; iZone < nZone; iZone++){
+          /*--- Project Sensitivities ---*/
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->OverwriteGradientProjected(geometry_container[iZone][MESH_0]);
+          projectGradient(geometry_container, config_container, surface_movement, volume_grid_movement, solver_container);
 
+          /*--- BFGS Update and Calculation of Descent Direction ---*/
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->ApplyDesignVar();
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
+        }
+    }
 
+}
+
+su2double CDiscOneShotIteration::mcstep(su2double& stx, su2double& fx, su2double& dx,
+                                         su2double& sty, su2double& fy, su2double& dy,
+                                         su2double& stp, su2double& fp, su2double& dp,
+                                         bool& brackt_mcstep, su2double stmin_mcstep, su2double stmax_mcstep){
+        su2double theta, gamma, p, q, r, s, stpc, stpf, stpq, d_1, d_2, d_3, sgnd;
+
+        sgnd = dp * (dx / abs(dx));
+
+        // case 1
+        if(fp > fx){
+            theta = 3.0 *(fx - fp)*pow(stp - stx,-1) + dx + dp;
+            d_1 = abs(theta);
+            d_2 = abs(dx);
+            d_1 = std::max(d_1,d_2);
+            d_2 = abs(dp);
+            s = std::max(d_1, d_2);
+            d_1 = theta*pow(s,-1);
+            gamma = s*pow(d_1*d_1 - (dx*pow(s,-1))*(dp*pow(s,-1)), 0.5);
+            if (stp < stx)
+                gamma = -gamma;
+            p = (gamma - dx) + theta;
+            q = ((gamma - dx)+gamma) + dp;
+            r= p/q;
+            stpc = stx + r*(stp-stx);
+            stpq = stx + ((dx/((fx-fp)*pow(stp-stx,-1)+dp))*0.5)*(stp-stx);
+            if(abs(stpc-stx)< abs(stpq-stx))
+                stpf = stpc;
+            else
+                stpf = stpc +(stpq-stpc)*0.5;
+            brackt_mcstep = true;
+        }
+
+        // case 2
+        else if (sgnd < 0.0){
+            theta = 3.0 *(fx - fp)*pow(stp - stx,-1) + dx + dp;
+            d_1 = abs(theta);
+            d_2 = abs(dx);
+            d_1 = std::max(d_1,d_2);
+            d_2 = abs(dp);
+            s = std::max(d_1, d_2);
+            d_1 = theta*pow(s,-1);
+            gamma = s*pow(d_1*d_1 - (dx*pow(s,-1))*(dp*pow(s,-1)), 0.5);
+            if (stp > stx)
+                gamma = -gamma;
+            p = (gamma - dp) + theta;
+            q = ((gamma - dp)+gamma) + dx;
+            r= p/q;
+            stpc = stp + r*(stx-stp);
+            stpq = stp + (dp/(dp-dx))*(stx - stp);
+            if(abs(stpc-stp)> abs(stpq-stp))
+                stpf = stpc;
+            else
+                stpf = stpq;
+            brackt_mcstep = true;
+        }
+
+        // case 3:
+        else if (abs(dp) < abs(dx)){
+            theta = 3.0 *(fx - fp)*pow(stp - stx,-1) + dx + dp;
+            d_1 = abs(theta);
+            d_2 = abs(dx);
+            d_1 = std::max(d_1,d_2);
+            d_2 = abs(dp);
+            s = std::max(d_1, d_2);
+            d_3 = theta*pow(s,-1);
+            d_1 =0.0;
+            d_2 = d_3*d_3 - (dx*pow(s,-1))*(dp*pow(s,-1));
+            d_3 = std::max(d_2,d_1);
+            gamma = s*pow(d_3,0.5);
+            if (stp > stx)
+                gamma = -gamma;
+            p = (gamma - dp) + theta;
+            q = (gamma +(dx- dp))+gamma;
+            r= p/q;
+
+            if(r < 0.0 && gamma != 0.0)
+                stpc = stp+ r*(stx-stp);
+            else if (stp > stx)
+                stpc = stmax_mcstep;
+            else
+                stpc = stmin_mcstep;
+
+            stpq = stp +(dp*pow(dp-dx,-1))*(stx-stp);
+
+            if(brackt_mcstep){
+                if(abs(stpc-stp)<abs(stpq - stp))
+                    stpf = stpc;
+                else
+                    stpf = stpq;
+
+                if(stp > stx){
+                    d_1 = stp + (sty-stp)*0.66;
+                    stpf = std::min(stpf,d_1);
+                }
+                else {
+                    d_1 = stp + (sty-stp)*0.66;
+                    stpf = std::max(stpf,d_1);
+                }
+            }
+            else{
+                if(abs(stpc-stp)>abs(stpq-stp))
+                    stpf = stpc;
+                else
+                    stpf = stpq;
+                stpf = std::min(stmax_mcstep,stpf);
+                stpf = std::max(stmin_mcstep,stpf);
+            }
+        }
+
+        // case 4:
+        else{
+            if(brackt_mcstep){
+                theta = 3.0 *(fp - fy)*pow(sty - stp,-1) + dp + dy;
+                d_1 = abs(theta);
+                d_2 = abs(dy);
+                d_1 = std::max(d_1,d_2);
+                d_2 = abs(dp);
+                s = std::max(d_1, d_2);
+                d_1 = theta*pow(s,-1);
+                gamma = s*pow(d_1*d_1 - (dy*pow(s,-1))*(dp*pow(s,-1)), 0.5);
+                if (stp > sty)
+                    gamma = -gamma;
+                p = (gamma - dp) + theta;
+                q = ((gamma - dp)+gamma) + dy;
+                r= p/q;
+                stpc = stp + r*(sty-stp);
+                stpf = stpc;
+            }
+            else if(stp > stx)
+                stpf = stmax_mcstep;
+            else
+                stpf = stmin_mcstep;
+        }
+        if (fp > fx) {
+            sty = stp;
+            fy = fp;
+            dy = dp;
+        }
+        else {
+            if (sgnd < 0) {
+                sty = stx;
+                fy = fx;
+                dy = dx;
+            }
+            stx = stp;
+            fx= fp;
+            dx = dp;
+        }
+        return stpf;
 }
 
 void CDiscOneShotIteration::DiscAdjMeanFlowIterationRobust(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
@@ -3867,7 +4154,7 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
     for (iMesh = 0; iMesh <= config_container[ZONE_0]->GetnMGLevels(); iMesh++){
       solver_container[ZONE_0][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ALL_VARIABLES);
     }
-
+      su2double time =su2double(clock())/su2double(CLOCKS_PER_SEC);
       AD::StartRecording();
 
       for (iZone = 0; iZone < nZone; iZone++){
@@ -3902,6 +4189,8 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
         }
       }
       AD::StopRecording();
+      su2double time3 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+      std::cout<<"TimeCompute: "<<time3-time<<std::endl;
 
       double* multiplierVec = new double[3];
       multiplierVec[0]=SU2_TYPE::GetValue(config_container[ZONE_0]->GetConstraintStart());
@@ -3918,7 +4207,10 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
                                                                         config_container[iZone]);
       }
     }
+    su2double time1 =su2double(clock())/su2double(CLOCKS_PER_SEC);
     AD::ComputeAdjoint();
+    su2double time2 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+    std::cout<<"TimeCompute: "<<time2-time1<<std::endl;
     for (iZone = 0; iZone < nZone; iZone++){
       if (flow){
         solver_container[iZone][MESH_0][ADJFLOW_SOL]->ResetSensitivity(geometry_container[iZone][MESH_0]);
@@ -3969,6 +4261,8 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
     }
 
     AD::ClearAdjoints();
+
+    if(config_container[0]->GetSecondOrder()){
 
    //Compute beta*Deltaybar^TNyu using second order AD (Forward over Reverse)
 
@@ -4039,83 +4333,87 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
 
     AD::ClearAdjoints();
 
+    }
+    else{
+
    //Compute beta*Deltaybar^TNyu using Finite Differences
 
-//    for (iZone = 0; iZone < nZone; iZone++){
-//      solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
-//    }
+    for (iZone = 0; iZone < nZone; iZone++){
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
+    }
 
-//    for (iZone = 0; iZone < nZone; iZone++){
-//        solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateStateVariable(config_container[ZONE_0]);
-//    }
-// //   cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
+    for (iZone = 0; iZone < nZone; iZone++){
+        solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateStateVariable(config_container[ZONE_0]);
+    }
+ //   cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
 
-//  #if defined CODI_REVERSE_TYPE
-//  if (config_container[ZONE_0]->GetOne_Shot()){
-//      AD::globalTape.reset();
-//   }
-//  #endif
+  #if defined CODI_REVERSE_TYPE
+  if (config_container[ZONE_0]->GetOne_Shot()){
+      AD::globalTape.reset();
+   }
+  #endif
 
-//  for (iMesh = 0; iMesh <= config_container[ZONE_0]->GetnMGLevels(); iMesh++){
-//    solver_container[ZONE_0][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ALL_VARIABLES);
-//  }
+  for (iMesh = 0; iMesh <= config_container[ZONE_0]->GetnMGLevels(); iMesh++){
+    solver_container[ZONE_0][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ALL_VARIABLES);
+  }
 
-//    for (iZone = 0; iZone < nZone; iZone++){
-//      solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadOldAdjoint();
-//    }
+    for (iZone = 0; iZone < nZone; iZone++){
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadOldAdjoint();
+    }
 
-//      AD::StartRecording();
+      AD::StartRecording();
 
-//      for (iZone = 0; iZone < nZone; iZone++){
-//        geometry_container[iZone][MESH_0]->RegisterCoordinates(config_container[iZone]);
-//        if (flow){
-//          solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterSolution(geometry_container[iZone][MESH_0],
-//                                                                     config_container[iZone]);
-//        }
-//      }
+      for (iZone = 0; iZone < nZone; iZone++){
+        geometry_container[iZone][MESH_0]->RegisterCoordinates(config_container[iZone]);
+        if (flow){
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterSolution(geometry_container[iZone][MESH_0],
+                                                                     config_container[iZone]);
+        }
+      }
 
-//      for (iZone = 0; iZone < nZone; iZone++){
-//        geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
-//      }
+      for (iZone = 0; iZone < nZone; iZone++){
+        geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone],config_container[iZone]);
+      }
 
-//      if (flow){
-//          for (iZone = 0; iZone < nZone; iZone++){
-//            meanflow_iteration->Iterate(output,integration_container,geometry_container,solver_container,numerics_container,
-//                                      config_container,surface_movement,volume_grid_movement,FFDBox, iZone);
-//          }
-//      }
+      if (flow){
+          for (iZone = 0; iZone < nZone; iZone++){
+            meanflow_iteration->Iterate(output,integration_container,geometry_container,solver_container,numerics_container,
+                                      config_container,surface_movement,volume_grid_movement,FFDBox, iZone);
+          }
+      }
 
-//      for (iZone = 0; iZone < nZone; iZone++){
-//        if (flow){
-//          solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterObj_Func(config_container[iZone]);
-//          if(config_container[0]->GetOneShotConstraint()==true) solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterConstraint_Func(config_container[iZone], geometry_container[iZone][MESH_0]);
-//          solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterOutput(geometry_container[iZone][MESH_0],
-//                                                                      config_container[iZone]);
-//        }
-//      }
+      for (iZone = 0; iZone < nZone; iZone++){
+        if (flow){
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterObj_Func(config_container[iZone]);
+          if(config_container[0]->GetOneShotConstraint()==true) solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterConstraint_Func(config_container[iZone], geometry_container[iZone][MESH_0]);
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterOutput(geometry_container[iZone][MESH_0],
+                                                                      config_container[iZone]);
+        }
+      }
 
-//      AD::StopRecording();
+      AD::StopRecording();
 
-//    //------------------COMPUTE new N_u-------------------------
-//    for (iZone = 0; iZone < nZone; iZone++){
-//      if (flow){
-//        solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[iZone][MESH_0], config_container[iZone],1.0);
-//        if(config_container[0]->GetOneShotConstraint()==true) solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFunc(geometry_container[iZone][MESH_0], config_container[iZone],solver_container[iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
-//        solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdjoint_Output(geometry_container[iZone][MESH_0],
-//                                                                      config_container[iZone]);
-//      }
-//    }
 
-//    AD::ComputeAdjoint();
+    //------------------COMPUTE new N_u-------------------------
+    for (iZone = 0; iZone < nZone; iZone++){
+      if (flow){
+        solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[iZone][MESH_0], config_container[iZone],1.0);
+        if(config_container[0]->GetOneShotConstraint()==true) solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFunc(geometry_container[iZone][MESH_0], config_container[iZone],solver_container[iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
+        solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdjoint_Output(geometry_container[iZone][MESH_0],
+                                                                      config_container[iZone]);
+      }
+    }
+    AD::ComputeAdjoint();
 
-//    for (iZone = 0; iZone < nZone; iZone++){
-//      if (flow){
-//        solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivityFD(geometry_container[iZone][MESH_0],config_container[iZone]); //contains N_u_new
-//        solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[iZone][MESH_0],config_container[ZONE_0]->GetOneShotBeta());
-//      }
-//    }
+    for (iZone = 0; iZone < nZone; iZone++){
+      if (flow){
+        solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivityFD(geometry_container[iZone][MESH_0],config_container[iZone]); //contains N_u_new
+        solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[iZone][MESH_0],config_container[ZONE_0]->GetOneShotBeta());
+      }
+    }
 
-//    AD::ClearAdjoints();
+    AD::ClearAdjoints();
+    }
 
     for (iZone = 0; iZone < nZone; iZone++){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();

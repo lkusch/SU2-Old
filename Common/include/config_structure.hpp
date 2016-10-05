@@ -427,7 +427,7 @@ private:
   unsigned short FFD_Continuity; /*!< Surface continuity at the intersection with the FFD */
   su2double Deform_ElasticityMod, Deform_PoissonRatio; /*!< young's modulus and poisson ratio for volume deformation stiffness model */
   su2double OneShotAlpha, OneShotBeta, OneShotStepSize, *ConstraintFactor, ConstraintStart;
-  unsigned long OneShotStart, SearchCounterMax;
+  unsigned long OneShotStart, SearchCounterMax, OneShotStop;
   unsigned short ConstraintNum;
   bool OneShotStepAdaptive, OneShotConstraint, IdentityHessian, MultiplierNorm, LineSearch, CheckVk, Armijo, BoundsExact; //bool EqualConstraint
   unsigned short *EqualConstraint;
@@ -441,6 +441,7 @@ private:
   bool NormNewY, NormHB;
   su2double DampedGamma;
   bool CheckDescent;
+  bool LoadMesh, SecondOrder;
 
   su2double TopOptMinElasticity, TopOptPenalty, TopOptVolumeFraction;
 
@@ -864,7 +865,7 @@ private:
    // }
     assert(option_map.find(name) == option_map.end());
     all_options.insert(pair<string, bool>(name, true));
-    COptionBase* val = new COptionDoubleArray(name, size, option_field, def);
+    COptionBase* val = new COptionDoubleArray(name, size, option_field, default_value);
     option_map.insert(pair<string, COptionBase *>(name, val));
   }
 
@@ -2993,6 +2994,7 @@ public:
   su2double GetOneShotAlpha(void);
   su2double GetOneShotBeta(void);
   unsigned long GetOneShotStart(void);
+  unsigned long GetOneShotStop(void);
   bool GetOSStepAdaptive(void);
   su2double GetOSStepSize(void);
   bool GetOneShotConstraint(void);
@@ -3007,6 +3009,8 @@ public:
   unsigned long GetSearchCounterMax(void);
   bool GetCheckVk(void);
   bool GetArmijo(void);
+  bool GetLoadMesh(void);
+  bool GetSecondOrder(void);
 
   bool GetPosConstraint(void);
   bool GetPosUpdate(void);

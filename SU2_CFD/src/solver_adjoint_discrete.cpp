@@ -1458,6 +1458,15 @@ void CDiscAdjSolver::ApplyDesignVar(){
     }
 }
 
+void CDiscAdjSolver::SetDesignVariable(){
+    su2double design [38]= {0.00430015707192, 0.00351786344767, 0.0032401667356, 0.00283807455377, 0.00206191727, 0.00108405876297, 0.000555539929847, 0.000786541534876, 0.00183052016302, 0.00338675330365, 0.00428013385902, 0.00345702317815, -0.000799563850502, -0.00492667722335, -0.00460574497224, -0.00466251584455, -0.00460957049057, -0.00465793791568, -0.000929145626517, -0.0031879407669, -0.00490755627308, -0.00484567484714, -0.0047489851551, -0.00449419269773, -0.00481480500091, -0.00162911460905, 0.00124351541834, 0.00201096724969, 0.0011449638727, -0.000714982158573, -0.00220847856125, -0.000765269648138, 0.00416351002763, 0.0048552422848, 0.00493010058661, 0.0049611775592, 0.00494926802939, 0.00196807919392};
+    unsigned long iVertex;
+    for (iVertex = 0; iVertex < 38; iVertex++){
+        DesignVarUpdate[iVertex]=design[iVertex];
+        DesignVar[iVertex]=design[iVertex];
+    }
+}
+
 su2double CDiscAdjSolver::getDVValue(unsigned long iDV){
     return DesignVarUpdate[iDV];
 }
@@ -1740,21 +1749,21 @@ void CDiscAdjSolver::DesignMinus(){
 
 void CDiscAdjSolver::CalculatePhi(su2double steplen, su2double& Phi, su2double& dPhi){
     su2double helper=0.0;
-    if(steplen==0.0){
+/*    if(steplen==0.0){
         unsigned long iVertex;
         for (iVertex = 0; iVertex < 38; iVertex++){
             helper+=UpdateSens[iVertex]*ProjectedSensOld[iVertex];
         }
         dPhi=helper;
         Phi=Lagrangian_Value_Old;
-    }else{
+    }else{*/
         unsigned long iVertex;
         for (iVertex = 0; iVertex < 38; iVertex++){
             helper+=UpdateSens[iVertex]*ProjectedSens[iVertex];
         }
         dPhi=helper;
         Phi=Lagrangian_Value;
-    }
+//    }
 }
 
 su2double CDiscAdjSolver::QuadraticApproximation(su2double steplen){
@@ -2249,6 +2258,7 @@ void CDiscAdjSolver::SetSensitivityFD(CGeometry *geometry, CConfig *config){
   su2double Total_Sens_Geo_local = 0.0;
   Total_Sens_Geo = 0.0;
   su2double stepsize=config->GetFDStep();
+  su2double eps;
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     Coord = geometry->node[iPoint]->GetCoord();
@@ -2256,9 +2266,18 @@ void CDiscAdjSolver::SetSensitivityFD(CGeometry *geometry, CConfig *config){
     for (iDim = 0; iDim < nDim; iDim++){
       Sensitivity = SU2_TYPE::GetDerivative(Coord[iDim]);
 
+      AD::ResetInput(Coord[iDim]);
+
+      if (config->GetSens_Remove_Sharp()) {
+        eps = config->GetLimiterCoeff()*config->GetRefElemLength();
+        if ( geometry->node[iPoint]->GetSharpEdge_Distance() < config->GetSharpEdgesCoeff()*eps )
+          Sensitivity = 0.0;
+      }
+
       node[iPoint]->SetSensitivity(iDim, Sensitivity);
     }
   }
+
   std::cout<<"FDStep: "<<stepsize<<std::endl;
 //  for (iMarker = 0; iMarker < nMarker; iMarker++){
     Sens_Geo[iMarker] = 0.0;
