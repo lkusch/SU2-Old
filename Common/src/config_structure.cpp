@@ -1222,7 +1222,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /*!\par CONFIG_CATEGORY: FEA solver \ingroup Config*/
   /*--- Options related to the FEA solver ---*/
 
-  addDoubleOption("ELEM_DENSITY", InitialElemDensity, 0.5);
+  addDoubleOption("ELEM_DENSITY", InitialElemDensity, 1.0);
   /* DESCRIPTION: Modulus of elasticity */
   addDoubleOption("ELASTICITY_MODULUS", ElasticyMod, 2E11);
   /* DESCRIPTION: Poisson ratio */

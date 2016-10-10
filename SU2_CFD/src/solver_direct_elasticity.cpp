@@ -647,6 +647,9 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
 
   if(dynamic) Set_MPI_Solution_Old(geometry, config);
 
+  penal = 3.0;
+  Emin = 1E-3;
+
 }
 
 CFEM_ElasticitySolver::~CFEM_ElasticitySolver(void) {
@@ -1775,7 +1778,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix(CGeometry *geometry, CSolver **s
 
         for (iVar = 0; iVar < nVar; iVar++){
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_ij[iVar][jVar] = pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];//(Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(E - Emin))*Kab[iVar*nVar+jVar];
+            Jacobian_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Kab[iVar*nVar+jVar];
           }
         }
 
@@ -1816,7 +1819,6 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix_NodalStressRes(CGeometry *geomet
   /*--- Loops over all the elements ---*/
 
   for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
-
     if (geometry->elem[iElem]->GetVTK_Type() == TRIANGLE)      {nNodes = 3; EL_KIND = EL_TRIA;}
     if (geometry->elem[iElem]->GetVTK_Type() == QUADRILATERAL) {nNodes = 4; EL_KIND = EL_QUAD;}
     if (geometry->elem[iElem]->GetVTK_Type() == TETRAHEDRON)   {nNodes = 4; EL_KIND = EL_TETRA;}
@@ -1871,7 +1873,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix_NodalStressRes(CGeometry *geomet
     for (iNode = 0; iNode < NelNodes; iNode++){
 
       Ta = element_container[FEA_TERM][EL_KIND]->Get_Kt_a(iNode);
-      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = Ta[iVar];
+      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ta[iVar];
 
       /*--- Check if this is my node or not ---*/
       LinSysRes.SubtractBlock(indexNode[iNode], Res_Stress_i);
@@ -1893,10 +1895,10 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix_NodalStressRes(CGeometry *geomet
         if (incompressible) Kk_ab = element_container[FEA_TERM][EL_KIND]->Get_Kk_ab(iNode,jNode);
 
         for (iVar = 0; iVar < nVar; iVar++){
-          Jacobian_s_ij[iVar][iVar] = Ks_ab;
+          Jacobian_s_ij[iVar][iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ks_ab;
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_c_ij[iVar][jVar] = pow(geometry->elem[iElem]->GetDensity()[0],1)*Kab[iVar*nVar+jVar];//pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];
-            if (incompressible) Jacobian_k_ij[iVar][jVar] = Kk_ab[iVar*nVar+jVar];
+            Jacobian_c_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Kab[iVar*nVar+jVar];//pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];
+            if (incompressible) Jacobian_k_ij[iVar][jVar] =(Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))* Kk_ab[iVar*nVar+jVar];
           }
         }
 
@@ -2043,7 +2045,7 @@ void CFEM_ElasticitySolver::Compute_NodalStressRes(CGeometry *geometry, CSolver 
     for (iNode = 0; iNode < NelNodes; iNode++){
 
       Ta = element_container[FEA_TERM][EL_KIND]->Get_Kt_a(iNode);
-      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = Ta[iVar];
+      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ta[iVar];
 
       LinSysRes.SubtractBlock(indexNode[iNode], Res_Stress_i);
 
@@ -2124,7 +2126,7 @@ void CFEM_ElasticitySolver::Compute_NodalStress(CGeometry *geometry, CSolver **s
 
       /*--- This only works if the problem is nonlinear ---*/
       Ta = element_container[FEA_TERM][EL_KIND]->Get_Kt_a(iNode);
-      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = Ta[iVar];
+      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ta[iVar];
 
       LinSysReact.AddBlock(indexNode[iNode], Res_Stress_i);
 

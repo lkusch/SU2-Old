@@ -7129,6 +7129,8 @@ private:
   su2double Total_OFRefGeom;        /*!< \brief Total FEA coefficient for all the boundaries. */
   su2double Total_ForwardGradient;  /*!< \brief Vector of the total forward gradient. */
   su2double MinimumCompliance;
+  su2double Emin;
+  su2double penal;
 
 public:
 

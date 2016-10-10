@@ -4017,7 +4017,7 @@ public:
 
   su2double Get_YoungModulus();
 
-	virtual void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
+    virtual void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
 	virtual void Compute_MeanDilatation_Term(CElement *element_container, CConfig *config);
 
@@ -4067,7 +4067,7 @@ public:
 
     void SetMaterial_Properties(su2double val_E, su2double val_Nu);
 
-	void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
+    void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
 	void Compute_Constitutive_Matrix(void);
   using CNumerics::Compute_Constitutive_Matrix; //??
@@ -4166,7 +4166,7 @@ public:
 	 */
 	virtual ~CFEM_NonlinearElasticity(void);
 
-	void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
+    void Compute_Tangent_Matrix(CElement *element_container, CConfig *config);
 
 	void Compute_MeanDilatation_Term(CElement *element_container, CConfig *config);
 

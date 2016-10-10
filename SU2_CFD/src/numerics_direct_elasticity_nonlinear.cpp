@@ -404,7 +404,7 @@ void CFEM_NonlinearElasticity::Compute_Tangent_Matrix(CElement *element, CConfig
 			for (iVar = 0; iVar < nDim; iVar++){
 				KAux_t_a[iVar] = 0.0;
 				for (jVar = 0; jVar < nDim; jVar++){
-					KAux_t_a[iVar] += Weight * Stress_Tensor[iVar][jVar] * GradNi_Curr_Mat[iNode][jVar] * Jac_x;
+                    KAux_t_a[iVar] += Weight * Stress_Tensor[iVar][jVar] * GradNi_Curr_Mat[iNode][jVar] * Jac_x;
 				}
 			}
 
@@ -477,7 +477,7 @@ void CFEM_NonlinearElasticity::Compute_Tangent_Matrix(CElement *element, CConfig
 					for (jVar = 0; jVar < nDim; jVar++){
 						KAux_ab[iVar][jVar] = 0.0;
 						for (kVar = 0; kVar < bDim; kVar++){
-							KAux_ab[iVar][jVar] += Weight * AuxMatrixKc[iVar][kVar] * Bb_Mat[kVar][jVar] * Jac_x;
+                            KAux_ab[iVar][jVar] += Weight * AuxMatrixKc[iVar][kVar] * Bb_Mat[kVar][jVar] * Jac_x;
 						}
 					}
 				}
@@ -485,7 +485,7 @@ void CFEM_NonlinearElasticity::Compute_Tangent_Matrix(CElement *element, CConfig
 				/*--- Ks_Aux_ab is the term for the constitutive part of the tangent matrix ---*/
 				Ks_Aux_ab = 0.0;
 				for (iVar = 0; iVar < nDim; iVar++){
-					Ks_Aux_ab += Weight * AuxMatrixKs[iVar] * GradNi_Curr_Mat[jNode][iVar] * Jac_x;
+                    Ks_Aux_ab += Weight * AuxMatrixKs[iVar] * GradNi_Curr_Mat[jNode][iVar] * Jac_x;
 				}
 
 				element->Add_Kab(KAux_ab,iNode, jNode);

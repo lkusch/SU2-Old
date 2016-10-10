@@ -2331,9 +2331,9 @@ void CDiscAdjFEASolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *co
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
-        std::cout<<"Solution "<<direct_solver->node[iPoint]->GetSolution(iVar)<<" Adjoint "<<node[iPoint]->GetSolution(iVar)<<" ";
+//        std::cout<<"Solution "<<direct_solver->node[iPoint]->GetSolution(iVar)<<" Adjoint "<<node[iPoint]->GetSolution(iVar)<<" ";
     }
-    std::cout<<std::endl;
+//    std::cout<<std::endl;
   }
 }
 
@@ -2361,6 +2361,7 @@ void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *c
     Global_Sens_Rho      = Local_Sens_Rho;
     Global_Sens_Rho_DL   = Local_Sens_Rho_DL;
 #endif
+
     unsigned long iElem;
     for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
         Global_Sens_Density[iElem] = SU2_TYPE::GetDerivative(Density[iElem]);
@@ -2480,13 +2481,13 @@ void CDiscAdjFEASolver::SetSensitivity(CGeometry *geometry, CConfig *config){
   Total_Sens_Nu       += Global_Sens_Nu;
   Total_Sens_Rho      += Global_Sens_Rho;
   Total_Sens_Rho_DL   += Global_Sens_Rho_DL;
-  std::cout<<"Sens: "<<Total_Sens_E<<" "<<Total_Sens_Nu<<" "<<Total_Sens_Rho<<" "<<Total_Sens_Rho_DL<<std::endl;
-  std::cout<<"Density: ";
+//  std::cout<<"Sens: "<<Total_Sens_E<<" "<<Total_Sens_Nu<<" "<<Total_Sens_Rho<<" "<<Total_Sens_Rho_DL<<std::endl;
+/*  std::cout<<"Density: ";
   unsigned short iElem;
   for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
       std::cout<<Global_Sens_Density[iElem]<<" ";
   }
-  std::cout<<std::endl;
+  std::cout<<std::endl;*/
 
 }
 
@@ -2496,14 +2497,14 @@ void CDiscAdjFEASolver::SetSensDensity(CGeometry *geometry, CConfig *config){
   unsigned short iDim;
   su2double Density, Sensitivity;
 
-  std::cout<<"Density: ";
+//  std::cout<<"Density: ";
   for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
     Density = geometry->elem[iElem]->GetDensity()[0];
 
    // for (iDim = 0; iDim < nDim; iDim++){
 
       Sensitivity = SU2_TYPE::GetDerivative(Density);
-      std::cout<<Sensitivity<<" ";
+  //    std::cout<<Sensitivity<<" ";
 
       /*--- Set the index manually to zero. ---*/
 
@@ -2513,7 +2514,7 @@ void CDiscAdjFEASolver::SetSensDensity(CGeometry *geometry, CConfig *config){
 
   //  }
   }
-  std::cout<<std::endl;
+//  std::cout<<std::endl;
 }
 
 void CDiscAdjFEASolver::InitializeDensity(CGeometry *geometry, CConfig *config){
@@ -2521,7 +2522,7 @@ void CDiscAdjFEASolver::InitializeDensity(CGeometry *geometry, CConfig *config){
   unsigned long iElem;
 
   for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
-    geometry->elem[iElem]->SetDensity(0.9);
+    geometry->elem[iElem]->SetDensity(config->GetInitialElemDensity());
   }
 }
 
