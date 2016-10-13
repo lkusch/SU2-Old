@@ -1828,8 +1828,12 @@ void CDriver::Iteration_Preprocessing(CIteration **iteration_container, CConfig 
     case DISC_ADJ_FEM:
       if (rank == MASTER_NODE)
         cout << ": discrete adjoint FEM structural iteration." << endl;
-      iteration_container[iZone] = new CDiscAdjFEAIteration(config[iZone]);
+      //iteration_container[iZone] = new CDiscAdjFEAIteration(config[iZone]);
+      iteration_container[iZone] = new TopologyOptimization(config[iZone]);
       break;
+
+    //TODOLISA: case ONE_SHOT_FEM:
+
   }
   
 }
@@ -2010,7 +2014,7 @@ void CSingleZoneDriver::Run(CIteration **iteration_container,
   iteration_container[ZONE_0]->Preprocess(output, integration_container, geometry_container,
                                           solver_container, numerics_container, config_container,
                                           surface_movement, grid_movement, FFDBox, ZONE_0);
-  
+
   iteration_container[ZONE_0]->Iterate(output, integration_container, geometry_container,
                                        solver_container, numerics_container, config_container,
                                        surface_movement, grid_movement, FFDBox, ZONE_0);

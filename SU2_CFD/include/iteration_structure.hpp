@@ -1559,3 +1559,146 @@ void FEM_StructuralIteration(COutput *output, CIntegration ***integration_contai
 void SetGrid_Movement(CGeometry **geometry_container, CSurfaceMovement *surface_movement, 
                       CVolumetricMovement *grid_movement, CFreeFormDefBox **FFDBox,
                       CSolver ***solver_container, CConfig *config_container, unsigned short iZone, unsigned long IntIter, unsigned long ExtIter);
+
+/*!
+ * \class TopologyOptimization
+ * \brief Class for PiggyBack/One-Shot Topology Optimization for Structural Mechanics.
+ * \author L. Kusch
+ * \version 4.2.0 "Cardinal"
+ */
+class TopologyOptimization : public CIteration {
+
+private:
+
+  CFEM_StructuralAnalysis* fem_iteration; /*!< \brief Pointer to the mean flow iteration class. */
+  unsigned short CurrentRecording;        /*!< \brief Stores the current status of the recording. */
+
+  enum RECORDING{
+    NONE = 0,               /*!< \brief Indicates that nothing is recorded. */
+    FLOW_VARIABLES = 1,     /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the flow problem with
+                                        respect to the conservative flow variables. */
+    GEOMETRY_VARIABLES = 2, /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the flow problem with respect
+                                        to the mesh geometry variables. */
+    FEM_VARIABLES = 3,      /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the structural problem with respect
+                                        to the structural displacements. */
+    ALL_VARIABLES = 4,      /*!< \brief All variables (monolithic solution) */
+    FLOW_CROSS_TERM = 5,    /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the structural problem
+                                        with respect to the flow variables. */
+    FEM_CROSS_TERM = 6,      /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the mesh problem
+                                        with respect to the structural displacements. */
+    GEOMETRY_CROSS_TERM = 7   /*!< \brief Indicates that the current recording can
+                                        be used to compute the gradients of the structural problem
+                                        with respect to the geometry variables. */
+  };
+
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] config - Definition of the particular problem.
+   */
+  TopologyOptimization(CConfig *config);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~TopologyOptimization(void);
+
+  /*!
+   * \brief Preprocessing to prepare for an iteration of the physics.
+   * \param[in] ??? - Description here.
+   */
+  void Preprocess(COutput *output,
+                  CIntegration ***integration_container,
+                  CGeometry ***geometry_container,
+                  CSolver ****solver_container,
+                  CNumerics *****numerics_container,
+                  CConfig **config_container,
+                  CSurfaceMovement **surface_movement,
+                  CVolumetricMovement **grid_movement,
+                  CFreeFormDefBox*** FFDBox,
+                  unsigned short val_iZone);
+
+  /*!
+   * \brief Perform a single iteration of the adjoint mean flow system.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
+  void Iterate(COutput *output,
+               CIntegration ***integration_container,
+               CGeometry ***geometry_container,
+               CSolver ****solver_container,
+               CNumerics *****numerics_container,
+               CConfig **config_container,
+               CSurfaceMovement **surface_movement,
+               CVolumetricMovement **grid_movement,
+               CFreeFormDefBox*** FFDBox,
+               unsigned short val_iZone);
+
+  void PiggyBack(COutput *output,
+                 CIntegration ***integration_container,
+                 CGeometry ***geometry_container,
+                 CSolver ****solver_container,
+                 CNumerics *****numerics_container,
+                 CConfig **config_container,
+                 CSurfaceMovement **surface_movement,
+                 CVolumetricMovement **grid_movement,
+                 CFreeFormDefBox*** FFDBox,
+                 unsigned short val_iZone);
+
+  /*!
+   * \brief Updates the containers for the discrete adjoint mean flow system.
+   * \param[in] ??? - Description here.
+   */
+  void Update(COutput *output,
+              CIntegration ***integration_container,
+              CGeometry ***geometry_container,
+              CSolver ****solver_container,
+              CNumerics *****numerics_container,
+              CConfig **config_container,
+              CSurfaceMovement **surface_movement,
+              CVolumetricMovement **grid_movement,
+              CFreeFormDefBox*** FFDBox,
+              unsigned short val_iZone);
+
+  /*!
+   * \brief Monitors the convergence and other metrics for the discrete adjoint mean flow system.
+   * \param[in] ??? - Description here.
+   */
+  void Monitor();
+
+  /*!
+   * \brief Outputs desired files and quantities for the discrete adjoint mean flow system.
+   * \param[in] ??? - Description here.
+   */
+  void Output();
+
+  /*!
+   * \brief Postprocesses the discrete adjoint mean flow system before heading to another physics system or the next iteration.
+   * \param[in] ??? - Description here.
+   */
+  void Postprocess(COutput *output,
+              CIntegration ***integration_container,
+              CGeometry ***geometry_container,
+              CSolver ****solver_container,
+              CNumerics *****numerics_container,
+              CConfig **config_container,
+              CSurfaceMovement **surface_movement,
+              CVolumetricMovement **grid_movement,
+              CFreeFormDefBox*** FFDBox,
+              unsigned short val_iZone);
+
+};

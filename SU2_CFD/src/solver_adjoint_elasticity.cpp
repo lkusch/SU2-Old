@@ -1968,6 +1968,65 @@ CDiscAdjFEASolver::~CDiscAdjFEASolver(void){
 
 }
 
+void CDiscAdjFEASolver::SetRecordingPiggyBack(CGeometry* geometry, CConfig *config, unsigned short kind_recording){
+
+
+  bool dynamic (config->GetDynamic_Analysis() == DYNAMIC);
+
+  unsigned long iPoint;
+  unsigned short iVar;
+
+  //For Piggy-Backing we do not set the solution to the converged solution
+
+  /*--- Reset the solution to the initial (converged) solution ---*/
+
+  /*
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->SetSolution(node[iPoint]->GetSolution_Direct());
+  }*/
+
+  if (dynamic){
+    /*--- Reset the solution to the initial (converged) solution ---*/
+
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      direct_solver->node[iPoint]->SetSolution_Accel(node[iPoint]->GetSolution_Accel_Direct());
+    }
+
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      direct_solver->node[iPoint]->SetSolution_Vel(node[iPoint]->GetSolution_Vel_Direct());
+    }
+
+    /*--- Reset the input for time n ---*/
+
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        AD::ResetInput(direct_solver->node[iPoint]->Get_femSolution_time_n()[iVar]);
+      }
+    }
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        AD::ResetInput(direct_solver->node[iPoint]->GetSolution_Accel_time_n()[iVar]);
+      }
+    }
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        AD::ResetInput(direct_solver->node[iPoint]->GetSolution_Vel_time_n()[iVar]);
+      }
+    }
+
+  }
+
+  /*--- Set the Jacobian to zero since this is not done inside the meanflow iteration
+   * when running the discrete adjoint solver. ---*/
+
+  direct_solver->Jacobian.SetValZero();
+
+  /*--- Set indices to zero ---*/
+
+  RegisterVariables(geometry, config, true);
+
+}
+
 void CDiscAdjFEASolver::SetRecording(CGeometry* geometry, CConfig *config, unsigned short kind_recording){
 
 
@@ -2331,9 +2390,9 @@ void CDiscAdjFEASolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *co
 
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
-//        std::cout<<"Solution "<<direct_solver->node[iPoint]->GetSolution(iVar)<<" Adjoint "<<node[iPoint]->GetSolution(iVar)<<" ";
+        std::cout<<"Solution "<<direct_solver->node[iPoint]->GetSolution(iVar)<<" Adjoint "<<node[iPoint]->GetSolution(iVar)<<" ";
     }
-//    std::cout<<std::endl;
+    std::cout<<std::endl;
   }
 }
 

@@ -1291,6 +1291,7 @@ inline su2double CDiscAdjFEASolver::GetVal_Rho_DL(void) { return Rho_DL; }
 inline unsigned long CSolver::SetPrimitive_Variables(CSolver **solver_container, CConfig *config, bool Output) {return 0;}
 
 inline void CSolver::SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording){}
+inline void CSolver::SetRecordingPiggyBack(CGeometry *geometry, CConfig *config, unsigned short kind_recording){}
 
 inline void CSolver::SetMesh_Recording(CGeometry **geometry, CVolumetricMovement *grid_movement, CConfig *config, unsigned short kind_recording){}
 

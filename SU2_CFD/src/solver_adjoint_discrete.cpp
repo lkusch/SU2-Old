@@ -268,6 +268,10 @@ CDiscAdjSolver::~CDiscAdjSolver(void){
 
 }
 
+void CDiscAdjSolver::SetRecordingPiggyBack(CGeometry* geometry, CConfig *config, unsigned short kind_recording){
+
+}
+
 void CDiscAdjSolver::SetRecording(CGeometry* geometry, CConfig *config, unsigned short kind_recording){
 
 

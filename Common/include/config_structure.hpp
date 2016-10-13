@@ -769,6 +769,8 @@ private:
   *default_ea_lim,            /*!< \brief Default equivalent area limit array for the COption class. */
   *default_grid_fix,          /*!< \brief Default fixed grid (non-deforming region) array for the COption class. */
   *default_inc_crit;          /*!< \brief Default incremental criteria array for the COption class. */
+
+  bool OneShot;
   
   /*--- all_options is a map containing all of the options. This is used during config file parsing
   to track the options which have not been set (so the default values can be used). Without this map
@@ -5869,6 +5871,8 @@ public:
    * \brief Get the AD support.
    */
   bool GetAD_Mode(void);
+
+  bool GetOne_Shot(void);
 };
 
 #include "config_structure.inl"

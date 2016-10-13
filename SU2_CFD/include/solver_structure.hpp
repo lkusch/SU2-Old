@@ -3119,6 +3119,7 @@ public:
    * \param[in] kind_recording - Kind of AD recording.
    */
   virtual void SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
+  virtual void SetRecordingPiggyBack(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
 
   /*!
    * \brief A virtual member.
@@ -8546,6 +8547,7 @@ public:
    * \param[in] kind_recording - Kind of AD recording.
    */
   void SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
+  void SetRecordingPiggyBack(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
 
   /*!
    * \brief Prepare the solver for a new recording.
@@ -8807,6 +8809,7 @@ public:
    * \param[in] kind_recording - Kind of AD recording.
    */
   void SetRecording(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
+  void SetRecordingPiggyBack(CGeometry *geometry, CConfig *config, unsigned short kind_recording);
 
   /*!
    * \brief A virtual member.

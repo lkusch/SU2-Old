@@ -1210,6 +1210,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /* DESCRIPTION: Maximum number of iterations of the linear solver for the implicit formulation */
   addUnsignedLongOption("DEFORM_LINEAR_SOLVER_ITER", Deform_Linear_Solver_Iter, 1000);
 
+  addBoolOption("ONE_SHOT", OneShot, false);
+
   /*!\par CONFIG_CATEGORY: Rotorcraft problem \ingroup Config*/
   /*--- option related to rotorcraft problems ---*/
 
@@ -1807,7 +1809,7 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
   if (Kind_Solver == FEM_ELASTICITY || Kind_Solver == ADJ_ELASTICITY) {
     nMGLevels = 0;
     if (Dynamic_Analysis == STATIC)
-	nExtIter = 1;
+    if(!OneShot) nExtIter = 1;
   }
 
   /*--- Decide whether we should be writing unsteady solution files. ---*/
@@ -2782,6 +2784,11 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
         break;
       default:
         break;
+    }
+
+    if (OneShot){
+        Restart      = false;
+        Restart_Flow = false;
     }
   }
 
