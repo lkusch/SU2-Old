@@ -521,7 +521,7 @@ void CDiscAdjSolver::RegisterObj_Func(CConfig *config){
 }
 
 
-void CDiscAdjSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config){
+void CDiscAdjSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config, double initVal){
   int rank = MASTER_NODE;
 
   bool time_stepping = config->GetUnsteady_Simulation() != STEADY;

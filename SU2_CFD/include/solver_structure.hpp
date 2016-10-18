@@ -2952,7 +2952,7 @@ public:
 
   virtual void InitializeDensity(CGeometry *geometry, CConfig *config);
 
-  virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+  virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
   virtual void SetZeroAdj_ObjFunc(CGeometry *geometry, CConfig* config);
 
@@ -3147,6 +3147,54 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   virtual void SetFreeStream_Solution(CConfig *config);
+
+  virtual void SetAdj_ConstraintFuncAD(CGeometry *geometry, CConfig *config, su2double* initVal);
+
+  virtual void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config, double* initVal);
+
+  virtual void StoreOldSolution();
+
+  virtual void LoadOldSolution();
+
+  virtual void StoreDensity(CGeometry *geometry);
+
+  virtual void LoadDensity(CGeometry *geometry);
+
+  virtual void DesignUpdateProjected(CGeometry *geometry, su2double steplen);
+
+  virtual void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+
+  virtual void UpdateMultiplier(CConfig *config);
+
+  virtual void RegisterConstraint_Func(CConfig *config, CGeometry *geometry);
+
+  virtual bool CheckFirstWolfe(su2double steplen);
+
+  virtual void SaveDensitySensitivity(CGeometry *geometry);
+
+  virtual void ResetSensitivity(CGeometry *geometry);
+
+  virtual void UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor);
+
+  virtual void SetAdjointOutputUpdate();
+
+  virtual void UpdateStateVariable(CConfig *config);
+
+  virtual void StoreSaveSolution();
+
+  virtual void LoadSaveSolution();
+
+  virtual void AssembleLagrangian(CConfig *config);
+
+  virtual su2double *GetConstraintFunc_Value();
+
+  virtual void StoreConstraint(CConfig *config);
+
+  virtual double* GetMultiplier();
+
+  virtual void SetMultiplier(CConfig *config, double * value);
+
+  virtual void LoadOldAdjoint();
 };
 
 /*!
@@ -8482,7 +8530,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
   /*!
    * \brief Set the objective function.
@@ -8733,7 +8781,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config);
+  void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
   /*!
    * \brief Set the objective function to 0 contribution.
@@ -8823,7 +8871,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference);
 
   /*!
    * \brief Update the dual-time derivatives.
@@ -8847,6 +8895,54 @@ public:
    */
   void BC_Clamped_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                          unsigned short val_marker);
+
+  void SetAdj_ConstraintFuncAD(CGeometry *geometry, CConfig *config, su2double* initVal);
+
+  void SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config, double* initVal);
+
+  void StoreOldSolution();
+
+  void LoadOldSolution();
+
+  void StoreDensity(CGeometry *geometry);
+
+  void LoadDensity(CGeometry *geometry);
+
+  void DesignUpdateProjected(CGeometry *geometry, su2double steplen);
+
+  void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+
+  void UpdateMultiplier(CConfig *config);
+
+  void RegisterConstraint_Func(CConfig *config, CGeometry *geometry);
+
+  bool CheckFirstWolfe(su2double steplen);
+
+  void SaveDensitySensitivity(CGeometry *geometry);
+
+  void ResetSensitivity(CGeometry *geometry);
+
+  void UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor);
+
+  void SetAdjointOutputUpdate();
+
+  void UpdateStateVariable(CConfig *config);
+
+  void StoreSaveSolution();
+
+  void LoadSaveSolution();
+
+  void AssembleLagrangian(CConfig *config);
+
+  su2double *GetConstraintFunc_Value();
+
+  void StoreConstraint(CConfig *config);
+
+  double* GetMultiplier();
+
+  void SetMultiplier(CConfig *config, double * value);
+
+  void LoadOldAdjoint();
 
 };
 #include "solver_structure.inl"

@@ -1252,7 +1252,7 @@ inline void CSolver::SetSensDensity(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::InitializeDensity(CGeometry *geometry, CConfig *config){}
 
-inline void CSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config){}
+inline void CSolver::SetAdj_ObjFunc(CGeometry *geometry, CConfig *config, double initVal){}
 
 inline void CSolver::SetZeroAdj_ObjFunc(CGeometry *geometry, CConfig *config){}
 
@@ -1320,4 +1320,52 @@ inline void CTurbSSTSolver::SetFreeStream_Solution(CConfig *config){
     node[iPoint]->SetSolution(1, omega_Inf);
   }
 }
+
+inline void CSolver::SetAdj_ConstraintFuncAD(CGeometry *geometry, CConfig *config, su2double* initVal){}
+
+inline void CSolver::SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config, double* initVal){}
+
+inline void CSolver::StoreOldSolution(){}
+
+inline void CSolver::LoadOldSolution(){}
+
+inline void CSolver::StoreDensity(CGeometry *geometry){}
+
+inline void CSolver::LoadDensity(CGeometry *geometry){}
+
+inline void CSolver::DesignUpdateProjected(CGeometry *geometry, su2double steplen){}
+
+inline void CSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter){}
+
+inline void CSolver::UpdateMultiplier(CConfig *config){}
+
+inline void CSolver::RegisterConstraint_Func(CConfig *config, CGeometry *geometry){}
+
+inline bool CSolver::CheckFirstWolfe(su2double steplen){}
+
+inline void CSolver::SaveDensitySensitivity(CGeometry *geometry){}
+
+inline void CSolver::ResetSensitivity(CGeometry *geometry){}
+
+inline void CSolver::UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor){}
+
+inline void CSolver::SetAdjointOutputUpdate(){}
+
+inline void CSolver::UpdateStateVariable(CConfig *config){}
+
+inline void CSolver::StoreSaveSolution(){}
+
+inline void CSolver::LoadSaveSolution(){}
+
+inline void CSolver::AssembleLagrangian(CConfig *config){}
+
+inline su2double *CSolver::GetConstraintFunc_Value(){}
+
+inline void CSolver::StoreConstraint(CConfig *config){}
+
+inline double* CSolver::GetMultiplier(){}
+
+inline void CSolver::SetMultiplier(CConfig *config, double * value){}
+
+inline void CSolver::LoadOldAdjoint(){}
 

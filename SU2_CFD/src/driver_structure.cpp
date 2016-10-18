@@ -4527,7 +4527,7 @@ void CDiscAdjFSIStatDriver::InitializeAdjoint(CIteration **iteration_container,
   if ((kind_recording == FLOW_VARIABLES) ||
       (kind_recording == GEOMETRY_VARIABLES)){
     if (print_output) cout << "  - 2. Set Flow Objective Function as output." << endl;
-    solver_container[ZONE_FLOW][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[ZONE_FLOW][MESH_0], config_container[ZONE_FLOW]);
+    solver_container[ZONE_FLOW][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[ZONE_FLOW][MESH_0], config_container[ZONE_FLOW], 1.0);
   }
 
   /*--- Register a structural-type objective function ---*/
@@ -4535,7 +4535,7 @@ void CDiscAdjFSIStatDriver::InitializeAdjoint(CIteration **iteration_container,
       (kind_recording == FLOW_CROSS_TERM) ||
       (kind_recording == GEOMETRY_CROSS_TERM)){
     if (print_output) cout << "  - 2. Set Structural Objective Function as output." << endl;
-    solver_container[ZONE_STRUCT][MESH_0][ADJFEA_SOL]->SetAdj_ObjFunc(geometry_container[ZONE_STRUCT][MESH_0], config_container[ZONE_STRUCT]);
+    solver_container[ZONE_STRUCT][MESH_0][ADJFEA_SOL]->SetAdj_ObjFunc(geometry_container[ZONE_STRUCT][MESH_0], config_container[ZONE_STRUCT], 1.0);
   }
 
 
