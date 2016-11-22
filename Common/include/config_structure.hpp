@@ -770,7 +770,12 @@ private:
   *default_grid_fix,          /*!< \brief Default fixed grid (non-deforming region) array for the COption class. */
   *default_inc_crit;          /*!< \brief Default incremental criteria array for the COption class. */
 
-  bool OneShot;
+  bool OneShot, OneShotConstraint, LineSearch;
+  su2double OneShotStepSize, OneShotAlpha, OneShotBeta, VolumeConstraint, ConstraintStart, FDStep, StressConstraint, HelmholtzFactor;
+  unsigned long OneShotStop, OneShotStart, SearchCounterMax;
+  unsigned short ConstraintNum;
+  su2double* ConstraintFactor;
+
   
   /*--- all_options is a map containing all of the options. This is used during config file parsing
   to track the options which have not been set (so the default values can be used). Without this map
@@ -5873,6 +5878,37 @@ public:
   bool GetAD_Mode(void);
 
   bool GetOne_Shot(void);
+
+  su2double GetOSStepSize(void);
+
+  unsigned long GetOneShotStop(void);
+
+  unsigned long GetOneShotStart(void);
+
+  unsigned long GetSearchCounterMax(void);
+
+  su2double GetOneShotAlpha(void);
+
+  su2double GetOneShotBeta(void);
+
+  su2double GetVolumeConstraint(void);
+
+  su2double GetStressConstraint(void);
+
+  su2double GetConstraintStart(void);
+
+  su2double GetHelmholtzFactor(void);
+
+  bool GetOneShotConstraint(void);
+
+  bool GetLineSearch(void);
+
+  unsigned short GetConstraintNum(void);
+
+  su2double GetFDStep(void);
+
+  su2double* GetConstraintFactor(void);
+
 };
 
 #include "config_structure.inl"

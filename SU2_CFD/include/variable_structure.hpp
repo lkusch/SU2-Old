@@ -55,7 +55,9 @@ class CVariable {
 protected:
 
 	su2double *Solution,		/*!< \brief Solution of the problem. */
-	*Solution_Old;			/*!< \brief Old solution of the problem R-K. */
+    *Solution_Old,			/*!< \brief Old solution of the problem R-K. */
+    *Solution_Store,
+    *Solution_Save;
   bool Non_Physical;			/*!< \brief Non-physical points in the solution (force first order). */
 	su2double *Solution_time_n,	/*!< \brief Solution of the problem at time n for dual-time stepping technique. */
 	*Solution_time_n1;			/*!< \brief Solution of the problem at time n-1 for dual-time stepping technique. */
@@ -161,6 +163,8 @@ public:
 	 */
 	su2double GetSolution_Old(unsigned short val_var);
 
+    su2double GetSolution_Store(unsigned short val_var);
+
   /*!
    * \brief Get the old solution of the discrete adjoint problem (for multiphysics subiterations=
    * \param[in] val_var - Index of the variable.
@@ -189,7 +193,11 @@ public:
 	/*!
 	 * \brief Set variables to the value of the old variables.
 	 */
-	void Set_Solution(void);	
+    void Set_Solution(void);
+
+    void Set_StoreSolution(void);
+
+    void Set_SaveSolution(void);
 
   /*!
    * \brief Set old discrete adjoint variables to the current value of the adjoint variables.
@@ -289,6 +297,10 @@ public:
 	 * \return Pointer to the old solution vector.
 	 */
 	su2double *GetSolution_Old(void);
+
+    su2double *GetSolution_Store(void);
+
+    su2double *GetSolution_Save(void);
 
 	/*!
 	 * \brief Get the solution at time n.

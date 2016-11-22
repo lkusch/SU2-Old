@@ -634,6 +634,8 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
   /*--- Initialize the value of the total objective function ---*/
    Total_OFRefGeom = 0.0;
    MinimumCompliance = 0.0;
+   VolumeConstraint=0.0;
+   StressConstraint=0.0;
 
    /*--- Initialize the value of the total gradient for the forward mode ---*/
    Total_ForwardGradient = 0.0;
@@ -5005,7 +5007,7 @@ void CFEM_ElasticitySolver::Compute_OFRefGeom(CGeometry *geometry, CSolver **sol
   }
   else {
 
-    if (!fsi) cout <<std::setprecision(12)<< "Objective function: " << Total_OFRefGeom << "." << endl;
+    if (!fsi) cout <<std::setprecision(5)<< "Objective function: " << Total_OFRefGeom << "." << endl;
 
   }
 
@@ -5015,6 +5017,7 @@ void CFEM_ElasticitySolver::Compute_MinimumCompliance(CGeometry *geometry, CSolv
     unsigned short iVar;
     unsigned long iPoint;
     su2double current_solution = 0.0;
+    su2double rhs_force = 0.0;
     su2double objective_function = 0.0;
 
     for (iPoint = 0; iPoint < nPoint; iPoint++){
@@ -5023,19 +5026,53 @@ void CFEM_ElasticitySolver::Compute_MinimumCompliance(CGeometry *geometry, CSolv
 
         /*--- Retrieve the value of the current solution ---*/
         current_solution = node[iPoint]->GetSolution(iVar);
+        rhs_force = node[iPoint]->Get_SurfaceLoad_Res(iVar);
 
-        /*--- The objective function is the sum of the difference between solution and difference, squared ---*/
-        objective_function += (current_solution)*(current_solution);
+        objective_function += (current_solution)*(rhs_force);
       }
 
     }
-
-    // TODO: Need to do an MPI reduction to have the sum in all processors HERE
+    //MPI Missing
 
     MinimumCompliance = objective_function;
 
-    cout <<std::setprecision(12)<< "Objective function: " << MinimumCompliance << "." << endl;
+    cout <<std::setprecision(5)<< "Objective function: " << MinimumCompliance << "." << endl;
 
+}
+
+void CFEM_ElasticitySolver::Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config){
+    unsigned long iElem;
+    su2double objective_function = 0.0;
+    //su2double volume = 0.0;
+
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+
+        objective_function += geometry->elem[iElem]->GetDensity()[0];//*geometry->elem[iElem]->GetVolume();
+        //volume += geometry->elem[iElem]->GetVolume();
+    }
+    //TODOLisa: volume is always zero!
+    //objective_function = objective_function / volume;
+    objective_function=objective_function/geometry->GetnElem();
+
+    // Need to do an MPI reduction to have the sum in all processors HERE
+
+    VolumeConstraint = objective_function;//1000*objective_function;
+
+    cout <<std::setprecision(5)<< "Constraint function: " << VolumeConstraint << "." << endl;
+
+}
+
+void CFEM_ElasticitySolver::Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config){
+    su2double stressnorm=0;
+    su2double pVal=3.0;
+    unsigned long iPoint;
+    for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
+          stressnorm+=pow(node[iPoint]->GetVonMises_Stress(),pVal);
+    }
+    stressnorm=stressnorm*(1.0/nPointDomain);
+    stressnorm=pow(stressnorm, 1./pVal);
+    StressConstraint = stressnorm;
+    cout <<std::setprecision(5)<< "Constraint function (Stress): " << StressConstraint << "." << endl;
 }
 
 void CFEM_ElasticitySolver::BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,

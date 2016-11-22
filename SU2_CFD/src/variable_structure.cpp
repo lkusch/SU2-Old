@@ -38,6 +38,8 @@ CVariable::CVariable(void) {
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+    Solution_Store=NULL;
+    Solution_Save=NULL;
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -58,6 +60,8 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+    Solution_Store=NULL;
+    Solution_Save=NULL;
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -92,6 +96,8 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   /*--- Array initialization ---*/
   Solution = NULL;
 	Solution_Old = NULL;
+    Solution_Store=NULL;
+    Solution_Save=NULL;
 	Solution_time_n = NULL;
 	Solution_time_n1 = NULL;
 	Gradient = NULL;
@@ -119,6 +125,8 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
 		Solution[iVar] = 0.0;
 
 	Solution_Old = new su2double [nVar];
+    Solution_Store = new su2double [nVar];
+    Solution_Save = new su2double [nVar];
 	
 	Gradient = new su2double* [nVar];
 	for (iVar = 0; iVar < nVar; iVar++) {
@@ -143,6 +151,8 @@ CVariable::~CVariable(void) {
 
   if (Solution            != NULL) delete [] Solution;
 	if (Solution_Old        != NULL) delete [] Solution_Old;
+    if (Solution_Store        != NULL) delete [] Solution_Store;
+    if (Solution_Save        != NULL) delete [] Solution_Save;
 	if (Solution_time_n     != NULL) delete [] Solution_time_n;
 	if (Solution_time_n1    != NULL) delete [] Solution_time_n1;
 	if (Limiter             != NULL) delete [] Limiter;
@@ -202,6 +212,20 @@ void CVariable::Set_OldSolution(void) {
 	for (unsigned short iVar = 0; iVar < nVar; iVar++)
 		Solution_Old[iVar] = Solution[iVar];
   
+}
+
+void CVariable::Set_StoreSolution(void) {
+
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        Solution_Store[iVar] = Solution[iVar];
+
+}
+
+void CVariable::Set_SaveSolution(void) {
+
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        Solution_Save[iVar] = Solution[iVar];
+
 }
 
 void CVariable::Set_OldSolution_Adj(void) {

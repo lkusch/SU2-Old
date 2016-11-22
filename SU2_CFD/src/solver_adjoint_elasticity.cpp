@@ -407,49 +407,6 @@ CFEM_ElasticitySolver_Adj::CFEM_ElasticitySolver_Adj(CGeometry *geometry, CConfi
 
   /*--- Perform the MPI communication of the solution ---*/
   Set_MPI_Solution(geometry, config);
-
-  Lagrange_Sens=new su2double[geometry->GetnElem()];
-  Lagrange_Sens_Old =new su2double[geometry->GetnElem()];
-  DesignVarUpdate=new su2double[geometry->GetnElem()];
-  TotalIterations=0;
-  for (iElem=0; iElem<geometry->GetnElem(); iElem++){
-      Lagrange_Sens[iElem]=0.0;
-      Lagrange_Sens_Old[iElem]=0.0;
-      DesignVarUpdate[iElem]=0.0;
-  }
-  ConstraintFunc_Value=new su2double [config->GetConstraintNum()];
-  Constraint_Save=new su2double [config->GetConstraintNum()];
-  Constraint_Old=new su2double [config->GetConstraintNum()];
-  cons_factor=new double [config->GetConstraintNum()];
-  multiplier=new double [config->GetConstraintNum()];
-  multiplierhelp=new double [config->GetConstraintNum()];
-  multiplieroriginal=new double [config->GetConstraintNum()];
-  for (iCons=0; iCons < config->GetConstraintNum();iCons++){
-      ConstraintFunc_Value[iCons]=0.0;
-      Constraint_Save[iCons]=0.0;
-      ExpConstraint_Save[iCons]=0.0;
-      Constraint_Old[iCons]=0.0;
-      multiplier[iCons]=0.0;
-      multiplierhelp[iCons]=0.0;
-      multiplieroriginal[iCons]=0.0;
-      cons_factor[iCons]=0.0;
-  }
-
-  Hess=new su2double*[geometry->GetnElem()];
-  Bess=new su2double*[geometry->GetnElem()];
-  for (iElem=0; iElem<geometry->GetnElem(); iElem++){
-     Hess[iElem]= new su2double [geometry->GetnElem()];
-     Bess[iElem]= new su2double [geometry->GetnElem()];
-  }
-  for (iElem=0; iElem<geometry->GetnElem(); iElem++){
-      for (jElem=0; jElem<geometry->GetnElem(); jElem++){
-         Hess[iElem][jElem]= 0.0;
-         Bess[iElem][jElem]= 0.0;
-      }
-      Hess[iElem][iElem]=1.0;
-      Bess[iElem][iElem]=1.0;
-  }
-
 }
 
 CFEM_ElasticitySolver_Adj::~CFEM_ElasticitySolver_Adj(void) {
@@ -1706,11 +1663,22 @@ CDiscAdjFEASolver::CDiscAdjFEASolver(CGeometry *geometry, CConfig *config)  : CS
   Solution_Vel  = NULL;
   Solution_Accel= NULL;
 
+  Lagrange_Sens=NULL;
+  Lagrange_Sens_Old =NULL;
+  DesignVarUpdate=NULL;
+  ConstraintFunc_Value=NULL;
+  Constraint_Save=NULL;
+  Constraint_Old=NULL;
+  cons_factor=NULL;
+  multiplier=NULL;
+
+  Hess=NULL;
+  Bess=NULL;
 }
 
 CDiscAdjFEASolver::CDiscAdjFEASolver(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short Kind_Solver, unsigned short iMesh)  : CSolver(){
 
-  unsigned short iVar, iMarker, iDim;
+  unsigned short iVar, iMarker, iDim, iElem, jElem, iCons;
 
   bool restart = config->GetRestart();
   bool fsi = config->GetFSI_Simulation();
@@ -1979,12 +1947,55 @@ CDiscAdjFEASolver::CDiscAdjFEASolver(CGeometry *geometry, CConfig *config, CSolv
   Total_Sens_Rho_DL   = 0.0;
 
   Density = new su2double[geometry->GetnElem()];
+  Density_Store = new su2double[geometry->GetnElem()];
   Global_Sens_Density=new su2double[geometry->GetnElem()];
+  Global_Sens_Density_Old=new su2double[geometry->GetnElem()];
+  UpdateSens=new su2double[geometry->GetnElem()];
 
-  unsigned long iElem;
   for (iElem=0;iElem<geometry->GetnElem();iElem++){
       Global_Sens_Density[iElem]=0.0;
+      Global_Sens_Density_Old[iElem]=0.0;
       Density[iElem]=0.0;
+      Density_Store[iElem]=0.0;
+      UpdateSens[iElem]=0.0;
+  }
+  Obj_Save=0.0;
+
+  Lagrange_Sens=new su2double[geometry->GetnElem()];
+  Lagrange_Sens_Old =new su2double[geometry->GetnElem()];
+  DesignVarUpdate=new su2double[geometry->GetnElem()];
+  TotalIterations=0;
+  for (iElem=0; iElem<geometry->GetnElem(); iElem++){
+      Lagrange_Sens[iElem]=0.0;
+      Lagrange_Sens_Old[iElem]=0.0;
+      DesignVarUpdate[iElem]=0.0;
+  }
+  ConstraintFunc_Value=new su2double [config->GetConstraintNum()];
+  Constraint_Save=new su2double [config->GetConstraintNum()];
+  Constraint_Old=new su2double [config->GetConstraintNum()];
+  cons_factor=new su2double [config->GetConstraintNum()];
+  multiplier=new su2double [config->GetConstraintNum()];
+  for (iCons=0; iCons < config->GetConstraintNum();iCons++){
+      ConstraintFunc_Value[iCons]=0.0;
+      Constraint_Save[iCons]=0.0;
+      Constraint_Old[iCons]=0.0;
+      multiplier[iCons]=0.0;
+      cons_factor[iCons]=0.0;
+  }
+
+  Hess=new su2double*[geometry->GetnElem()];
+  Bess=new su2double*[geometry->GetnElem()];
+  for (iElem=0; iElem<geometry->GetnElem(); iElem++){
+     Hess[iElem]= new su2double [geometry->GetnElem()];
+     Bess[iElem]= new su2double [geometry->GetnElem()];
+  }
+  for (iElem=0; iElem<geometry->GetnElem(); iElem++){
+      for (jElem=0; jElem<geometry->GetnElem(); jElem++){
+         Hess[iElem][jElem]= 0.0;
+         Bess[iElem][jElem]= 0.0;
+      }
+      Hess[iElem][iElem]=1.0;
+      Bess[iElem][iElem]=1.0;
   }
 
 }
@@ -2177,9 +2188,9 @@ void CDiscAdjFEASolver::RegisterVariables(CGeometry *geometry, CConfig *config, 
 
     unsigned long iElem;
 
-    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
-          Density[iElem]=config->GetInitialElemDensity();
-    }
+ /*   for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+          Density[iElem]=geometry->elem[iElem]->GetDensity()[0];
+    }*/
 
     if (!reset){
       AD::RegisterInput(E);
@@ -2458,12 +2469,12 @@ void CDiscAdjFEASolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *co
 
   SetResidual_RMS(geometry, config);
 
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
+  /*for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
         std::cout<<"Solution "<<direct_solver->node[iPoint]->GetSolution(iVar)<<" Adjoint "<<node[iPoint]->GetSolution(iVar)<<" ";
     }
     std::cout<<std::endl;
-  }
+  }*/
 }
 
 void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference){
@@ -2630,24 +2641,14 @@ void CDiscAdjFEASolver::SetSensDensity(CGeometry *geometry, CConfig *config){
   unsigned short iDim;
   su2double Density, Sensitivity;
 
-//  std::cout<<"Density: ";
   for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
     Density = geometry->elem[iElem]->GetDensity()[0];
 
-   // for (iDim = 0; iDim < nDim; iDim++){
-
       Sensitivity = SU2_TYPE::GetDerivative(Density);
-  //    std::cout<<Sensitivity<<" ";
-
       /*--- Set the index manually to zero. ---*/
 
        AD::ResetInput(Density);
-
-      /*--- If sharp edge, set the sensitivity to 0 on that region ---*/
-
-  //  }
   }
-//  std::cout<<std::endl;
 }
 
 void CDiscAdjFEASolver::InitializeDensity(CGeometry *geometry, CConfig *config){
@@ -2656,6 +2657,7 @@ void CDiscAdjFEASolver::InitializeDensity(CGeometry *geometry, CConfig *config){
 
   for (iElem = 0; iElem < geometry->GetnElem(); iElem++){
     geometry->elem[iElem]->SetDensity(config->GetInitialElemDensity());
+    Density[iElem]=config->GetInitialElemDensity();
   }
 }
 
@@ -2825,8 +2827,22 @@ void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config
         std::cout<<"normduk "<<normduk<<", normrk "<<normrk<<", vk/normduk "<<vk/normduk<<std::endl;
 
         if (vk>0){
-
-            su2double** MatA;
+            su2double wtwo=0.0;
+            for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+                      wone[iElem]=0.0;
+                      for (jElem=0;jElem<geometry->GetnElem();jElem++){
+                        wone[iElem]+=Hess[iElem][jElem]*rk[jElem];
+                      }
+                    }
+                    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+                      wtwo+=rk[iElem]*wone[iElem];
+                    }
+                    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+                      for (jElem=0;jElem<geometry->GetnElem();jElem++){
+                        Hess[iElem][jElem]=Hess[iElem][jElem]-(1.0/vk)*(wone[iElem]*duk[jElem]+wone[jElem]*duk[iElem])+(1.0/vk)*(1+wtwo/vk)*duk[iElem]*duk[jElem];
+                      }
+                    }
+           /* su2double** MatA;
             MatA=new su2double*[geometry->GetnElem()];
             for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
                 MatA[iElem]=new su2double[geometry->GetnElem()];
@@ -2834,7 +2850,7 @@ void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config
                     MatA[iElem][jElem]=0.0;
                 }
             }
-
+            std::cout<<"out2"<<std::endl;
             for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
                 for (jElem=0;jElem<geometry->GetnElem();jElem++){
                     MatA[iElem][jElem]=Hess[iElem][jElem]+(1.0/vk)*duk[iElem]*duk[jElem];
@@ -2843,20 +2859,22 @@ void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config
                         for (lElem=0;lElem<geometry->GetnElem();lElem++){
                             MatA[iElem][jElem]+=(1.0/vk)*(1.0/vk)*duk[iElem]*duk[jElem]*rk[lElem]*Hess[lElem][kElem]*rk[kElem];
                         }
-                    }
-                }
-            }
 
+                    }
+
+                }
+                std::cout<<iElem<<" "<<jElem<<" "<<kElem<<" "<<lElem<<std::endl;
+            }
+            std::cout<<"out3"<<std::endl;
             for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
                 for (jElem=0;jElem<geometry->GetnElem();jElem++){
                     Hess[iElem][jElem]=MatA[iElem][jElem];
                 }
             }
-
             for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
                 delete [] MatA[iElem];
             }
-            delete [] MatA;
+            delete [] MatA;*/
 
         }else{
             std::cout<<"!!!!!!!!!!!!!!!!ATTENTION-HESSIAN NON-POSITIVE-DEFINITE!!!!!!!!!!!!!!!!!!!"<<std::endl;
@@ -2868,9 +2886,7 @@ void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config
             }
 
         }
-
     }
-
     std::cout<<"Density Variable "<<std::endl;
     for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
         std::cout<<Density[iElem]<<" ";
@@ -2887,6 +2903,7 @@ void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config
         UpdateSens[iElem]=0.0;
         for (jElem=0;jElem<geometry->GetnElem();jElem++){
             UpdateSens[iElem]-=Hess[iElem][jElem]*Global_Sens_Density_Old[jElem];
+            //UpdateSens[iElem]-=Lagrange_Sens[iElem];
         }
     }
     delete [] rk;
@@ -2896,23 +2913,7 @@ void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config
 
 void CDiscAdjFEASolver::UpdateMultiplier(CConfig *config){
     for (unsigned short iValue=0; iValue<config->GetConstraintNum();iValue++){
-        if(config->GetPosConstraint()){
-                if(config->GetFactorIncrease()) cons_factor[iValue]=cons_factor[iValue]*(1+fabs(SU2_TYPE::GetValue(Constraint_Save[iValue]))/fabs(SU2_TYPE::GetValue(Constraint_Save[iValue])-SU2_TYPE::GetValue(Constraint_Old[iValue])));
-                if(config->GetPosUpdate()){
-                    multiplier[iValue]=multiplierhelp[iValue]+cons_factor[iValue]*SU2_TYPE::GetValue(Constraint_Save[iValue]);
-                }else{
-                    multiplier[iValue]=multiplierhelp[iValue]-cons_factor[iValue]*SU2_TYPE::GetValue(Constraint_Save[iValue]);
-                }
-                multiplierhelp[iValue]=multiplier[iValue];
-        }else{
-                if(config->GetFactorIncrease()) cons_factor[iValue]=cons_factor[iValue]*(1+fabs(SU2_TYPE::GetValue(Constraint_Save[iValue]))/fabs(SU2_TYPE::GetValue(Constraint_Save[iValue])-SU2_TYPE::GetValue(Constraint_Old[iValue])));
-                if(config->GetPosUpdate()){
-                    multiplier[iValue]=multiplierhelp[iValue]+cons_factor[iValue]*SU2_TYPE::GetValue(Constraint_Save[iValue]);
-                }else{
-                    multiplier[iValue]=multiplierhelp[iValue]-cons_factor[iValue]*SU2_TYPE::GetValue(Constraint_Save[iValue]);
-                }
-                multiplierhelp[iValue]=multiplier[iValue];
-        }
+        multiplier[iValue]=multiplier[iValue]+cons_factor[iValue]*SU2_TYPE::GetValue(Constraint_Save[iValue]);
         std::cout<<"Update of Multiplier: "<<multiplier[iValue]<<" "<<cons_factor[iValue]<<std::endl;
     }
 }
@@ -2923,17 +2924,14 @@ void CDiscAdjFEASolver::RegisterConstraint_Func(CConfig *config, CGeometry *geom
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
-  if(config->GetPosConstraint()){
-    ConstraintFunc_Value[0] = config->GetTargetVolume()-direct_solver->GetVolume();
-  }else{
-    ConstraintFunc_Value[0] = -config->GetTargetVolume()+direct_solver->GetVolume();
-  }
+  //ConstraintFunc_Value[0] = config->GetVolumeConstraint()-direct_solver->GetVolumeConstraint();
+  ConstraintFunc_Value[0]=config->GetStressConstraint()-direct_solver->GetStressConstraint();
   if (rank == MASTER_NODE){
     AD::RegisterOutput(ConstraintFunc_Value[0]);
   }
 }
 
-bool CDiscAdjFEASolver::CheckFirstWolfe(su2double steplen){
+bool CDiscAdjFEASolver::CheckFirstWolfe(CGeometry *geometry, su2double steplen){
     su2double helper=0.0;
     unsigned long iElem;
     std::cout<<"LagrangeOld: "<<Lagrangian_Value_Old<<", LagrangeNew: "<<Lagrangian_Value<<", Stepsize: "<<steplen<<std::endl;
@@ -2965,10 +2963,10 @@ void CDiscAdjFEASolver::ResetSensitivity(CGeometry *geometry){
 
 void CDiscAdjFEASolver::UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor){
     unsigned short iElem;
-    cout.precision(15);
+    //cout.precision(15);
     std::cout<<"factor: "<<factor<<std::endl;
     for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
-      Lagrange_Sens[iElem] = factor*Global_Sens_Density[iElem];
+      Lagrange_Sens[iElem] += factor*Global_Sens_Density[iElem];
       std::cout<<factor*Global_Sens_Density[iElem]<<" ";
     }
     std::cout<<std::endl;
@@ -2989,12 +2987,15 @@ void CDiscAdjFEASolver::UpdateStateVariable(CConfig *config){
     unsigned long iPoint;
     unsigned short iVar;
     su2double stepsize=config->GetFDStep();
+    //std::cout<<"DeltaUBar: ";
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       for (iVar = 0; iVar < nVar; iVar++){
         Solution[iVar] = direct_solver->node[iPoint]->GetSolution_Store(iVar)+stepsize*(node[iPoint]->GetSolution(iVar)-node[iPoint]->GetSolution_Store(iVar));
+        //std::cout<<node[iPoint]->GetSolution(iVar)-node[iPoint]->GetSolution_Store(iVar)<<" ";
       }
       direct_solver->node[iPoint]->SetSolution(Solution);
     }
+    //std::cout<<std::endl;
 }
 
 void CDiscAdjFEASolver::StoreSaveSolution(){
@@ -3016,6 +3017,15 @@ void CDiscAdjFEASolver::LoadSaveSolution(){
 void CDiscAdjFEASolver::AssembleLagrangian(CConfig *config){
     unsigned short iVar;
     unsigned long iPoint;
+
+/*    std::cout<<"DeltaUBar: ";
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        std::cout<<node[iPoint]->GetSolution(iVar)-node[iPoint]->GetSolution_Store(iVar)<<" ";
+      }
+    }
+    std::cout<<std::endl;*/
+
     Lagrangian_Value=0.0;
     su2double helper=0.0;
     for (iPoint = 0; iPoint < nPoint; iPoint++){
@@ -3066,7 +3076,7 @@ void CDiscAdjFEASolver::StoreConstraint(CConfig *config){
    }
 }
 
-double* CDiscAdjFEASolver::GetMultiplier(){
+su2double* CDiscAdjFEASolver::GetMultiplier(){
     return multiplier;
 }
 
@@ -3074,9 +3084,7 @@ void CDiscAdjFEASolver::SetMultiplier(CConfig *config, double * value){
     unsigned short iHelp;
     for (iHelp=0; iHelp<config->GetConstraintNum();iHelp++){
         multiplier[iHelp]=value[iHelp];
-        multiplierhelp[iHelp]=multiplier[iHelp];
-        multiplieroriginal[iHelp]=multiplier[iHelp];
-        cons_factor[iHelp]=SU2_TYPE::GetValue(config->GetConstraintFactor(iHelp));
+        cons_factor[iHelp]=config->GetConstraintFactor()[iHelp];
     }
 }
 
@@ -3087,4 +3095,438 @@ void CDiscAdjFEASolver::LoadOldAdjoint(){
         node[iPoint]->SetSolution(node[iPoint]->GetSolution_Store());
     }
 }
+
+void CDiscAdjFEASolver::VolumeProjection(CGeometry *geometry, CConfig *config){
+    su2double tol = 0.001;
+    unsigned long iElem;
+
+    const double EPS=std::numeric_limits<double>::epsilon();
+
+    su2double a,b,c,d,e,fa,fb,fc,p,q,r,s, sumlambda, tol1, xm, min1, min2;
+
+    su2double itermax=10000;
+
+    su2double* lambda_l = new su2double[geometry->GetnElem()];
+    su2double* lambda_u = new su2double[geometry->GetnElem()];
+    su2double* y = new su2double[geometry->GetnElem()];
+    su2double* zlambda = new su2double[geometry->GetnElem()];
+
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        y[iElem]=Density[iElem]+config->GetOSStepSize()*UpdateSens[iElem];
+        //std::cout<<y[iElem]<<" ";
+        lambda_u[iElem]=y[iElem]-1.0;
+        lambda_l[iElem]=y[iElem];
+    }
+    //std::cout<<std::endl;
+
+    su2double lambdamin = lambda_u[0];
+    su2double lambdamax = lambda_l[0];
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        if(lambda_u[iElem]<lambdamin)   lambdamin=lambda_u[iElem];
+        if(lambda_l[iElem]>lambdamax)   lambdamax=lambda_l[iElem];
+    }
+
+    /*su2double step=(lambdamax-lambdamin)/1000.0;
+    for (unsigned short itera=0;itera<1000;itera++){
+        sumlambda=0.0;
+        for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+            zlambda[iElem] = max(0.0 ,min(y[iElem]-(lambdamin+step*itera),1.0));
+            sumlambda+=zlambda[iElem]*1.0;
+        }
+        std::cout<<sumlambda-geometry->GetnElem()*config->GetVolumeConstraint()<<std::endl;
+    }*/
+
+
+    // compute zero of G(lambda) = ones*z(lambda) - volfrac*nElem in interval
+    // [lambdamin,lambdamax] with tolerance tol
+
+    a = lambdamin;
+    b = lambdamax;
+    c = lambdamax;
+
+    std::cout<<"lambda: "<<lambdamin<<" "<<lambdamax<<" "<<config->GetVolumeConstraint()<<std::endl;
+
+    sumlambda=0.0;
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        zlambda[iElem] = max(0.0 ,min(y[iElem]-a,1.0));
+        sumlambda+=zlambda[iElem]*1.0;
+    }
+    fa=sumlambda-geometry->GetnElem()*config->GetVolumeConstraint();
+
+    sumlambda=0.0;
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        zlambda[iElem] = max(0.0 ,min(y[iElem]-b,1.0));
+        sumlambda+=zlambda[iElem]*1.0;
+    }
+    fb=sumlambda-geometry->GetnElem()*config->GetVolumeConstraint();
+
+    //while(iter<itermax)
+
+    if ((fa > 0.0 && fb > 0.0) || (fa < 0.0 && fb < 0.0))
+        std::cout<<"Root must be bracketed in zbrent"<<std::endl;
+
+    fc=fb;
+    bool found = false;
+    unsigned int iter=0;
+
+    while(!found && iter<itermax) {
+        if ((fb > 0.0 && fc > 0.0) || (fb < 0.0 && fc < 0.0)) {
+            c=a;
+            fc=fa;
+            e=b-a;
+            d=b-a;
+        }
+        if (fabs(fc) < fabs(fb)) {
+            a=b;
+            b=c;
+            c=a;
+            fa=fb;
+            fb=fc;
+            fc=fa;
+        }
+        tol1=2.0*EPS*fabs(b)+0.5*tol;
+        xm=0.5*(c-b);
+        if (fabs(xm) <= tol1 || fb == 0.0) {
+                found=true;
+                //result is in b
+        }
+        else{
+            if (fabs(e) >= tol1 && fabs(fa) > fabs(fb)) {
+                s=fb/fa;
+                if (a == c) {
+                    p=2.0*xm*s;
+                    q=1.0-s;
+                } else {
+                    q=fa/fc;
+                    r=fb/fc;
+                    p=s*(2.0*xm*q*(q-r)-(b-a)*(r-1.0));
+                    q=(q-1.0)*(r-1.0)*(s-1.0);
+                }
+                if (p > 0.0) q = -q;
+                p=fabs(p);
+
+                min1=3.0*xm*q-fabs(tol1*q);
+                min2=fabs(e*q);
+                if (2.0*p < (min1 < min2 ? min1 : min2)) {
+                    e=d;
+                    d=p/q;
+                } else {
+                    d=xm;
+                    e=d;
+                }
+            } else {
+                d=xm;
+                e=d;
+            }
+            a=b;
+            fa=fb;
+            if (fabs(d) > tol1){
+                b += d;
+            }else{
+                if (xm >= 0 && tol1>= 0)
+                    b += tol1;
+                else if (xm>= 0 && tol1 < 0)
+                    b += -tol1;
+                else if (xm<0 && tol1 >= 0)
+                    b += -tol1;
+                else
+                    b += tol1;
+            }
+            iter++;
+        }
+        sumlambda=0.0;
+        for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+            zlambda[iElem] = max(0.0 ,min(y[iElem]-b,1.0));
+            sumlambda+=zlambda[iElem]*1.0;
+        }
+        fb=sumlambda-geometry->GetnElem()*config->GetVolumeConstraint();
+    }
+    if (iter==itermax){
+        std::cout<<"Maximum number of iterations exceeded in zbrent"<<std::endl;
+    }else{
+        std::cout<<"Value="<<fb<<std::endl;
+    }
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        UpdateSens[iElem]=zlambda[iElem]-Density[iElem];
+    }
+
+    delete [] lambda_l;
+    delete [] lambda_u;
+    delete [] y;
+    delete [] zlambda;
+
+}
+
+
+void CDiscAdjFEASolver::DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens){
+    unsigned long nElemx=52;
+    unsigned long nElem= geometry->GetnElem();
+    unsigned long nElemy=12;
+    unsigned long iElem,jElem;
+    su2double eps=config->GetHelmholtzFactor();
+
+    //Normal Gauss Elimination
+
+    /*su2double** MatA;
+    MatA=new su2double*[nElem];
+    for (iElem = 0; iElem < nElem; iElem++) {
+        MatA[iElem]=new su2double[nElem];
+        for (jElem=0;jElem<nElem;jElem++){
+            MatA[iElem][jElem]=0.0;
+        }
+    }
+    for (iElem = 0; iElem < nElem; iElem++) {
+        MatA[iElem][iElem]=4*eps*eps+1;
+        if(iElem%nElemx==(nElemx-1)){
+            MatA[iElem][iElem-1]=-2*eps*eps;
+            //MatA[iElem][iElem+1]=0.0;
+        }else if (iElem%nElemx!=0){
+            MatA[iElem][iElem-1]=-eps*eps;
+            MatA[iElem][iElem+1]=-eps*eps;
+        }else{
+            //MatA[iElem][iElem-1]=0.0;
+            MatA[iElem][iElem+1]=-2*eps*eps;
+        }
+        if (iElem<nElemx){
+            MatA[iElem][iElem+nElemx]=-2*eps*eps;
+        }else if(iElem>=nElem-nElemx){
+            MatA[iElem][iElem-nElemx]=-2*eps*eps;
+        }else{
+            MatA[iElem][iElem+nElemx]=-eps*eps;
+            MatA[iElem][iElem-nElemx]=-eps*eps;
+        }
+    }
+
+    Global_Sens_Density=GaussElimination(MatA,Global_Sens_Density);
+
+    for (iElem = 0; iElem < nElem; iElem++) {
+        delete [] MatA[iElem];
+    }
+    delete [] MatA;*/
+
+    //Thomas Algorithm
+
+    su2double** HelpOne;
+    su2double* help;
+    su2double* result = new su2double[nElem];
+    HelpOne=new su2double*[nElem];
+    help=new su2double[nElem];
+    for (iElem = 0; iElem < nElem; iElem++) {
+        HelpOne[iElem]=new su2double[nElemx];
+        help[iElem]=0.0;
+        result[iElem]=UpdateSens[iElem];
+        //if(updsens) result[iElem]=Global_Sens_Density_Old[iElem];
+        //else        result[iElem]=Lagrange_Sens[iElem];
+        //result[iElem]=-Global_Sens_Density[iElem];
+        for (jElem=0;jElem<nElemx;jElem++){
+            HelpOne[iElem][jElem]=0.0;
+        }
+    }
+
+    su2double **BlockA=new su2double*[nElemx];
+    su2double **BlockB=new su2double*[nElemx];
+    su2double **BlockC=new su2double*[nElemx];
+    su2double **HelpTwo=new su2double*[nElemx];
+    su2double * rhs=new su2double[nElemx];
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        BlockA[iElem]=new su2double[nElemx];
+        BlockB[iElem]=new su2double[nElemx];
+        BlockC[iElem]=new su2double[nElemx];
+        HelpTwo[iElem]=new su2double[nElemx];
+        rhs[iElem]=0.0;
+        for (jElem=0;jElem<nElemx;jElem++){
+            BlockA[iElem][jElem]=0.0;
+            BlockB[iElem][jElem]=0.0;
+            BlockC[iElem][jElem]=0.0;
+            HelpTwo[iElem][jElem]=0.0;
+        }
+    }
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        BlockA[iElem][iElem]=-eps*eps;
+        BlockB[iElem][iElem]=4*eps*eps+1;
+        BlockC[iElem][iElem]=-eps*eps;
+        if (iElem==0){
+            BlockB[iElem][iElem+1]=-2*eps*eps;
+        }else if(iElem==nElemx-1){
+            BlockB[iElem][iElem-1]=-2*eps*eps;
+        }else{
+            BlockB[iElem][iElem-1]=-eps*eps;
+            BlockB[iElem][iElem+1]=-eps*eps;
+        }
+    }
+    //Attention: A_n=2*A_i, C_1=2*C_i
+    //one could invert BlockB once and reuse it, same for B-A*C'
+    for (jElem = 0; jElem < nElemx; jElem++) {
+        for (iElem = 0; iElem < nElemx; iElem++) {
+            rhs[iElem]=2*BlockC[iElem][jElem]; //Usually only one entry, others zero
+        }
+        rhs=ThomasAlgorithm(BlockB,rhs);
+        for (iElem = 0; iElem < nElemx; iElem++) {
+            HelpOne[iElem][jElem] = rhs[iElem];
+        }
+    }
+
+
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        rhs[iElem]=result[iElem];
+    }
+    rhs=ThomasAlgorithm(BlockB,rhs);
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        help[iElem]=rhs[iElem];
+    }
+
+    for (unsigned short kElem = 1; kElem < nElemy; kElem++) {
+        for (iElem = 0; iElem < nElemx; iElem++) {
+            for (jElem = 0; jElem < nElemx; jElem++) {
+                if(kElem==nElemy-1) HelpTwo[iElem][jElem]=BlockB[iElem][jElem]-2*BlockA[iElem][iElem]*HelpOne[(kElem-1)*nElemx+iElem][jElem];
+                else            HelpTwo[iElem][jElem]=BlockB[iElem][jElem]-BlockA[iElem][iElem]*HelpOne[(kElem-1)*nElemx+iElem][jElem];
+            }
+        }
+        for (jElem = 0; jElem < nElemx; jElem++) {
+            for (iElem = 0; iElem < nElemx; iElem++) {
+                rhs[iElem]=BlockC[iElem][jElem]; //Usually only one entry, others zero
+            }
+            rhs=GaussElimination(HelpTwo,rhs);
+            for (iElem = 0; iElem < nElemx; iElem++) {
+                HelpOne[kElem*nElemx+iElem][jElem] = rhs[iElem];
+            }
+        }
+        for (iElem = 0; iElem < nElemx; iElem++) {
+            if(kElem==nElemy-1) rhs[iElem]=result[kElem*nElemx+iElem]-2*BlockA[iElem][iElem]*help[(kElem-1)*nElemx+iElem];
+            else            rhs[iElem]=result[kElem*nElemx+iElem]-BlockA[iElem][iElem]*help[(kElem-1)*nElemx+iElem];
+        }
+        rhs=GaussElimination(HelpTwo,rhs);
+        for (iElem = 0; iElem < nElemx; iElem++) {
+            help[kElem*nElemx+iElem]=rhs[iElem];
+        }
+    }
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        result[(nElemy-1)*nElemx+iElem]=help[(nElemy-1)*nElemx+iElem];
+    }
+    for (long i = nElemy-2; i >=0; i--) {
+        for (iElem = 0; iElem < nElemx; iElem++) {
+            result[i*nElemx+iElem]=help[i*nElemx+iElem];
+            for (jElem = 0; jElem < nElemx; jElem++) {
+                result[i*nElemx+iElem]-=HelpOne[i*nElemx+iElem][jElem]*result[(i+1)*nElemx+jElem];
+            }
+        }
+    }
+
+    for (iElem = 0; iElem < nElem; iElem++) {
+        UpdateSens[iElem]=result[iElem];
+        //if(updsens) Global_Sens_Density_Old[iElem]=result[iElem];
+        //else        Lagrange_Sens[iElem]=result[iElem];
+        //Global_Sens_Density[iElem]=-result[iElem];
+    }
+
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        delete [] BlockA[iElem];
+        delete [] BlockB[iElem];
+        delete [] BlockC[iElem];
+        delete [] HelpTwo[iElem];
+    }
+    for (iElem = 0; iElem < nElem; iElem++){
+        delete [] HelpOne[iElem];
+    }
+    delete [] BlockA;
+    delete [] BlockB;
+    delete [] BlockC;
+    delete [] rhs;
+    delete [] help;
+    delete [] HelpOne;
+    delete [] HelpTwo;
+    delete [] result;
+
+
+}
+
+su2double* CDiscAdjFEASolver::GaussElimination(su2double** A, su2double* b){//, unsigned long nElemx){
+    unsigned long nElemx=52;//624;
+    unsigned long iElem,jElem;
+    su2double **HelpOne=new su2double*[nElemx];
+    su2double * help=new su2double[nElemx];
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        HelpOne[iElem]=new su2double[nElemx];
+        help[iElem]=b[iElem];
+        for (jElem=0;jElem<nElemx;jElem++){
+            HelpOne[iElem][jElem]=A[iElem][jElem];
+        }
+    }
+    for (unsigned long i=0; i<nElemx; i++) {
+        // Search for maximum in this column
+        su2double maxEl = abs(A[i][i]);
+        unsigned long maxRow = i;
+        for (unsigned long k=i+1; k<nElemx; k++) {
+            if (abs(A[k][i]) > maxEl) {
+                maxEl = abs(A[k][i]);
+                maxRow = k;
+            }
+        }
+
+        // Swap maximum row with current row (column by column)
+        for (unsigned long k=i; k<nElemx;k++) {
+            su2double tmp = A[maxRow][k];
+            A[maxRow][k] = A[i][k];
+            A[i][k] = tmp;
+        }
+        su2double tmp=b[maxRow];
+        b[maxRow]=b[i];
+        b[i]=tmp;
+
+        // Make all rows below this one 0 in current column
+        for (unsigned long k=i+1; k<nElemx; k++) {
+            su2double c = -A[k][i]/A[i][i];
+            for (unsigned long j=i; j<nElemx; j++) {
+                if (i==j) {
+                    A[k][j] = 0;
+                } else {
+                    A[k][j] += c * A[i][j];
+                }
+            }
+            b[k]+=c*b[i];
+        }
+    }
+
+    // Solve equation Ax=b for an upper triangular matrix A
+    su2double* res;
+    res=new su2double[nElemx];
+    for (long i=nElemx-1; i>=0; i--) {
+        res[i] = b[i]/A[i][i];
+        for (short k=i-1;k>=0; k--) {
+            b[k] -= A[k][i] * res[i];
+        }
+    }
+    for (iElem = 0; iElem < nElemx; iElem++) {
+        b[iElem]=help[iElem];
+        for (jElem=0;jElem<nElemx;jElem++){
+            A[iElem][jElem]=HelpOne[iElem][jElem];
+        }
+    }
+    for (iElem = 0; iElem < nElemx; iElem++){
+        delete [] HelpOne[iElem];
+    }
+    delete [] HelpOne;
+    delete [] help;
+    return res;
+}
+
+su2double* CDiscAdjFEASolver::ThomasAlgorithm(su2double** A, su2double *d){
+    unsigned long nElemx=52;
+    su2double* a = new su2double[nElemx];
+    su2double* help=new su2double[nElemx];;
+    su2double * HelpOne=new su2double[nElemx];
+    HelpOne[0]=A[0][1]/A[0][0];
+    help[0]=d[0]/A[0][0];
+    for(unsigned long i=1;i<nElemx;i++){
+       if(i!=nElemx-1) HelpOne[i]= A[i][i+1]/(A[i][i]-HelpOne[i-1]*A[i][i-1]); //not really needed for last vector element
+       help[i]= (d[i]-help[i-1]*A[i][i-1])/(A[i][i]-HelpOne[i-1]*A[i][i-1]);
+    }
+
+    a[nElemx-1]=help[nElemx-1];
+    for(long i=nElemx-2;i>=0;i--){
+        a[i]=help[i]-HelpOne[i]*a[i+1];
+    }
+    return a;
+}
+
 

@@ -1152,6 +1152,11 @@ void CFEM_StructuralAnalysis::Iterate(COutput *output,
       solver_container[val_iZone][MESH_0][FEA_SOL]->Compute_MinimumCompliance(geometry_container[val_iZone][MESH_0],solver_container[val_iZone][MESH_0], config_container[val_iZone]);
       break;
   }
+  if(config_container[val_iZone]->GetOneShotConstraint()){
+      //solver_container[val_iZone][MESH_0][FEA_SOL]->Compute_VolumeConstraint(geometry_container[val_iZone][MESH_0],solver_container[val_iZone][MESH_0], config_container[val_iZone]);
+      solver_container[val_iZone][MESH_0][FEA_SOL]->Compute_NodalStress(geometry_container[val_iZone][MESH_0], solver_container[val_iZone][MESH_0], numerics_container[val_iZone][MESH_0][FEA_SOL], config_container[val_iZone]);
+      solver_container[val_iZone][MESH_0][FEA_SOL]->Compute_StressConstraint(geometry_container[val_iZone][MESH_0],solver_container[val_iZone][MESH_0], config_container[val_iZone]);
+  }
 
 }
 
@@ -2037,7 +2042,7 @@ void CDiscAdjMeanFlowIteration::Iterate(COutput *output,
                                                                               config_container[val_iZone]);
 
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
-                                                                               config_container[val_iZone]);
+                                                                               config_container[val_iZone], false);
 
     if (config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS) {
       solver_container[val_iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Solution(geometry_container[val_iZone][MESH_0],
@@ -2363,7 +2368,7 @@ void CDiscAdjMeanFlowIteration::Iterate_FSI(COutput *output,
                                                                               config_container[ZONE_FLOW]);
 
     solver_container[ZONE_FLOW][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Variables(geometry_container[ZONE_FLOW][MESH_0],
-                                                                               config_container[ZONE_FLOW]);
+                                                                               config_container[ZONE_FLOW], false);
 
     if (config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS) {
       solver_container[ZONE_FLOW][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Solution(geometry_container[ZONE_FLOW][MESH_0],
@@ -2646,7 +2651,7 @@ void CDiscAdjFEAIteration::Iterate(COutput *output,
                                                                               config_container[val_iZone]);
 
     solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
-                                                                               config_container[val_iZone]);
+                                                                               config_container[val_iZone], false);
 
 
     /*--- Clear all adjoints to re-use the stored computational graph in the next iteration ---*/
@@ -2925,7 +2930,7 @@ void CDiscAdjFEAIteration::Iterate_FSI(COutput *output,
                                                                               config_container[ZONE_STRUCT]);
 
     solver_container[ZONE_STRUCT][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[ZONE_STRUCT][MESH_0],
-                                                                               config_container[ZONE_STRUCT]);
+                                                                               config_container[ZONE_STRUCT], false);
 
     /*--- Clear all adjoints to re-use the stored computational graph in the next iteration ---*/
 
@@ -3680,6 +3685,8 @@ void TopologyOptimization::PiggyBack(COutput *output,
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   #endif
 
+    if(ExtIter==0) solver_container[val_iZone][MESH_0][ADJFEA_SOL]->InitializeDensity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]);
+
     AD::Reset();
 
     /*--- Record one FEM iteration with structural variables as input ---*/
@@ -3754,7 +3761,7 @@ void TopologyOptimization::PiggyBack(COutput *output,
                                                                                 config_container[ZONE_0]);
 
     solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
-                                                                                 config_container[ZONE_0]);
+                                                                                 config_container[ZONE_0], false);
 
 
     /*--- Clear all adjoints to re-use the stored computational graph in the next iteration ---*/
@@ -3763,7 +3770,7 @@ void TopologyOptimization::PiggyBack(COutput *output,
 
     cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFEA_SOL]->GetRes_RMS(0))<<std::endl;
     cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FEA_SOL]->GetRes_RMS(0))<<std::endl;
-      //TODO change the residual computations!
+      //TODOLISA change the residual computations!
 
     AD::Reset();
 
@@ -3793,7 +3800,7 @@ void TopologyOptimization::Iterate(COutput *output,
                                      CVolumetricMovement **volume_grid_movement,
                                      CFreeFormDefBox*** FFDBox,
                                      unsigned short val_iZone){
-    PiggyBack(output, integration_container, geometry_container, solver_container, numerics_container, config_container, surface_movement, volume_grid_movement, FFDBox, val_iZone);
+    OneShot(output, integration_container, geometry_container, solver_container, numerics_container, config_container, surface_movement, volume_grid_movement, FFDBox, val_iZone);
 }
 
 void TopologyOptimization::Update(COutput *output,
@@ -3827,13 +3834,15 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
 
     su2double steplen=config_container[ZONE_0]->GetOSStepSize();
 
+    if(ExtIter==0) solver_container[val_iZone][MESH_0][ADJFEA_SOL]->InitializeDensity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]);
+
     //print residuals!
        cout << "log10Primal[RMS Density]: " << log10(solver_container[val_iZone][MESH_0][FEA_SOL]->GetRes_RMS(0))<<std::endl;
        cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[val_iZone][MESH_0][ADJFEA_SOL]->GetRes_RMS(0))<<std::endl;
 
     //store old solution and density before starting line search
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreOldSolution();
-    solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreDensity(config_container[ZONE_0], geometry_container[val_iZone][MESH_0]);
+    solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreDensity(geometry_container[val_iZone][MESH_0]);
 
     unsigned short whilecounter=0;
     do{
@@ -3845,11 +3854,13 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
       whilecounter=whilecounter+1;
 
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadOldSolution();
-      solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadDensity(config_container[ZONE_0], geometry_container[val_iZone][MESH_0]);
+      solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadDensity(geometry_container[val_iZone][MESH_0]);
 
       if((ExtIter>config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())){
         //Update the density and update the constraint multiplier
-        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityUpdateProjected(geometry_container[val_iZone][MESH_0],config_container[ZONE_0], ExtIter, steplen);
+        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], true);
+        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->VolumeProjection(geometry_container[val_iZone][MESH_0], config_container[ZONE_0]);
+        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DesignUpdateProjected(geometry_container[val_iZone][MESH_0], steplen);
         if(config_container[ZONE_0]->GetOneShotConstraint()==true && whilecounter==1) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateMultiplier(config_container[ZONE_0]);
       }
 
@@ -3857,9 +3868,10 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
                solver_container, numerics_container, config_container,
                 surface_movement, volume_grid_movement, FFDBox, val_iZone, whilecounter);
     }
-    while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())&&solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(steplen)&&(whilecounter<config_container[ZONE_0]->GetSearchCounterMax())&&config_container[ZONE_0]->GetLineSearch()&&steplen>1E-15);
+    while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())&&solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(geometry_container[val_iZone][MESH_0],steplen)&&(whilecounter<config_container[ZONE_0]->GetSearchCounterMax())&&config_container[ZONE_0]->GetLineSearch()&&steplen>1E-15);
 
     if((ExtIter>=config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())){
+      std::cout<<"searchsteps: "<<whilecounter<<std::endl;
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[val_iZone][MESH_0],config_container[ZONE_0],ExtIter);
     }
 }
@@ -3891,8 +3903,8 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
     fem_iteration->Iterate(output,integration_container,geometry_container,solver_container,numerics_container,
                                 config_container,surface_movement,volume_grid_movement,FFDBox, val_iZone);
 
-    cout     <<"Objective: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetMaximumThickness()
-        <<", Constraint: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetVolumeConstraint() << "." << endl;
+    cout     <<"Objective: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetMinimumCompliance()
+        <<", Volume Constraint: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetVolumeConstraint() <<", Stress Constraint: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetStressConstraint() << "." << endl;
 
     config_container[ZONE_0]->SetExtIter(ExtIter);
 
@@ -3910,7 +3922,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
     //------------------COMPUTE N_u-------------------------
 
     solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdj_ObjFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],1.0);
-    if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
+    if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFuncAD(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
     solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdjoint_Output(geometry_container[val_iZone][MESH_0],
                                                                     config_container[ZONE_0]);
 
@@ -3921,7 +3933,9 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->ResetSensitivity(geometry_container[val_iZone][MESH_0]);
     solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
                                                                                  config_container[ZONE_0], false);
+    //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], true);
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SaveDensitySensitivity(geometry_container[val_iZone][MESH_0]);
+    //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], true);
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[val_iZone][MESH_0],1.0);
     AD::ClearAdjoints();
 
@@ -3939,7 +3953,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],0.0);
         if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFuncAD(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetConstraintFunc_Value());
-        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdjointOutputUpdate(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]);
+        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdjointOutputUpdate();
 
         AD::ComputeAdjoint();
 
@@ -3947,6 +3961,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
                                                                                     config_container[ZONE_0]);
         solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
                                                                                      config_container[ZONE_0], false);
+        //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0]);
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]->GetOneShotAlpha());
 
         AD::ClearAdjoints();
@@ -3989,7 +4004,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
             solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->OutputWritten(geometry_container[ZONE_0][MESH_0]);
 
             solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdj_ObjFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],1.0);
-            if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
+            if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFuncAD(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
             solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdjoint_Output(geometry_container[val_iZone][MESH_0],
                                                                             config_container[ZONE_0]);
 
@@ -4040,7 +4055,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
             //------------------COMPUTE new N_u-------------------------
             solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdj_ObjFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],1.0);
-            if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
+            if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFuncAD(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
             solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdjoint_Output(geometry_container[val_iZone][MESH_0],
                                                                             config_container[ZONE_0]);
 
@@ -4050,7 +4065,9 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
                                                                                         config_container[ZONE_0]);
             solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0],
                                                                                          config_container[ZONE_0], true);//contains N_u_new
+            //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], false);
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]->GetOneShotBeta());
+            //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], false);
 
             AD::ClearAdjoints();
    //     }

@@ -100,6 +100,10 @@ inline void CSolver::Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_con
 
 inline void CSolver::Compute_MinimumCompliance(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
 
+inline void CSolver::Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
+
+inline void CSolver::Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
+
 inline void CSolver::SetCSensitivity(unsigned short val_marker, unsigned long val_vertex, su2double val_sensitivity) { }
 
 inline void CSolver::Inviscid_Sensitivity(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config) { }
@@ -293,6 +297,10 @@ inline su2double CSolver::GetTotal_CNearFieldOF() { return 0; }
 inline su2double CSolver::GetTotal_OFRefGeom() { return 0; }
 
 inline su2double CSolver::GetMinimumCompliance() { return 0; }
+
+inline su2double CSolver::GetVolumeConstraint() { return 0; }
+
+inline su2double CSolver::GetStressConstraint() { return 0; }
 
 inline void CSolver::SetTotal_CEquivArea(su2double val_cequivarea) { }
 
@@ -1216,6 +1224,10 @@ inline su2double CFEM_ElasticitySolver::GetTotal_OFRefGeom(void){ return Total_O
 
 inline su2double CFEM_ElasticitySolver::GetMinimumCompliance(void){ return MinimumCompliance; }
 
+inline su2double CFEM_ElasticitySolver::GetVolumeConstraint(void){ return VolumeConstraint; }
+
+inline su2double CFEM_ElasticitySolver::GetStressConstraint(void){ return StressConstraint; }
+
 inline void CFEM_ElasticitySolver_Adj::Set_DV_Val(su2double val_EField, unsigned short i_DV){ DV_Val[i_DV] = val_EField;}
 
 inline su2double CFEM_ElasticitySolver_Adj::Get_DV_Val(unsigned short i_DV){ return DV_Val[i_DV]; }
@@ -1305,7 +1317,7 @@ inline void CEulerSolver::SetTemperature_Inf(su2double t_inf){Temperature_Inf = 
 
 inline void CSolver::RegisterVariables(CGeometry *geometry, CConfig *config, bool reset){}
 
-inline void CSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config){}
+inline void CSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference){}
 
 inline void CSolver::SetFreeStream_Solution(CConfig *config){}
 
@@ -1341,7 +1353,7 @@ inline void CSolver::UpdateMultiplier(CConfig *config){}
 
 inline void CSolver::RegisterConstraint_Func(CConfig *config, CGeometry *geometry){}
 
-inline bool CSolver::CheckFirstWolfe(su2double steplen){}
+inline bool CSolver::CheckFirstWolfe(CGeometry *geometry, su2double steplen){}
 
 inline void CSolver::SaveDensitySensitivity(CGeometry *geometry){}
 
@@ -1363,9 +1375,17 @@ inline su2double *CSolver::GetConstraintFunc_Value(){}
 
 inline void CSolver::StoreConstraint(CConfig *config){}
 
-inline double* CSolver::GetMultiplier(){}
+inline su2double* CSolver::GetMultiplier(){}
 
 inline void CSolver::SetMultiplier(CConfig *config, double * value){}
 
 inline void CSolver::LoadOldAdjoint(){}
+
+inline void CSolver::VolumeProjection(CGeometry *geometry, CConfig *config){}
+
+inline void CSolver::DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens){}
+
+inline su2double* CSolver::GaussElimination(su2double **A, su2double *b){}
+
+inline su2double* CSolver::ThomasAlgorithm(su2double **A, su2double *d){}
 

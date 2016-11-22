@@ -4605,7 +4605,7 @@ void CDiscAdjFSIStatDriver::ExtractAdjoint(CIteration **iteration_container,
                                                       config_container[ZONE_FLOW]);
 
     solver_container[ZONE_FLOW][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Variables(geometry_container[ZONE_FLOW][MESH_0],
-                                                      config_container[ZONE_FLOW]);
+                                                      config_container[ZONE_FLOW], false);
 
     if (config_container[ZONE_FLOW]->GetKind_Solver() == DISC_ADJ_RANS) {
       solver_container[ZONE_FLOW][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Solution(geometry_container[ZONE_FLOW][MESH_0],
@@ -4639,7 +4639,7 @@ void CDiscAdjFSIStatDriver::ExtractAdjoint(CIteration **iteration_container,
                                                                                config_container[ZONE_STRUCT]);
 
     solver_container[ZONE_STRUCT][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Variables(geometry_container[ZONE_STRUCT][MESH_0],
-                                                                                config_container[ZONE_STRUCT]);
+                                                                                config_container[ZONE_STRUCT], false);
 
   }
 

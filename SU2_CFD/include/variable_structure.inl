@@ -129,6 +129,10 @@ inline su2double *CVariable::GetSolution(void) { return Solution; }
 
 inline su2double *CVariable::GetSolution_Old(void) { return Solution_Old; }
 
+inline su2double *CVariable::GetSolution_Store(void) { return Solution_Store; }
+
+inline su2double *CVariable::GetSolution_Save(void) { return Solution_Save; }
+
 inline su2double *CVariable::GetSolution_time_n(void) { return Solution_time_n; }
 
 inline su2double *CVariable::Get_femSolution_time_n(void) { return NULL; }
@@ -144,6 +148,8 @@ inline su2double CVariable::GetUndivided_Laplacian(unsigned short val_var) { ret
 inline su2double CVariable::GetSolution(unsigned short val_var) { return Solution[val_var]; }
 
 inline su2double CVariable::GetSolution_Old(unsigned short val_var) { return Solution_Old[val_var]; }
+
+inline su2double CVariable::GetSolution_Store(unsigned short val_var) { return Solution_Store[val_var]; }
 
 inline su2double CVariable::GetSolution_Old_Adj(unsigned short val_var) { return Solution_Adj_Old[val_var]; }
 

@@ -1297,3 +1297,33 @@ inline bool CConfig::GetAD_Mode(void) {return AD_Mode;}
 
 inline bool CConfig::GetOne_Shot() {return OneShot;}
 
+inline bool CConfig::GetLineSearch() {return LineSearch;}
+
+inline bool CConfig::GetOneShotConstraint() {return OneShotConstraint;}
+
+inline su2double CConfig::GetOSStepSize() {return OneShotStepSize;}
+
+inline unsigned long CConfig::GetOneShotStop() {return OneShotStop;}
+
+inline unsigned long CConfig::GetOneShotStart() {return OneShotStart;}
+
+inline unsigned long CConfig::GetSearchCounterMax() {return SearchCounterMax;}
+
+inline su2double CConfig::GetOneShotAlpha() {return OneShotAlpha;}
+
+inline su2double CConfig::GetOneShotBeta() {return OneShotBeta;}
+
+inline su2double CConfig::GetVolumeConstraint() {return VolumeConstraint;}
+
+inline su2double CConfig::GetStressConstraint() {return StressConstraint;}
+
+inline su2double CConfig::GetHelmholtzFactor() {return HelmholtzFactor;}
+
+inline su2double CConfig::GetConstraintStart() {return ConstraintStart;}
+
+inline unsigned short CConfig::GetConstraintNum() {return ConstraintNum;}
+
+inline su2double CConfig::GetFDStep() {return FDStep;}
+
+inline su2double* CConfig::GetConstraintFactor() {return ConstraintFactor;}
+

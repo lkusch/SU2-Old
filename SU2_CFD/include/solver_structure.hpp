@@ -2008,6 +2008,8 @@ public:
    */
   virtual su2double GetTotal_OFRefGeom(void);
       virtual su2double GetMinimumCompliance(void);
+    virtual su2double GetVolumeConstraint(void);
+    virtual su2double GetStressConstraint(void);
     
 	/*!
 	 * \brief A virtual member.
@@ -2715,6 +2717,8 @@ public:
    */
     virtual void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
     virtual void Compute_MinimumCompliance(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+    virtual void Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+    virtual void Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
 
 	/*!
 	 * \brief A virtual member.
@@ -3140,7 +3144,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  virtual void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+  virtual void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference);
 
   /*!
    * \brief A virtual member.
@@ -3168,7 +3172,7 @@ public:
 
   virtual void RegisterConstraint_Func(CConfig *config, CGeometry *geometry);
 
-  virtual bool CheckFirstWolfe(su2double steplen);
+  virtual bool CheckFirstWolfe(CGeometry *geometry, su2double steplen);
 
   virtual void SaveDensitySensitivity(CGeometry *geometry);
 
@@ -3190,11 +3194,19 @@ public:
 
   virtual void StoreConstraint(CConfig *config);
 
-  virtual double* GetMultiplier();
+  virtual su2double* GetMultiplier();
 
   virtual void SetMultiplier(CConfig *config, double * value);
 
   virtual void LoadOldAdjoint();
+
+  virtual void VolumeProjection(CGeometry *geometry, CConfig *config);
+
+  virtual void DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens);
+
+  virtual su2double* GaussElimination(su2double **A, su2double *b);
+
+  virtual su2double* ThomasAlgorithm(su2double **A, su2double *d);
 };
 
 /*!
@@ -7178,6 +7190,8 @@ private:
   su2double Total_OFRefGeom;        /*!< \brief Total FEA coefficient for all the boundaries. */
   su2double Total_ForwardGradient;  /*!< \brief Vector of the total forward gradient. */
   su2double MinimumCompliance;
+  su2double VolumeConstraint;
+  su2double StressConstraint;
   su2double Emin;
   su2double penal;
 
@@ -7564,6 +7578,8 @@ public:
    */
   su2double GetTotal_OFRefGeom(void);
     su2double GetMinimumCompliance(void);
+    su2double GetVolumeConstraint(void);
+    su2double GetStressConstraint(void);
 
 	/*!
 	 * \brief Set the value of the FEA coefficient.
@@ -7643,6 +7659,8 @@ public:
    */
   void Compute_OFRefGeom(CGeometry *geometry, CSolver **solver_container, CConfig *config);
   void Compute_MinimumCompliance(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+  void Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
+  void Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
 
 	/*!
 	 * \brief Get the value of the FSI convergence.
@@ -8616,7 +8634,7 @@ public:
    * \param[in] geometry - Geometrical definition of the problem.
    * \param[in] config - Definition of the particular problem.
    */
-  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config);
+  void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference);
 
 	/*!
 	 * \brief Update the dual-time derivatives.
@@ -8681,6 +8699,25 @@ private:
   unsigned long nMarker_nL;     /*!< \brief Total number of markers that have a normal load applied. */
   su2double* Density;
   su2double* Global_Sens_Density;
+  su2double* Global_Sens_Density_Old;
+  su2double* Density_Store;
+  su2double* UpdateSens;
+  su2double Obj_Save;
+  su2double Lagrangian_Value, Lagrangian_Value_Old;
+
+  su2double* Lagrange_Sens;
+  su2double* Lagrange_Sens_Old;
+  su2double* DesignVarUpdate;
+  unsigned long TotalIterations;
+
+  su2double* ConstraintFunc_Value;
+  su2double* Constraint_Save;
+  su2double* Constraint_Old;
+  su2double* cons_factor;
+  su2double* multiplier;
+
+  su2double** Hess;
+  su2double** Bess;
 
 public:
 
@@ -8916,7 +8953,7 @@ public:
 
   void RegisterConstraint_Func(CConfig *config, CGeometry *geometry);
 
-  bool CheckFirstWolfe(su2double steplen);
+  bool CheckFirstWolfe(CGeometry *geometry, su2double steplen);
 
   void SaveDensitySensitivity(CGeometry *geometry);
 
@@ -8938,11 +8975,19 @@ public:
 
   void StoreConstraint(CConfig *config);
 
-  double* GetMultiplier();
+  su2double *GetMultiplier();
 
   void SetMultiplier(CConfig *config, double * value);
 
   void LoadOldAdjoint();
+
+  void VolumeProjection(CGeometry *geometry, CConfig *config);
+
+  void DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens);
+
+  su2double* GaussElimination(su2double **A, su2double *b);
+
+  su2double* ThomasAlgorithm(su2double **A, su2double *d);
 
 };
 #include "solver_structure.inl"

@@ -1518,6 +1518,22 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /* DESCRIPTION: Activate ParMETIS mode for testing */
   addBoolOption("PARMETIS", ParMETIS, false);
+
+  addDoubleOption("OS_ALPHA", OneShotAlpha, 200.0);
+  addDoubleOption("OS_BETA", OneShotBeta, 2.0);
+  addUnsignedLongOption("OS_START", OneShotStart, 1);
+  addDoubleOption("OS_STEP_SIZE", OneShotStepSize, 1E-4);
+  addBoolOption("OS_CONSTRAINT", OneShotConstraint, false);
+  addUnsignedLongOption("OS_STOP", OneShotStop, 2000);
+  addDoubleOption("CONS_START", ConstraintStart, 0.0);
+  addUnsignedShortOption("CONS_NUM", ConstraintNum, 1);
+  addDoubleListOption("CONS_FACTOR", ConstraintNum, ConstraintFactor);
+  addBoolOption("LINE_SEARCH", LineSearch, false);
+  addDoubleOption("TARGET_VOLUME", VolumeConstraint, 0.5);
+  addDoubleOption("TARGET_STRESS", StressConstraint, 0.5);
+    addDoubleOption("HELMH_FACTOR", HelmholtzFactor, 2.0);
+  addDoubleOption("FDSTEP", FDStep, 1E-5);
+  addUnsignedLongOption("LINE_SEARCH_COUNTER", SearchCounterMax, 15);
   
   /* END_CONFIG_OPTIONS */
 
@@ -3375,7 +3391,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       }
     }
     else {
-      cout << "Reference origin (moment computation) is (" << RefOriginMoment_X[0] << ", " << RefOriginMoment_Y[0] << ", " << RefOriginMoment_Z[0] << ")." << endl;
+     // cout << "Reference origin (moment computation) is (" << RefOriginMoment_X[0] << ", " << RefOriginMoment_Y[0] << ", " << RefOriginMoment_Z[0] << ")." << endl;
       cout << "Surface(s) where the force coefficients are evaluated: ";
       for (iMarker_Monitoring = 0; iMarker_Monitoring < nMarker_Monitoring; iMarker_Monitoring++) {
         cout << Marker_Monitoring[iMarker_Monitoring];

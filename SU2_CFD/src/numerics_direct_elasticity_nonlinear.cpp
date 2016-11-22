@@ -75,6 +75,7 @@ CFEM_NonlinearElasticity::CFEM_NonlinearElasticity(unsigned short val_nDim, unsi
 
   F_Mat_Iso = NULL;
   b_Mat_Iso = NULL;
+  cijkl=NULL;
 	if (incompressible || nearly_incompressible){
 
 		F_Mat_Iso = new su2double *[3];

@@ -1701,4 +1701,15 @@ public:
               CFreeFormDefBox*** FFDBox,
               unsigned short val_iZone);
 
+  void OneShot(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                            CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                            CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short val_iZone);
+
+  void OneShotStep(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
+                   CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
+                   CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short val_iZone, unsigned short whilecounter);
+
+
+
+
 };

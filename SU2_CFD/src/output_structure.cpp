@@ -5662,10 +5662,10 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
           
         case FEM_ELASTICITY:
           
-          if (!DualTime_Iteration) {
+         /* if (!DualTime_Iteration) {
             ConvHist_file[0] << begin << fem_coeff << fem_resid << end;
             ConvHist_file[0].flush();
-          }
+          }*/
           
           cout.precision(6);
           cout.setf(ios::fixed, ios::floatfield);
