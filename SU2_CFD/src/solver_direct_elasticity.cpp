@@ -111,8 +111,6 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  su2double E = config->GetElasticyMod();
-
   nElement      = geometry->GetnElem();
   nDim          = geometry->GetnDim();
   nMarker       = geometry->GetnMarker();
@@ -651,6 +649,7 @@ CFEM_ElasticitySolver::CFEM_ElasticitySolver(CGeometry *geometry, CConfig *confi
 
   penal = 3.0;
   Emin = 1E-3;
+  //Emin=1E-9;
 
 }
 
@@ -1780,7 +1779,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix(CGeometry *geometry, CSolver **s
 
         for (iVar = 0; iVar < nVar; iVar++){
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Kab[iVar*nVar+jVar];
+            Jacobian_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))*Kab[iVar*nVar+jVar];
           }
         }
 
@@ -1875,7 +1874,7 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix_NodalStressRes(CGeometry *geomet
     for (iNode = 0; iNode < NelNodes; iNode++){
 
       Ta = element_container[FEA_TERM][EL_KIND]->Get_Kt_a(iNode);
-      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ta[iVar];
+      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))*Ta[iVar];
 
       /*--- Check if this is my node or not ---*/
       LinSysRes.SubtractBlock(indexNode[iNode], Res_Stress_i);
@@ -1897,10 +1896,10 @@ void CFEM_ElasticitySolver::Compute_StiffMatrix_NodalStressRes(CGeometry *geomet
         if (incompressible) Kk_ab = element_container[FEA_TERM][EL_KIND]->Get_Kk_ab(iNode,jNode);
 
         for (iVar = 0; iVar < nVar; iVar++){
-          Jacobian_s_ij[iVar][iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ks_ab;
+          Jacobian_s_ij[iVar][iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))*Ks_ab;
           for (jVar = 0; jVar < nVar; jVar++){
-            Jacobian_c_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Kab[iVar*nVar+jVar];//pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];
-            if (incompressible) Jacobian_k_ij[iVar][jVar] =(Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))* Kk_ab[iVar*nVar+jVar];
+            Jacobian_c_ij[iVar][jVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))*Kab[iVar*nVar+jVar];//pow(geometry->elem[iElem]->GetDensity()[0],3)*Kab[iVar*nVar+jVar];
+            if (incompressible) Jacobian_k_ij[iVar][jVar] =(Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))* Kk_ab[iVar*nVar+jVar];
           }
         }
 
@@ -2047,7 +2046,7 @@ void CFEM_ElasticitySolver::Compute_NodalStressRes(CGeometry *geometry, CSolver 
     for (iNode = 0; iNode < NelNodes; iNode++){
 
       Ta = element_container[FEA_TERM][EL_KIND]->Get_Kt_a(iNode);
-      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ta[iVar];
+      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))*Ta[iVar];
 
       LinSysRes.SubtractBlock(indexNode[iNode], Res_Stress_i);
 
@@ -2123,12 +2122,11 @@ void CFEM_ElasticitySolver::Compute_NodalStress(CGeometry *geometry, CSolver **s
     numerics[FEA_TERM]->Compute_Averaged_NodalStress(element_container[FEA_TERM][EL_KIND], config);
 
     NelNodes = element_container[FEA_TERM][EL_KIND]->GetnNodes();
-
     for (iNode = 0; iNode < NelNodes; iNode++){
 
       /*--- This only works if the problem is nonlinear ---*/
       Ta = element_container[FEA_TERM][EL_KIND]->Get_Kt_a(iNode);
-      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal))*Ta[iVar];
+      for (iVar = 0; iVar < nVar; iVar++) Res_Stress_i[iVar] = (Emin + pow(geometry->elem[iElem]->GetDensity()[0],penal)*(1.0-Emin))*Ta[iVar];
 
       LinSysReact.AddBlock(indexNode[iNode], Res_Stress_i);
 
@@ -2163,7 +2161,6 @@ void CFEM_ElasticitySolver::Compute_NodalStress(CGeometry *geometry, CSolver **s
 
       S1=(Sxx+Syy)/2+sqrt(((Sxx-Syy)/2)*((Sxx-Syy)/2)+Sxy*Sxy);
       S2=(Sxx+Syy)/2-sqrt(((Sxx-Syy)/2)*((Sxx-Syy)/2)+Sxy*Sxy);
-
       VonMises_Stress = sqrt(S1*S1+S2*S2-2*S1*S2);
 
     }
@@ -5034,7 +5031,7 @@ void CFEM_ElasticitySolver::Compute_MinimumCompliance(CGeometry *geometry, CSolv
     }
     //MPI Missing
 
-    MinimumCompliance = objective_function;
+    MinimumCompliance = 1E-2*objective_function;//1E-1*objective_function;
 
     cout <<std::setprecision(5)<< "Objective function: " << MinimumCompliance << "." << endl;
 
@@ -5056,7 +5053,7 @@ void CFEM_ElasticitySolver::Compute_VolumeConstraint(CGeometry *geometry, CSolve
 
     // Need to do an MPI reduction to have the sum in all processors HERE
 
-    VolumeConstraint = objective_function;//1000*objective_function;
+    VolumeConstraint = objective_function*1E-1;//1000*objective_function;
 
     cout <<std::setprecision(5)<< "Constraint function: " << VolumeConstraint << "." << endl;
 
@@ -5064,14 +5061,69 @@ void CFEM_ElasticitySolver::Compute_VolumeConstraint(CGeometry *geometry, CSolve
 
 void CFEM_ElasticitySolver::Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config){
     su2double stressnorm=0;
-    su2double pVal=3.0;
+    su2double value=0;
+
+    su2double rhomin=1.0;
+    su2double meanstress=0;
+    unsigned long iElem, iNode;
+    su2double pVal=4.0;
+
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+      //calculate element von mises stress
+      meanstress=0;
+      for (iNode = 0; iNode < 4; iNode++) {
+         meanstress+=node[geometry->elem[iElem]->GetNode(iNode)]->GetVonMises_Stress();
+         //std::cout<<node[geometry->elem[iElem]->GetNode(iNode)]->GetVonMises_Stress()<<" ";
+      }
+      meanstress=meanstress/4.0;
+      //std::cout<<meanstress<<" "<<geometry->elem[iElem]->GetDensity()[0]<<" "<<meanstress*sqrt(geometry->elem[iElem]->GetDensity()[0])<<std::endl;
+      if(geometry->elem[iElem]->GetDensity()[0]<1E-8 || fabs(meanstress)>1E15 || std::isnan(SU2_TYPE::GetValue(meanstress))){
+          //meanstress=meanstress*0.0;
+          meanstress=0.0;
+      }
+      else{
+          meanstress=meanstress*sqrt(geometry->elem[iElem]->GetDensity()[0]);
+      }
+      stressnorm+=pow((meanstress),pVal);//(pow(geometry->elem[iElem]->GetDensity()[0],0.5)*meanstress),pVal); //divide by stress
+    }
+    stressnorm=pow(stressnorm, 1./pVal);
+    StressConstraint=stressnorm*1E-2;//1E-2;
+
+    //find smallest Density
+/*    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+        if(geometry->elem[iElem]->GetDensity()[0]<rhomin) rhomin=geometry->elem[iElem]->GetDensity()[0];
+    }
+    su2double maxmean=0;
+    su2double maxrho=0;
+    for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
+      //calculate element von mises stress
+      meanstress=0;
+      for (iNode = 0; iNode < 4; iNode++) {
+         meanstress+=node[geometry->elem[iElem]->GetNode(iNode)]->GetVonMises_Stress();
+      }
+      meanstress=meanstress/4.0;
+      if(meanstress>maxmean && geometry->elem[iElem]->GetDensity()[0]>1E-3){
+          maxmean=meanstress;
+          maxrho=geometry->elem[iElem]->GetDensity()[0];
+      }
+      //update sum
+      rhomin=1E-3;
+      value=(meanstress/(pow(geometry->elem[iElem]->GetDensity()[0],3.0)*78000000.0))-sqrt(rhomin)/geometry->elem[iElem]->GetDensity()[0]+sqrt(rhomin);
+      //if (geometry->elem[iElem]->GetDensity()[0]==0.0) std::cout<<(pow(geometry->elem[iElem]->GetDensity()[0],3.0)*8000000.0)<<std::endl;
+      //if(value<0) std::cout<<"value<0: "<<value<<std::endl;
+      if(value>0 && geometry->elem[iElem]->GetDensity()[0]>1E-3) stressnorm+=pow(value,pVal);
+    }
+    std::cout<<"MAXMEAN: "<<maxmean<<" "<<maxrho<<" "<<rhomin<<std::endl;
+    stressnorm=pow(stressnorm/geometry->GetnElem(), 1./pVal);
+    StressConstraint = stressnorm;*/
+ /*   su2double pVal=3.0;
     unsigned long iPoint;
     for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
           stressnorm+=pow(node[iPoint]->GetVonMises_Stress(),pVal);
     }
     stressnorm=stressnorm*(1.0/nPointDomain);
     stressnorm=pow(stressnorm, 1./pVal);
-    StressConstraint = stressnorm;
+    StressConstraint = stressnorm*1E-2;*/
     cout <<std::setprecision(5)<< "Constraint function (Stress): " << StressConstraint << "." << endl;
 }
 

@@ -1303,6 +1303,8 @@ inline bool CConfig::GetOneShotConstraint() {return OneShotConstraint;}
 
 inline su2double CConfig::GetOSStepSize() {return OneShotStepSize;}
 
+inline su2double CConfig::GetStepTolerance() {return StepTolerance;}
+
 inline unsigned long CConfig::GetOneShotStop() {return OneShotStop;}
 
 inline unsigned long CConfig::GetOneShotStart() {return OneShotStart;}

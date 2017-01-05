@@ -295,6 +295,7 @@ void CFEM_LinearElasticity::Compute_Averaged_NodalStress(CElement *element, CCon
 			Stress[iVar] = 0.0;
 			for (jVar = 0; jVar < bDim; jVar++){
 				Stress[iVar] += D_Mat[iVar][jVar]*Strain[jVar];
+                //std::cout<<D_Mat[iVar][jVar]<<" "<<Strain[jVar]<<std::endl;
 			}
 		}
 

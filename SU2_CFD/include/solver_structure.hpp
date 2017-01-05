@@ -3200,13 +3200,13 @@ public:
 
   virtual void LoadOldAdjoint();
 
-  virtual void VolumeProjection(CGeometry *geometry, CConfig *config);
+  virtual void VolumeProjection(CGeometry *geometry, CConfig *config, su2double steplen);
 
   virtual void DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens);
 
-  virtual su2double* GaussElimination(su2double **A, su2double *b);
+  virtual void GaussElimination(su2double **A, su2double *b);
 
-  virtual su2double* ThomasAlgorithm(su2double **A, su2double *d);
+  virtual void ThomasAlgorithm(su2double **A, su2double *d);
 };
 
 /*!
@@ -8702,6 +8702,7 @@ private:
   su2double* Global_Sens_Density_Old;
   su2double* Density_Store;
   su2double* UpdateSens;
+  su2double* UpdateSensOld;
   su2double Obj_Save;
   su2double Lagrangian_Value, Lagrangian_Value_Old;
 
@@ -8981,13 +8982,13 @@ public:
 
   void LoadOldAdjoint();
 
-  void VolumeProjection(CGeometry *geometry, CConfig *config);
+  void VolumeProjection(CGeometry *geometry, CConfig *config, su2double steplen);
 
   void DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens);
 
-  su2double* GaussElimination(su2double **A, su2double *b);
+  void GaussElimination(su2double **A, su2double *b);
 
-  su2double* ThomasAlgorithm(su2double **A, su2double *d);
+  void ThomasAlgorithm(su2double **A, su2double *d);
 
 };
 #include "solver_structure.inl"

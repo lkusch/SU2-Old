@@ -1525,6 +1525,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addDoubleOption("OS_STEP_SIZE", OneShotStepSize, 1E-4);
   addBoolOption("OS_CONSTRAINT", OneShotConstraint, false);
   addUnsignedLongOption("OS_STOP", OneShotStop, 2000);
+  addDoubleOption("STEP_TOL", StepTolerance, 1E-3);
   addDoubleOption("CONS_START", ConstraintStart, 0.0);
   addUnsignedShortOption("CONS_NUM", ConstraintNum, 1);
   addDoubleListOption("CONS_FACTOR", ConstraintNum, ConstraintFactor);

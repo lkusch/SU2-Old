@@ -1381,11 +1381,11 @@ inline void CSolver::SetMultiplier(CConfig *config, double * value){}
 
 inline void CSolver::LoadOldAdjoint(){}
 
-inline void CSolver::VolumeProjection(CGeometry *geometry, CConfig *config){}
+inline void CSolver::VolumeProjection(CGeometry *geometry, CConfig *config, su2double steplen){}
 
 inline void CSolver::DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens){}
 
-inline su2double* CSolver::GaussElimination(su2double **A, su2double *b){}
+inline void CSolver::GaussElimination(su2double **A, su2double *b){}
 
-inline su2double* CSolver::ThomasAlgorithm(su2double **A, su2double *d){}
+inline void CSolver::ThomasAlgorithm(su2double **A, su2double *d){}
 

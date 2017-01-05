@@ -3858,8 +3858,13 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
 
       if((ExtIter>config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())){
         //Update the density and update the constraint multiplier
-        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], true);
-        solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->VolumeProjection(geometry_container[val_iZone][MESH_0], config_container[ZONE_0]);
+        if(whilecounter==1){
+          solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], true);
+          solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->VolumeProjection(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], steplen);
+        }
+        else{
+          solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->VolumeProjection(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], steplen);
+        }
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DesignUpdateProjected(geometry_container[val_iZone][MESH_0], steplen);
         if(config_container[ZONE_0]->GetOneShotConstraint()==true && whilecounter==1) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateMultiplier(config_container[ZONE_0]);
       }
@@ -3868,7 +3873,7 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
                solver_container, numerics_container, config_container,
                 surface_movement, volume_grid_movement, FFDBox, val_iZone, whilecounter);
     }
-    while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())&&solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(geometry_container[val_iZone][MESH_0],steplen)&&(whilecounter<config_container[ZONE_0]->GetSearchCounterMax())&&config_container[ZONE_0]->GetLineSearch()&&steplen>1E-15);
+    while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())&&solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(geometry_container[val_iZone][MESH_0],steplen)&&(whilecounter<config_container[ZONE_0]->GetSearchCounterMax())&&config_container[ZONE_0]->GetLineSearch()&&(steplen>1E-15));
 
     if((ExtIter>=config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())){
       std::cout<<"searchsteps: "<<whilecounter<<std::endl;
@@ -4020,7 +4025,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
             //Compute beta*Deltaybar^TNyu using Finite Differences
 
-            solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
+ /*           solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
 
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateStateVariable(config_container[ZONE_0]);
 
@@ -4069,7 +4074,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]->GetOneShotBeta());
             //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], false);
 
-            AD::ClearAdjoints();
+            AD::ClearAdjoints();*/
    //     }
 
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();

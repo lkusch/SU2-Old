@@ -989,7 +989,6 @@ void CFEM_NonlinearElasticity::Compute_Averaged_NodalStress(CElement *element, C
 	nGauss = element->GetnGaussPoints();
 
 	/*--- Computation of the deformation gradient ---*/
-
 	for (iGauss = 0; iGauss < nGauss; iGauss++){
 
 		Weight = element->GetWeight(iGauss);
@@ -1042,7 +1041,6 @@ void CFEM_NonlinearElasticity::Compute_Averaged_NodalStress(CElement *element, C
 		}
 
 		/*--- Determinant of F --> Jacobian of the transformation ---*/
-
 		J_F = 	F_Mat[0][0]*F_Mat[1][1]*F_Mat[2][2]+
 				F_Mat[0][1]*F_Mat[1][2]*F_Mat[2][0]+
 				F_Mat[0][2]*F_Mat[1][0]*F_Mat[2][1]-
@@ -1081,7 +1079,6 @@ void CFEM_NonlinearElasticity::Compute_Averaged_NodalStress(CElement *element, C
 			element->Add_Kt_a(KAux_t_a, iNode);
 
 		    /*--- Compute the average nodal stresses for each node ---*/
-
 			element->Add_NodalStress(Stress_Tensor[0][0] * element->GetNi_Extrap(iNode, iGauss), iNode, 0);
 			element->Add_NodalStress(Stress_Tensor[1][1] * element->GetNi_Extrap(iNode, iGauss), iNode, 1);
 			element->Add_NodalStress(Stress_Tensor[0][1] * element->GetNi_Extrap(iNode, iGauss), iNode, 2);
@@ -1094,7 +1091,6 @@ void CFEM_NonlinearElasticity::Compute_Averaged_NodalStress(CElement *element, C
 		}
 
 	}
-
 
 }
 
@@ -1137,13 +1133,13 @@ void CFEM_NeoHookean_Comp::Compute_Plane_Stress_Term(CElement *element, CConfig 
 	NRTOL = 1E-25;
 
 	// j_red: reduced jacobian, for the 2x2 submatrix of F
-	j_red = F_Mat[0][0] * F_Mat[1][1] - F_Mat[1][0] * F_Mat[0][1];
+    j_red = F_Mat[0][0] * F_Mat[1][1] - F_Mat[1][0] * F_Mat[0][1];
+    //if(j_red<0) j_red=-j_red; //TODOLISA
 	// cte: constant term in the NR method
 	cte = Lambda*log(j_red) - Mu;
 
 	// f(f33)  = mu*f33^2 + lambda*ln(f33) + (lambda*ln(j_red)-mu) = 0
 	// f'(f33) = 2*mu*f33 + lambda/f33
-
 	for (iNR = 0; iNR < nNR; iNR++){
 		fx  = Mu*pow(xk,2.0) + Lambda*log(xk) + cte;
 		fpx = 2*Mu*xk + (Lambda / xk);
@@ -1195,7 +1191,6 @@ void CFEM_NeoHookean_Comp::Compute_Stress_Tensor(CElement *element, CConfig *con
 		Mu_J = Mu/J_F;
 		Lambda_J = Lambda/J_F;
 	}
-
 	for (iVar = 0; iVar < 3; iVar++){
 		for (jVar = 0; jVar < 3; jVar++){
 			if (iVar == jVar) dij = 1.0;

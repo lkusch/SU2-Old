@@ -771,7 +771,7 @@ private:
   *default_inc_crit;          /*!< \brief Default incremental criteria array for the COption class. */
 
   bool OneShot, OneShotConstraint, LineSearch;
-  su2double OneShotStepSize, OneShotAlpha, OneShotBeta, VolumeConstraint, ConstraintStart, FDStep, StressConstraint, HelmholtzFactor;
+  su2double OneShotStepSize, OneShotAlpha, OneShotBeta, VolumeConstraint, ConstraintStart, FDStep, StressConstraint, HelmholtzFactor, StepTolerance;
   unsigned long OneShotStop, OneShotStart, SearchCounterMax;
   unsigned short ConstraintNum;
   su2double* ConstraintFactor;
@@ -5880,6 +5880,8 @@ public:
   bool GetOne_Shot(void);
 
   su2double GetOSStepSize(void);
+
+  su2double GetStepTolerance(void);
 
   unsigned long GetOneShotStop(void);
 
