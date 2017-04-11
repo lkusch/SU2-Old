@@ -1867,6 +1867,10 @@ void CDiscAdjSolver::DesignUpdateProjected(CGeometry *geometry, CConfig *config,
             if (normsens>10000){ //vorher normsens>10000000
                         DesignVarUpdate[iVertex]=DesignVarUpdate[iVertex]*1E-4; //was >100, 1E-2 //1E-3
             }
+            //new
+            //else if (normsens>100){
+            //
+            //}
         /*    else if(normsens>1&&config->GetExtIter()>1416){ //vorher normsens>100000, 1E-1
                         DesignVarUpdate[iVertex]=DesignVarUpdate[iVertex]*1E-3; //was >1, 1E-1
             }*/
