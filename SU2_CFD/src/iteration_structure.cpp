@@ -2524,7 +2524,7 @@ void CDiscOneShotIteration::Iterate(COutput *output,
                                         CVolumetricMovement **volume_grid_movement,
                                         CFreeFormDefBox*** FFDBox,
                                         unsigned short val_iZone) {
-    MoreThuenteLineSearch(output, integration_container, geometry_container, solver_container, numerics_container, config_container,
+    DiscAdjMeanFlowIterationConstraint(output, integration_container, geometry_container, solver_container, numerics_container, config_container,
                               surface_movement, volume_grid_movement, FFDBox);
 }
 
@@ -2718,7 +2718,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationRun(COutput *output, CIntegr
   for (iZone = 0; iZone < nZone; iZone++){
     if (flow){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivity(geometry_container[iZone][MESH_0],config_container[iZone]);
-      normgu=solver_container[iZone][MESH_0][ADJFLOW_SOL]->SensitivityNorm(geometry_container[iZone][MESH_0]);;
+      normgu=solver_container[iZone][MESH_0][ADJFLOW_SOL]->SensitivityNorm(geometry_container[iZone][MESH_0],config_container[iZone]);
     }
   }
 
@@ -2747,7 +2747,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationRun(COutput *output, CIntegr
     for (iZone = 0; iZone < nZone; iZone++){
       if (flow){
         solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivity(geometry_container[iZone][MESH_0],config_container[iZone]);
-        normfu=solver_container[iZone][MESH_0][ADJFLOW_SOL]->SensitivityNorm(geometry_container[iZone][MESH_0]);
+        normfu=solver_container[iZone][MESH_0][ADJFLOW_SOL]->SensitivityNorm(geometry_container[iZone][MESH_0],config_container[iZone]);
       }
     }
 
@@ -3018,7 +3018,7 @@ if (config_container[ZONE_0]->GetOne_Shot()) AD::globalTape.reset();
     /*--- BFGS Update and Calculation of Descent Direction ---*/
     std::cout<<"steplen: "<<steplen<<std::endl;
     std::cout<<"searchsteps: "<<whilecounter<<std::endl;
-    solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
+    solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter, true);
   }
 
   /*--- Clear all adjoints to re-use the stored computational graph in the next iteration ---*/
@@ -3043,6 +3043,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationSparseGrid(COutput *output, 
                                                                CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox){
     unsigned short iZone, ExtIter = config_container[ZONE_0]->GetExtIter();
     unsigned short nZone = config_container[ZONE_0]->GetnZone();
+    bool descent=true;
 
     su2double steplen=config_container[ZONE_0]->GetOSStepSize();
 
@@ -3380,7 +3381,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationSparseGrid(COutput *output, 
 
           /*--- BFGS Update and Calculation of Descent Direction ---*/
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->ApplyDesignVar();
-          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter, descent);
         }
     }
 }
@@ -3584,6 +3585,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
     unsigned short nZone = config_container[ZONE_0]->GetnZone();
 
     su2double steplen=config_container[0]->GetOSStepSize();
+    bool descent=true;
 
  //   su2double alpha_next=steplen;
 
@@ -3617,9 +3619,11 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
             if(ExtIter>config_container[0]->GetOneShotStart()){
                 if ((solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CheckDescentDirection(steplen)==false)&&(config_container[ZONE_0]->GetCheckDescent()==true)){
                     std::cout<<"No Descent Direction!"<<std::endl;
+                    descent=false;
+                    steplen=0.0;
                     //steplen=-1E-10;
                     //steplen=-1E-15;
-                    solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->ChangeDirection();
+                    //solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->ChangeDirection();
                 }
             }
         }
@@ -3658,7 +3662,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
             }}
         //CHANGED!
     }
-    while(ExtIter>config_container[0]->GetOneShotStart()&&(ExtIter<config_container[0]->GetOneShotStop())&&solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(steplen)&&(whilecounter<config_container[0]->GetSearchCounterMax())&&config_container[0]->GetLineSearch()&&steplen>1E-15);
+    while(ExtIter>config_container[0]->GetOneShotStart()&&(ExtIter<config_container[0]->GetOneShotStop())&&solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(steplen)&&(whilecounter<config_container[0]->GetSearchCounterMax())&&config_container[0]->GetLineSearch()&&steplen>1E-15&&(descent==true));
 
     /*for (iZone = 0; iZone < nZone; iZone++){
             solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreOldSolution();
@@ -3675,7 +3679,8 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationConstraint(COutput *output, 
 
           /*--- BFGS Update and Calculation of Descent Direction ---*/
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->ApplyDesignVar();
-          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
+          std::cout<<"searchsteps: "<<whilecounter<<std::endl;
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter, descent);
         }
     }
 }
@@ -3877,7 +3882,7 @@ void CDiscOneShotIteration::MoreThuenteLineSearch(COutput *output, CIntegration 
 
           /*--- BFGS Update and Calculation of Descent Direction ---*/
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->ApplyDesignVar();
-          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter, true);
         }
     }
 
@@ -4127,7 +4132,7 @@ void CDiscOneShotIteration::DiscAdjMeanFlowIterationRobust(COutput *output, CInt
 
           /*--- BFGS Update and Calculation of Descent Direction ---*/
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->ApplyDesignVar();
-          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter);
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[iZone][MESH_0],config_container[iZone],ExtIter,true);
         }
     }
 
@@ -4154,7 +4159,7 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
     for (iMesh = 0; iMesh <= config_container[ZONE_0]->GetnMGLevels(); iMesh++){
       solver_container[ZONE_0][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ALL_VARIABLES);
     }
-      su2double time =su2double(clock())/su2double(CLOCKS_PER_SEC);
+    //  su2double time =su2double(clock())/su2double(CLOCKS_PER_SEC);
       AD::StartRecording();
 
       for (iZone = 0; iZone < nZone; iZone++){
@@ -4177,7 +4182,7 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
       }
         if(flow){
        //     cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))<<std::endl;
-            cout     <<"Drag: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetTotal_CDrag()
+            cout     <<setprecision(16)<<"Drag: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetTotal_CDrag()
                 <<", Lift: "<< solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetTotal_CLift() << "." << endl;
         }
       for (iZone = 0; iZone < nZone; iZone++){
@@ -4189,13 +4194,14 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
         }
       }
       AD::StopRecording();
-      su2double time3 =su2double(clock())/su2double(CLOCKS_PER_SEC);
-      std::cout<<"TimeCompute: "<<time3-time<<std::endl;
+   //   su2double time3 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+   //   std::cout<<"TimeCompute: "<<time3-time<<std::endl;
 
       double* multiplierVec = new double[3];
       multiplierVec[0]=SU2_TYPE::GetValue(config_container[ZONE_0]->GetConstraintStart());
       multiplierVec[1]=0.0;
       multiplierVec[2]=0.0;
+
       if(ExtIter==0 && whilecounter==1 && config_container[0]->GetOneShotConstraint()==true) solver_container[0][MESH_0][ADJFLOW_SOL]->SetMultiplier(config_container[0],multiplierVec );
        delete [] multiplierVec;
     //------------------COMPUTE N_u-------------------------
@@ -4207,10 +4213,10 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
                                                                         config_container[iZone]);
       }
     }
-    su2double time1 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+   // su2double time1 =su2double(clock())/su2double(CLOCKS_PER_SEC);
     AD::ComputeAdjoint();
-    su2double time2 =su2double(clock())/su2double(CLOCKS_PER_SEC);
-    std::cout<<"TimeCompute: "<<time2-time1<<std::endl;
+   // su2double time2 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+  //  std::cout<<"TimeCompute: "<<time2-time1<<std::endl;
     for (iZone = 0; iZone < nZone; iZone++){
       if (flow){
         solver_container[iZone][MESH_0][ADJFLOW_SOL]->ResetSensitivity(geometry_container[iZone][MESH_0]);
@@ -4262,7 +4268,46 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
 
     AD::ClearAdjoints();
 
+    //-------------Compute Preconditioner-----------//
+    if(config_container[0]->GetMultiplierNorm()){
+      double* setConstraint=new double[3];
+      setConstraint[0]=1.0;
+      setConstraint[1]=0.0;
+      setConstraint[2]=0.0;
+      //Compute g_u or g_y
+      for (iZone = 0; iZone < nZone; iZone++){
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadOldAdjoint();
+      }
+      for (iZone = 0; iZone < nZone; iZone++){
+          if (flow){
+              solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[iZone][MESH_0], config_container[iZone],0.0);
+              if(config_container[0]->GetOneShotConstraint()==true) solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFunc(geometry_container[iZone][MESH_0], config_container[iZone],setConstraint);
+
+              solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdjointOutputZero(geometry_container[iZone][MESH_0],
+                                                                        config_container[iZone]);
+          }
+
+      }
+
+
+      AD::ComputeAdjoint();
+
+      for (iZone = 0; iZone < nZone; iZone++){
+          if (flow){
+              solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivity(geometry_container[iZone][MESH_0],config_container[iZone]);
+
+              solver_container[iZone][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Solution(geometry_container[iZone][MESH_0],
+                                                                             config_container[iZone]);
+              solver_container[iZone][MESH_0][ADJFLOW_SOL]->SensitivityNorm(geometry_container[iZone][MESH_0],config_container[iZone]);
+          }
+      }
+
+      AD::ClearAdjoints();
+   }
+
     if(config_container[0]->GetSecondOrder()){
+
+     su2double time1 =su2double(clock())/su2double(CLOCKS_PER_SEC);
 
    //Compute beta*Deltaybar^TNyu using second order AD (Forward over Reverse)
 
@@ -4333,8 +4378,14 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
 
     AD::ClearAdjoints();
 
+    su2double time2 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+
+    std::cout<<"TimeCompute: "<<time2-time1<<std::endl;
+
     }
     else{
+
+    su2double time1 =su2double(clock())/su2double(CLOCKS_PER_SEC);
 
    //Compute beta*Deltaybar^TNyu using Finite Differences
 
@@ -4347,11 +4398,12 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
     }
  //   cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
 
-  #if defined CODI_REVERSE_TYPE
-  if (config_container[ZONE_0]->GetOne_Shot()){
-      AD::globalTape.reset();
-   }
-  #endif
+//  #if defined CODI_REVERSE_TYPE
+//  if (config_container[ZONE_0]->GetOne_Shot()){
+//      AD::globalTape.reset();
+//   }
+//  #endif
+  AD::Reset();
 
   for (iMesh = 0; iMesh <= config_container[ZONE_0]->GetnMGLevels(); iMesh++){
     solver_container[ZONE_0][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[ZONE_0][MESH_0], config_container[ZONE_0], ALL_VARIABLES);
@@ -4413,6 +4465,10 @@ void CDiscOneShotIteration::OneShotStep(COutput *output, CIntegration ***integra
     }
 
     AD::ClearAdjoints();
+
+    su2double time2 =su2double(clock())/su2double(CLOCKS_PER_SEC);
+
+    std::cout<<"TimeCompute: "<<time2-time1<<std::endl;
     }
 
     for (iZone = 0; iZone < nZone; iZone++){
@@ -4956,6 +5012,3 @@ void TopologyOptimization::Update(COutput *output,
 void TopologyOptimization::Monitor()     { }
 void TopologyOptimization::Output()      { }
 void TopologyOptimization::Postprocess() { }
-
-
-

@@ -51,6 +51,7 @@ namespace SU2_TYPE{
 
   inline double SetMixedDerivative(su2double& data, const double &val){}
 /*
+
   inline void SetValue(su2double& data, const double &val){data.value().value() = val;}
 
   inline double GetValue(const su2double& data){return data.getValue().getValue();}

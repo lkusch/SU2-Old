@@ -2766,7 +2766,7 @@ public:
 
  // virtual void BFGSUpdate(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
 
-  virtual void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+  virtual void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, bool descent);
 
   virtual void SetSensitivityFD(CGeometry *geometry, CConfig *config);
   virtual void SetMixedSensitivity(CGeometry *geometry, CConfig *config);
@@ -2816,7 +2816,7 @@ public:
 
   virtual void LoadSurfaceSensitivity(CGeometry *geometry);
 
-  virtual su2double SensitivityNorm(CGeometry *geometry);
+  virtual su2double SensitivityNorm(CGeometry *geometry, CConfig* config);
 
   virtual void SetAdj_ObjFunc(CGeometry *geometry, CConfig* config, double initVal);
 
@@ -7960,6 +7960,7 @@ private:
   double * multiplierhelp;
   double * multiplieroriginal;
   double * cons_factor;
+  su2double bcheck;
   su2double Mach, Alpha, Beta, Pressure, Temperature;
   unsigned long nMarker;				/*!< \brief Total number of markers using the grid information. */
   su2double PhiOld;
@@ -8140,7 +8141,7 @@ public:
 
 //  void BFGSUpdate(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
 
-  void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter);
+  void BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, bool descent);
 
   void ResetSensitivity(CGeometry *geometry);
 
@@ -8181,7 +8182,7 @@ public:
 
   void UpdateLagrangeSensitivity(CGeometry *geometry, su2double factor);
 
-  su2double SensitivityNorm(CGeometry *geometry);
+  su2double SensitivityNorm(CGeometry *geometry, CConfig* config);
 
   /*!
    * \brief Set the objective function.

@@ -717,6 +717,7 @@ void CDiscAdjSolver::SetAdj_ConstraintFunc(CGeometry *geometry, CConfig *config,
   for (unsigned short iValue=0; iValue<config->GetConstraintNum();iValue++){
       if (rank == MASTER_NODE){
         SU2_TYPE::SetDerivative(ConstraintFunc_Value[iValue], initVal[iValue]);
+        //std::cout<<"initval: "<<initVal[iValue];
       } else {
         SU2_TYPE::SetDerivative(ConstraintFunc_Value[iValue], 0.0);
       }
@@ -754,6 +755,7 @@ void CDiscAdjSolver::SetMultiplier(CConfig *config, double * value){
         multiplierhelp[iHelp]=multiplier[iHelp];
         multiplieroriginal[iHelp]=multiplier[iHelp];
         cons_factor[iHelp]=SU2_TYPE::GetValue(config->GetConstraintFactor(iHelp));
+        bcheck=config->GetConstraintFactor(0);
     }
 
 }
@@ -785,6 +787,13 @@ void CDiscAdjSolver::LoadMeshPoints(CConfig *config, CGeometry *geometry){
     }*/
     for (jPoint=0; jPoint<geometry->GetnPoint();jPoint++){
         geometry->node[jPoint]->SetCoord(geometry->node[jPoint]->GetCoord_Old());
+    }
+    //NEW!
+    for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+        for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+          jPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+          geometry->vertex[iMarker][iVertex]->SetNormal(geometry->vertex[iMarker][iVertex]->GetNormal_Old());
+        }
     }
 
 }
@@ -936,6 +945,10 @@ void CDiscAdjSolver::UpdateMultiplier(CConfig *config){
             multiplierhelp=multiplieroriginal;
             std::cout<<"Multiplier set to 0"<<std::endl;
     }*/
+    if(config->GetMultiplierNorm()){
+        std::cout<<"factor= "<<bcheck<<std::endl;
+        cons_factor[0]=SU2_TYPE::GetValue(bcheck);
+    }
     for (unsigned short iValue=0; iValue<config->GetConstraintNum();iValue++){
         if(config->GetPosConstraint()){
             if(Constraint_Save[iValue]<=0 && !(config->GetEqualConstraint(iValue))){
@@ -1028,15 +1041,17 @@ void CDiscAdjSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *confi
   }
 
   /*--- Set the residuals ---*/
-
+  //std::cout<<"ybar: ";
   for (iPoint = 0; iPoint < nPointDomain; iPoint++){
       for (iVar = 0; iVar < nVar; iVar++){
           residual = node[iPoint]->GetSolution(iVar) - node[iPoint]->GetSolution_Old(iVar);
+    //      std::cout<<node[iPoint]->GetSolution(iVar)<<" ";
 
           AddRes_RMS(iVar,residual*residual);
           AddRes_Max(iVar,fabs(residual),geometry->node[iPoint]->GetGlobalIndex(),geometry->node[iPoint]->GetCoord());
       }
   }
+  //std::cout<<endl;
 
   SetResidual_RMS(geometry, config);
 }
@@ -1264,9 +1279,11 @@ void CDiscAdjSolver::AssembleLagrangian(CConfig *config){
         for (unsigned short iValue=0; iValue<config->GetConstraintNum();iValue++){
             helper+=ConstraintFunc_Value[iValue]*ConstraintFunc_Value[iValue];
         }
-        helper=sqrt(helper/(nPoint*nVar+config->GetConstraintNum()))*(config->GetOneShotAlpha()/2);
+        //helper=sqrt(helper/(nPoint*nVar+config->GetConstraintNum()))*(config->GetOneShotAlpha()/2);
+        helper=helper*(config->GetOneShotAlpha()/2);
     }else{
-        helper=sqrt(helper/(nPoint*nVar))*(config->GetOneShotAlpha()/2);
+        //helper=sqrt(helper/(nPoint*nVar))*(config->GetOneShotAlpha()/2);
+        helper=helper*(config->GetOneShotAlpha()/2);
     }
     Lagrangian_Value+=helper;
     helper=0.0;
@@ -1276,7 +1293,8 @@ void CDiscAdjSolver::AssembleLagrangian(CConfig *config){
         helper+=(node[iPoint]->GetSolution(iVar)-node[iPoint]->GetSolution_Store(iVar))*(node[iPoint]->GetSolution(iVar)-node[iPoint]->GetSolution_Store(iVar));
       }
     }
-    Lagrangian_Value+=sqrt(helper/(nPoint*nVar))*(config->GetOneShotBeta()/2);
+    //Lagrangian_Value+=sqrt(helper/(nPoint*nVar))*(config->GetOneShotBeta()/2);
+    Lagrangian_Value+=helper*(config->GetOneShotBeta()/2);
     Lagrangian_Value+=ObjFunc_Value;
     Obj_Save=ObjFunc_Value;
     if(config->GetOneShotConstraint()==true){
@@ -1310,16 +1328,13 @@ void CDiscAdjSolver::UpdateStateVariable(CConfig *config){
 void CDiscAdjSolver::SetForwardDirection(CConfig *config){
     unsigned short iVar;
     unsigned long iPoint;
-   // std::cout<<"ForwardDirection"<<std::endl;
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       for (iVar = 0; iVar < nVar; iVar++){
         Solution[iVar] = (node[iPoint]->GetSolution_Save(iVar)-node[iPoint]->GetSolution_Store(iVar));
          // Solution[iVar] = 1.0;
-       // std::cout<<Solution[iVar]<<" ";
       }
       direct_solver->node[iPoint]->SetForwardSolution(Solution);
     }
-   // std::cout<<std::endl;
 }
 
 void CDiscAdjSolver::SetAdjointOutputUpdate(CGeometry *geometry, CConfig *config){
@@ -1419,14 +1434,14 @@ void CDiscAdjSolver::UpdateLagrangeSensitivity(CGeometry *geometry, su2double fa
     unsigned long iVertex;
     /*if(factor==200)     factor=2/((1-rho)*(1-rho));*/
     cout.precision(15);
-    std::cout<<"factor: "<<factor<<std::endl;
+   // std::cout<<"factor: "<<factor<<std::endl;
    // for (iMarker = 0; iMarker < nMarker; iMarker++){
         for (iVertex = 0; iVertex < geometry->GetnVertex(iMarker); iVertex++){
           LagrangeSens[iMarker][iVertex] += factor*CSensitivity[iMarker][iVertex];
-          std::cout<<factor*CSensitivity[iMarker][iVertex]<<" ";
+     //     std::cout<<factor*CSensitivity[iMarker][iVertex]<<" ";
         }
    // }
-    std::cout<<std::endl;
+  //  std::cout<<std::endl;
 }
 
 void CDiscAdjSolver::OverwriteSensitivityProjected(CGeometry *geometry){
@@ -1607,13 +1622,21 @@ void CDiscAdjSolver::DistributeExpValues(CGeometry *geometry, CConfig *config){
         Lagrangian_Value=1./sqrt(pi)*ExpLagrangian_Value;
 }
 
-su2double CDiscAdjSolver::SensitivityNorm(CGeometry *geometry){
-    unsigned long iVertex;
+su2double CDiscAdjSolver::SensitivityNorm(CGeometry *geometry, CConfig *config){
+    unsigned long iVertex, iPoint, iVar;
     su2double norm=0;
-        for (iVertex = 0; iVertex < geometry->GetnVertex(0); iVertex++){
+    /*    for (iVertex = 0; iVertex < geometry->GetnVertex(0); iVertex++){
              norm+=CSensitivity[0][iVertex]*CSensitivity[0][iVertex];
+        }*/
+       // norm=norm/geometry->GetnVertex(0);
+
+        for (iPoint = 0; iPoint < nPointDomain; iPoint++){
+            for (iVar = 0; iVar < nVar; iVar++){
+                norm+=node[iPoint]->GetSolution(iVar)*node[iPoint]->GetSolution(iVar);
+            }
         }
-    norm=sqrt(norm);
+    //norm=sqrt(norm);
+    bcheck=config->GetConstraintFactor(0)*(1./norm);//0.001*((1./norm));//*1E-2);0.01*
     return norm;
 }
 
@@ -1785,7 +1808,9 @@ bool CDiscAdjSolver::CheckDescentDirection(su2double steplen){
     su2double helper=0.0; //Phi'(0)
     unsigned long iVertex;
     for (iVertex = 0; iVertex < 38; iVertex++){
-        helper+=UpdateSens[iVertex]*ProjectedSens[iVertex];
+        //helper+=UpdateSens[iVertex]*ProjectedSens[iVertex];
+        //helper+=UpdateSens[iVertex]*ProjectedSensOld[iVertex]; //old way
+        helper+=DesignVarUpdateReal[iVertex]*ProjectedSensOld[iVertex];
     }
     if(helper<=0) return true;
     else{
@@ -1887,7 +1912,7 @@ bool CDiscAdjSolver::CheckFirstWolfe(su2double steplen){
     unsigned long iVertex;
     std::cout<<"LagrangeOld: "<<Lagrangian_Value_Old<<", LagrangeNew: "<<Lagrangian_Value<<", Stepsize: "<<steplen<<std::endl;
     for (iVertex = 0; iVertex < 38; iVertex++){
-        helper+=DesignVarUpdateReal[iVertex]*ProjectedSens[iVertex];//UpdateSens[iVertex]*ProjectedSens[iVertex];
+        helper+=DesignVarUpdateReal[iVertex]*ProjectedSensOld[iVertex];//UpdateSens[iVertex]*ProjectedSensOld[iVertex];
     }
     if (Lagrangian_Value<=(Lagrangian_Value_Old+1E-4*helper)){ //*steplen*helper)){
         return false;
@@ -1899,7 +1924,7 @@ bool CDiscAdjSolver::CheckFirstWolfe(su2double steplen){
     }
 }
 
-void CDiscAdjSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter){
+void CDiscAdjSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, bool descent){
 
     unsigned long iVertex, jVertex, kVertex, lVertex, mVertex;
     su2double *rk,*duk,*wone;
@@ -1935,7 +1960,7 @@ void CDiscAdjSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, u
         for (iVertex = 0; iVertex < 38; iVertex++){
             //DesignVar[iVertex]+=DesignVarUpdate[iVertex];
             rk[iVertex]=ProjectedSens[iVertex]-ProjectedSensOld[iVertex];
-            duk[iVertex]=DesignVarUpdate[iVertex];
+            duk[iVertex]=DesignVarUpdateReal[iVertex];
             vk+=rk[iVertex]*duk[iVertex];
             normrk+=rk[iVertex]*rk[iVertex];
             normduk+=duk[iVertex]*duk[iVertex];
@@ -2075,7 +2100,7 @@ void CDiscAdjSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, u
             }
         }else{
 
-        if (vk>0 && ((fabs(vk)>1E-3) || (config->GetCheckVk()==false))){
+        if (vk>0 && ((fabs(vk)>1E-3) || (config->GetCheckVk()==false)) && (descent==true)){
             //HESSOLD
      /*   for (iVertex = 0; iVertex < 38; iVertex++){
           wone[iVertex]=0.0;

@@ -613,19 +613,19 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
 
   bool TapeActive = NO;
 
-  if (config->GetDiscrete_Adjoint()){
+//  if (config->GetDiscrete_Adjoint()){
 //#ifdef CODI_REVERSE_TYPE
 
-//   /*--- Check whether the tape is active, i.e. if it is recording and store the status ---*/
+   /*--- Check whether the tape is active, i.e. if it is recording and store the status ---*/
 
 //    TapeActive = AD::globalTape.isActive();
 
 
-//    /*--- Stop the recording for the linear solver ---*/
+    /*--- Stop the recording for the linear solver ---*/
 
 //    AD::StopRecording();
 //#endif
-  }
+ // }
 
   /*--- Solve the linear system using a Krylov subspace method ---*/
   

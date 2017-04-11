@@ -1194,7 +1194,7 @@ inline bool CSolver::CheckFirstWolfe(su2double steplen){}
 
 //inline void CSolver::BFGSUpdate(CGeometry *geometry, CConfig *config, unsigned short ExtIter){}
 
-inline void CSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter){}
+inline void CSolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter, bool descent){}
 
 inline void CSolver::SetSensitivityFD(CGeometry *geometry, CConfig *config){}
 inline void CSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){}
@@ -1287,7 +1287,7 @@ inline su2double CSolver::getDesignVar(unsigned long iDV){}
 inline void CSolver::StoreOldLagrangeSensitivity(CGeometry *geometry){}
 
 inline void CSolver::LoadSurfaceSensitivity(CGeometry *geometry){}
-inline su2double CSolver::SensitivityNorm(CGeometry *geometry){}
+inline su2double CSolver::SensitivityNorm(CGeometry *geometry, CConfig* config){}
 
 inline void CSolver::OutputWritten(CGeometry *geometry){}
 
