@@ -169,6 +169,9 @@ void CIntegration::Space_Integration(CGeometry *geometry,
       case LOAD_SINE_BOUNDARY:
 		solver_container[MainSolver]->BC_Sine_Load(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);
 		break;
+      case LOAD_POINT_BOUNDARY:
+        solver_container[MainSolver]->BC_Point_Load(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);
+        break;
     }
   }
   
@@ -190,6 +193,9 @@ void CIntegration::Space_Integration(CGeometry *geometry,
         break;
       case ROLLER_BOUNDARY:
         solver_container[MainSolver]->BC_Roller(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);
+        break;
+      case ROLLER_POINT_BOUNDARY:
+        solver_container[MainSolver]->BC_PointRoller(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);
         break;
       case CUSTOM_BOUNDARY:
         solver_container[MainSolver]->BC_Custom(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);
@@ -284,6 +290,9 @@ void CIntegration::Space_Integration_FEM(CGeometry *geometry,
 		      case LOAD_SINE_BOUNDARY:
 				solver_container[MainSolver]->BC_Sine_Load(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
 				break;
+              case LOAD_POINT_BOUNDARY:
+                solver_container[MainSolver]->BC_Point_Load(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
+                break;
 		    }
 		  }
 	  }
@@ -419,6 +428,9 @@ void CIntegration::Time_Integration_FEM(CGeometry *geometry, CSolver **solver_co
           case ROLLER_BOUNDARY:
             solver_container[MainSolver]->BC_Roller(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
             break;
+          case ROLLER_POINT_BOUNDARY:
+            solver_container[MainSolver]->BC_PointRoller(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
+            break;
           case DISP_DIR_BOUNDARY:
             solver_container[MainSolver]->BC_DispDir(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
             break;
@@ -454,6 +466,9 @@ void CIntegration::Time_Integration_FEM(CGeometry *geometry, CSolver **solver_co
 			break;
           case ROLLER_BOUNDARY:
             solver_container[MainSolver]->BC_Roller_Post(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
+            break;
+          case ROLLER_POINT_BOUNDARY:
+            solver_container[MainSolver]->BC_PointRoller_Post(geometry, solver_container, numerics[FEA_TERM], config, iMarker);
             break;
 //		  case DISPLACEMENT_BOUNDARY:
 //			solver_container[MainSolver]->BC_Normal_Displacement(geometry, solver_container, numerics[CONV_BOUND_TERM], config, iMarker);

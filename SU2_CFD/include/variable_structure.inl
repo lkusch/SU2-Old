@@ -133,6 +133,13 @@ inline su2double *CVariable::GetSolution_Store(void) { return Solution_Store; }
 
 inline su2double *CVariable::GetSolution_Save(void) { return Solution_Save; }
 
+inline su2double CVariable::GetSolution_Save(unsigned short val_var) { return Solution_Save[val_var]; }
+
+inline void CVariable::SetForwardSolution(su2double *adj_sol){
+    for (unsigned short iVar = 0; iVar < nVar; iVar++)
+        SU2_TYPE::SetForwardDerivative(Solution[iVar], SU2_TYPE::GetValue(adj_sol[iVar]));
+}
+
 inline su2double *CVariable::GetSolution_time_n(void) { return Solution_time_n; }
 
 inline su2double *CVariable::Get_femSolution_time_n(void) { return NULL; }

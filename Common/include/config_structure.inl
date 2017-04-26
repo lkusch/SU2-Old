@@ -1299,6 +1299,8 @@ inline bool CConfig::GetOne_Shot() {return OneShot;}
 
 inline bool CConfig::GetLineSearch() {return LineSearch;}
 
+inline bool CConfig::GetSecondOrder() {return SecondOrder;}
+
 inline bool CConfig::GetOneShotConstraint() {return OneShotConstraint;}
 
 inline su2double CConfig::GetOSStepSize() {return OneShotStepSize;}
@@ -1310,6 +1312,11 @@ inline unsigned long CConfig::GetOneShotStop() {return OneShotStop;}
 inline unsigned long CConfig::GetOneShotStart() {return OneShotStart;}
 
 inline unsigned long CConfig::GetSearchCounterMax() {return SearchCounterMax;}
+
+inline unsigned long CConfig::GetNx() {return NElemx;}
+inline unsigned long CConfig::GetNy()  {return NElemy;}
+inline su2double CConfig::GetEmin()  {return Emin;}
+inline su2double CConfig::GetPenal()  {return Penal;}
 
 inline su2double CConfig::GetOneShotAlpha() {return OneShotAlpha;}
 

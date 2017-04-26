@@ -3949,6 +3949,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
 
     if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
+    //if(ExtIter>=1){
 
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreSaveSolution();
         if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreConstraint(config_container[ZONE_0]);
@@ -3971,7 +3972,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
         AD::ClearAdjoints();
 
- /*       if(config_container[ZONE_0]->GetSecondOrder()){
+        if(config_container[ZONE_0]->GetSecondOrder()){
 
             //Compute beta*Deltaybar^TNyu using second order AD (Forward over Reverse)
 
@@ -4006,7 +4007,7 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
             AD::StopRecording();
 
-            solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->OutputWritten(geometry_container[ZONE_0][MESH_0]);
+            //solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->OutputWritten(geometry_container[ZONE_0][MESH_0]);
 
             solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetAdj_ObjFunc(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],1.0);
             if(config_container[ZONE_0]->GetOneShotConstraint()==true) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ConstraintFuncAD(geometry_container[val_iZone][MESH_0], config_container[ZONE_0],solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetMultiplier());
@@ -4015,17 +4016,19 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
 
             AD::ComputeAdjoint();
 
+            solver_container[val_iZone][MESH_0][ADJFEA_SOL]->ExtractAdjoint_Solution(geometry_container[val_iZone][MESH_0],
+                                                                                        config_container[ZONE_0]);
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->SetMixedSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]); //read from ubardot (mixed derivative)
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]->GetOneShotBeta());
 
             AD::ClearAdjoints();
 
         }
-        else{*/
+        else{
 
             //Compute beta*Deltaybar^TNyu using Finite Differences
 
- /*           solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
+            solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
 
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateStateVariable(config_container[ZONE_0]);
 
@@ -4074,8 +4077,8 @@ void TopologyOptimization::OneShotStep(COutput *output, CIntegration ***integrat
             solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateLagrangeSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]->GetOneShotBeta());
             //solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], false);
 
-            AD::ClearAdjoints();*/
-   //     }
+            AD::ClearAdjoints();
+        }
 
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
     }

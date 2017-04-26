@@ -718,6 +718,9 @@ public:
     virtual void BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                  unsigned short val_marker);
 
+    virtual void BC_PointRoller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
     /*!
      * \brief A virtual member.
      * \param[in] geometry - Geometrical definition of the problem.
@@ -730,6 +733,10 @@ public:
 
     virtual void BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                  unsigned short val_marker);
+
+    virtual void BC_PointRoller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                 unsigned short val_marker);
+
 
   /*!
    * \brief A virtual member.
@@ -778,6 +785,8 @@ public:
 	 */
 
 	virtual void BC_Dir_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                         unsigned short val_marker);
+    virtual void BC_Point_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                          unsigned short val_marker);
 
   /*!
@@ -2720,6 +2729,9 @@ public:
     virtual void Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
     virtual void Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
 
+    virtual void SetPenal(su2double penalty);
+    virtual su2double GetPenal();
+
 	/*!
 	 * \brief A virtual member.
 	 * \param[in] geometry - Geometrical definition of the problem.
@@ -3146,6 +3158,9 @@ public:
    */
   virtual void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference);
 
+  virtual void SetMixedSensitivity(CGeometry *geometry, CConfig *config);
+  virtual void SetForwardDirection(CConfig *config);
+
   /*!
    * \brief A virtual member.
    * \param[in] config - Definition of the particular problem.
@@ -3204,9 +3219,9 @@ public:
 
   virtual void DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens);
 
-  virtual void GaussElimination(su2double **A, su2double *b);
+  virtual void GaussElimination(su2double **A, su2double *b, unsigned long nElemx);
 
-  virtual void ThomasAlgorithm(su2double **A, su2double *d);
+  virtual void ThomasAlgorithm(su2double **A, su2double *d, unsigned long nElemx);
 };
 
 /*!
@@ -7396,6 +7411,8 @@ public:
      * \param[in] config - Definition of the particular problem.
      */
     void BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker);
+    void BC_PointRoller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, unsigned short val_marker);
+
 
     /*!
      * \brief Enforce the solution to be 0 in the nodes for roller bearings - Avoids accumulation of numerical error.
@@ -7406,6 +7423,8 @@ public:
      * \param[in] val_marker - Surface marker where the boundary condition is applied.
      */
     void BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                         unsigned short val_marker);
+    void BC_PointRoller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                          unsigned short val_marker);
 
   /*!
@@ -7452,6 +7471,8 @@ public:
 	 * \param[in] val_marker - Surface marker where the boundary condition is applied.
 	 */
 	void BC_Dir_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                 unsigned short val_marker);
+    void BC_Point_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                  unsigned short val_marker);
 
 	/*!
@@ -7662,6 +7683,8 @@ public:
   void Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
   void Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config);
 
+  void SetPenal(su2double penalty);
+  su2double GetPenal();
 	/*!
 	 * \brief Get the value of the FSI convergence.
 	 * \param[in] Set value of interest: 0 - Initial value, 1 - Current value.
@@ -8636,6 +8659,9 @@ public:
    */
   void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference);
 
+  //void SetMixedSensitivity(CGeometry *geometry, CConfig *config);
+  //void SetForwardDirection(CConfig *config);
+
 	/*!
 	 * \brief Update the dual-time derivatives.
 	 * \param[in] geometry - Geometrical definition of the problem.
@@ -8911,6 +8937,9 @@ public:
    */
   void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference);
 
+  void SetMixedSensitivity(CGeometry *geometry, CConfig *config);
+  void SetForwardDirection(CConfig *config);
+
   /*!
    * \brief Update the dual-time derivatives.
    * \param[in] geometry - Geometrical definition of the problem.
@@ -8986,9 +9015,9 @@ public:
 
   void DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens);
 
-  void GaussElimination(su2double **A, su2double *b);
+  void GaussElimination(su2double **A, su2double *b, unsigned long nElemx);
 
-  void ThomasAlgorithm(su2double **A, su2double *d);
+  void ThomasAlgorithm(su2double **A, su2double *d, unsigned long nElemx);
 
 };
 #include "solver_structure.inl"

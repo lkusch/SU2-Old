@@ -174,9 +174,11 @@ private:
   nMarker_EngineBleed,					/*!< \brief Number of nacelle inflow flow markers. */
   nMarker_Clamped,						/*!< \brief Number of clamped markers in the FEM. */
     nMarker_Roller,                       /*!< \brief Number of roller markers in the FEM. */
+    nMarker_PointRoller,
   nMarker_Displacement,					/*!< \brief Number of displacement surface markers. */
 	nMarker_Load,					/*!< \brief Number of load surface markers. */
 	nMarker_Load_Dir,					/*!< \brief Number of load surface markers defined by magnitude and direction. */
+    nMarker_Load_Point,					/*!< \brief Number of load surface markers defined by point. */
   nMarker_Disp_Dir,         /*!< \brief Number of load surface markers defined by magnitude and direction. */
 	nMarker_Load_Sine,					/*!< \brief Number of load surface markers defined by magnitude and direction. */
 	nMarker_FlowLoad,					/*!< \brief Number of load surface markers. */
@@ -216,9 +218,11 @@ private:
   *Marker_EngineExhaust,					/*!< \brief Engine Exhaust flow markers. */
 	*Marker_Clamped,						/*!< \brief Clamped markers. */
     *Marker_Roller,                                             /*!< \brief Roller markers. */
+    *Marker_PointRoller,
 	*Marker_Displacement,					/*!< \brief Displacement markers. */
 	*Marker_Load,					/*!< \brief Load markers. */
 	*Marker_Load_Dir,					/*!< \brief Load markers defined in cartesian coordinates. */
+    *Marker_Load_Point,					/*!< \brief Load markers defined in cartesian coordinates (point). */
   *Marker_Disp_Dir,         /*!< \brief Load markers defined in cartesian coordinates. */
 	*Marker_Load_Sine,					/*!< \brief Sine-wave loaded markers defined in cartesian coordinates. */
 	*Marker_FlowLoad,					/*!< \brief Flow Load markers. */
@@ -254,9 +258,12 @@ private:
 	su2double *Load_Value;    /*!< \brief Specified force for load boundaries. */
   su2double *Load_Dir_Value;    /*!< \brief Specified force for load boundaries defined in cartesian coordinates. */
 	su2double *Load_Dir_Multiplier;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
+    su2double *Load_Point_Value;    /*!< \brief Specified force for load boundaries defined in cartesian coordinates. */
+      su2double *Load_Point_Multiplier;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
   su2double *Disp_Dir_Value;    /*!< \brief Specified force for load boundaries defined in cartesian coordinates. */
   su2double *Disp_Dir_Multiplier;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
 	su2double **Load_Dir;  /*!< \brief Specified flow direction vector (unit vector) for inlet boundaries. */
+    su2double **Load_Point;  /*!< \brief Specified flow direction vector (unit vector) for inlet boundaries. */
   su2double **Disp_Dir;  /*!< \brief Specified structural displacement direction (unit vector). */
 	su2double *Load_Sine_Amplitude;    /*!< \brief Specified amplitude for a sine-wave load. */
 	su2double *Load_Sine_Frequency;    /*!< \brief Specified multiplier for load boundaries defined in cartesian coordinates. */
@@ -269,6 +276,7 @@ private:
   su2double *ActDisk_TempJump;
   su2double *ActDisk_Omega;
   unsigned short *Comp_Roller; /*!< \brief Component of acting roller bearing. */
+  unsigned short *Comp_PointRoller;
   unsigned short *ActDisk_Distribution;
   su2double **Periodic_RotCenter;  /*!< \brief Rotational center for each periodic boundary. */
 	su2double **Periodic_RotAngles;      /*!< \brief Rotation angles for each periodic boundary. */
@@ -770,11 +778,13 @@ private:
   *default_grid_fix,          /*!< \brief Default fixed grid (non-deforming region) array for the COption class. */
   *default_inc_crit;          /*!< \brief Default incremental criteria array for the COption class. */
 
-  bool OneShot, OneShotConstraint, LineSearch;
+  bool OneShot, OneShotConstraint, LineSearch, SecondOrder;
   su2double OneShotStepSize, OneShotAlpha, OneShotBeta, VolumeConstraint, ConstraintStart, FDStep, StressConstraint, HelmholtzFactor, StepTolerance;
   unsigned long OneShotStop, OneShotStart, SearchCounterMax;
   unsigned short ConstraintNum;
   su2double* ConstraintFactor;
+  su2double Emin,Penal;
+  unsigned long NElemx,NElemy;
 
   
   /*--- all_options is a map containing all of the options. This is used during config file parsing
@@ -5173,6 +5183,7 @@ public:
      * \return The component.
      */
     unsigned short GetComp_Roller(string val_index);
+    unsigned short GetComp_PointRoller(string val_index);
 
 	/*!
 	 * \brief Get the force value at a load boundary defined in cartesian coordinates.
@@ -5180,6 +5191,10 @@ public:
 	 * \return The load value.
 	 */
 	su2double GetLoad_Dir_Value(string val_index);
+
+    su2double GetLoad_Point_Value(string val_index);
+    su2double GetLoad_Point_Multiplier(string val_index);
+    su2double* GetLoad_Point(string val_index);
 
 	/*!
 	 * \brief Get the force multiplier at a load boundary in cartesian coordinates.
@@ -5889,6 +5904,11 @@ public:
 
   unsigned long GetSearchCounterMax(void);
 
+  unsigned long GetNx(void);
+  unsigned long GetNy(void);
+  su2double GetEmin(void);
+  su2double GetPenal(void);
+
   su2double GetOneShotAlpha(void);
 
   su2double GetOneShotBeta(void);
@@ -5904,6 +5924,8 @@ public:
   bool GetOneShotConstraint(void);
 
   bool GetLineSearch(void);
+
+  bool GetSecondOrder(void);
 
   unsigned short GetConstraintNum(void);
 

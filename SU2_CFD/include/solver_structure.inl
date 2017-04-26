@@ -103,6 +103,8 @@ inline void CSolver::Compute_MinimumCompliance(CGeometry *geometry, CSolver **so
 inline void CSolver::Compute_VolumeConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
 
 inline void CSolver::Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
+inline void CSolver::SetPenal(su2double penalty) {}
+inline su2double CSolver::GetPenal() {}
 
 inline void CSolver::SetCSensitivity(unsigned short val_marker, unsigned long val_vertex, su2double val_sensitivity) { }
 
@@ -545,6 +547,12 @@ inline void CSolver::BC_Roller(CGeometry *geometry, CSolver **solver_container, 
 
 inline void CSolver::BC_Roller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                      unsigned short val_marker) { }
+
+inline void CSolver::BC_PointRoller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
+
+inline void CSolver::BC_PointRoller_Post(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
 									 
 inline void CSolver::BC_Normal_Displacement(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }
@@ -554,6 +562,9 @@ inline void CSolver::BC_Normal_Load(CGeometry *geometry, CSolver **solver_contai
 
 inline void CSolver::BC_Dir_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }
+
+inline void CSolver::BC_Point_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
+                                     unsigned short val_marker) { }
 									 
 inline void CSolver::BC_Sine_Load(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config, 
 									 unsigned short val_marker) { }									 
@@ -1319,6 +1330,9 @@ inline void CSolver::RegisterVariables(CGeometry *geometry, CConfig *config, boo
 
 inline void CSolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config, bool finitedifference){}
 
+inline void CSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){}
+inline void CSolver::SetForwardDirection(CConfig *config){}
+
 inline void CSolver::SetFreeStream_Solution(CConfig *config){}
 
 inline void CTurbSASolver::SetFreeStream_Solution(CConfig *config){
@@ -1385,7 +1399,7 @@ inline void CSolver::VolumeProjection(CGeometry *geometry, CConfig *config, su2d
 
 inline void CSolver::DensityFiltering(CGeometry *geometry, CConfig *config, bool updsens){}
 
-inline void CSolver::GaussElimination(su2double **A, su2double *b){}
+inline void CSolver::GaussElimination(su2double **A, su2double *b, unsigned long nElemx){}
 
-inline void CSolver::ThomasAlgorithm(su2double **A, su2double *d){}
+inline void CSolver::ThomasAlgorithm(su2double **A, su2double *d, unsigned long nElemx){}
 

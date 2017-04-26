@@ -613,23 +613,24 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
 
   bool TapeActive = NO;
 
-  if (config->GetDiscrete_Adjoint()){
-#ifdef CODI_REVERSE_TYPE
+//  if (config->GetDiscrete_Adjoint()){
+//#ifdef CODI_REVERSE_TYPE
 
    /*--- Check whether the tape is active, i.e. if it is recording and store the status ---*/
 
-    TapeActive = AD::globalTape.isActive();
+//    TapeActive = AD::globalTape.isActive();
 
 
     /*--- Stop the recording for the linear solver ---*/
 
-    AD::StopRecording();
-#endif
-  }
+//    AD::StopRecording();
+//#endif
+//  }
+
 
   bool print_output = config->GetDeform_Output();
 
-  if (print_output){
+ /* if (print_output){
 
   cout << "The direct solver runs a" ;
   switch (config->GetKind_Linear_Solver()){
@@ -648,7 +649,7 @@ unsigned long CSysSolve::Solve(CSysMatrix & Jacobian, CSysVector & LinSysRes, CS
   }
   cout << ". " << endl;
 
-  }
+  }*/
 
   /*--- Solve the linear system using a Krylov subspace method ---*/
   

@@ -41,4 +41,11 @@ namespace SU2_TYPE{
   inline double GetSecondary(const double& data){return 0.0;}
 
   inline void SetDerivative(double &data, const double &val){}
+
+  inline double GetForwardDerivative(const double& data){return 0.0;}
+  inline void SetForwardDerivative(double &data, const double &val){}
+
+  inline double GetMixedDerivative(const double& data){return 0.0;}
+  inline void SetMixedDerivative(double &data, const double &val){}
+
 }

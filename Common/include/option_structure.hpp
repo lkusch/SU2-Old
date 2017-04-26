@@ -781,6 +781,8 @@ enum BC_TYPE {
   DISP_DIR_BOUNDARY = 38,    /*!< \brief Boundary displacement definition. */
   ROLLER_BOUNDARY = 39,     /*!< \brief Roller Bearings boundary definition. */
   SEND_RECEIVE = 99,		/*!< \brief Boundary send-receive definition. */
+  LOAD_POINT_BOUNDARY = 40,
+  ROLLER_POINT_BOUNDARY= 41,
 };
 
 

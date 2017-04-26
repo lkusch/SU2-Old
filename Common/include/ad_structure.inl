@@ -52,6 +52,9 @@ namespace AD{
     }
   }
 
+  inline void ResetVectorPosition(){ adjointVectorPosition = 0;}
+
+
   inline void SetPreaccIn(const su2double &data){
     if (PreaccActive){
       if (data.isActive()){
@@ -141,6 +144,7 @@ namespace AD{
   inline void ComputeAdjoint(){}
 
   inline void Reset(){}
+  inline void ResetVectorPosition(){}
 
   inline void ResetInput(su2double &data){}
 

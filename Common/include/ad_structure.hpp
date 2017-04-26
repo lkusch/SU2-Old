@@ -47,6 +47,7 @@ namespace AD{
    * \brief Reset the tape structure to be ready for a new recording.
    */
   void Reset();
+  void ResetVectorPosition();
 
   /*!
    * \brief Reset the variable (set index to zero).

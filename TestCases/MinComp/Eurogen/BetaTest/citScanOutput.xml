@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Hardware>
+
+
+	<Processor version="1" timestamp="1492695221">
+		<Index IsKey="1">1</Index>
+		<ID IsKey="1">0b4170a584c3b46e6bbe43fc323ecc85</ID>
+		<Family>Unknown</Family>
+		<MaxClockSpeed>3000</MaxClockSpeed>
+		<CurrentClockSpeed>3000</CurrentClockSpeed>
+		<ExternalClockSpeed>100</ExternalClockSpeed>
+		<Manufacturer>GenuineIntel</Manufacturer>
+		<ChipFamily>6</ChipFamily>
+		<ChipModel>60</ChipModel>
+		<ChipStepping>3</ChipStepping>
+		<ChipFeatures>394525695</ChipFeatures>
+		<FloatingPointUnitPresent>Y</FloatingPointUnitPresent>
+		<VirtualModeExtensions>Y</VirtualModeExtensions>
+		<DebugExtensionPresent>Y</DebugExtensionPresent>
+		<PageSizeExtensions>Y</PageSizeExtensions>
+		<TimeStampCounter>Y</TimeStampCounter>
+		<ModelSpecificRegisters>Y</ModelSpecificRegisters>
+		<PhysicalAddressExtensions>Y</PhysicalAddressExtensions>
+		<MachineCheckExceptions>Y</MachineCheckExceptions>
+		<CMPXCHG8BInstructionSupport>Y</CMPXCHG8BInstructionSupport>
+		<OnchipAPIC>Y</OnchipAPIC>
+		<FastSystemCall>Y</FastSystemCall>
+		<MemoryTypeRangeRegisters>Y</MemoryTypeRangeRegisters>
+		<PageGlobalEnable>Y</PageGlobalEnable>
+		<MachineCheckArchitecture>Y</MachineCheckArchitecture>
+		<ConditionalMoveInstruction>Y</ConditionalMoveInstruction>
+		<PageAttributeTable>Y</PageAttributeTable>
+		<_36-bitPageSizeExtension>Y</_36-bitPageSizeExtension>
+		<ProcessSerialNumberEnabled>N</ProcessSerialNumberEnabled>
+		<MMXtmTechonlogy>Y</MMXtmTechonlogy>
+		<FastFloatingPointSaveRestore>Y</FastFloatingPointSaveRestore>
+		<StreamingSIMDExtensions>Y</StreamingSIMDExtensions>
+		<AMD3DNowtmTechnology>N</AMD3DNowtmTechnology>
+		<CPUEnabled>H</CPUEnabled>
+	</Processor>
+
+	<PhysicalProcessor version="1" timestamp="1492695223">
+		<Id IsKey="1">1</Id>
+		<CorePerPackageCount>2</CorePerPackageCount>
+		<LogicalProcPerCore>2</LogicalProcPerCore>
+		<Manufacturer>Intel</Manufacturer>
+		<Family>Unknown</Family>
+		<Type>Unknown</Type>
+		<CpuFreq>2500</CpuFreq>
+		<L2CacheSize>3072</L2CacheSize>
+		<L3CacheSize>3072</L3CacheSize>
+		<Brandname>Intel(R) Core(TM) i5-4200M CPU @ 2.50GHz</Brandname>
+		<Signature>0x000306C3</Signature>
+		<Is64BitSupported>Y</Is64BitSupported>
+		<ActiveProcessorCount>4</ActiveProcessorCount>
+		<ActiveCoreCount>2</ActiveCoreCount>
+	</PhysicalProcessor>
+
+	<IPAddress version="1" timestamp="1492695223">
+		<Index>1</Index>
+		<Address IsKey="1">131.246.20.89</Address>
+		<Hostname>shiva</Hostname>
+		<Domain>scicomp.uni-kl.de</Domain>
+		<Subnet>255.255.255.224</Subnet>
+		<Gateway>131.246.20.94</Gateway>
+		<PrimaryDNS>131.246.9.116</PrimaryDNS>
+		<SecondaryDNS>131.246.1.116</SecondaryDNS>
+		<PermanentMacAddress>64:51:06:FF:54:58</PermanentMacAddress>
+		<IPV6Address></IPV6Address>
+	</IPAddress>
+
+	<IPAddress version="1" timestamp="1492695223">
+		<Index>2</Index>
+		<Address IsKey="1">192.168.122.1</Address>
+		<Hostname>bau36-rhrk-ag-gauger-ipv4-0002</Hostname>
+		<Domain>scicomp.uni-kl.de</Domain>
+		<Subnet>255.255.255.0</Subnet>
+		<Gateway></Gateway>
+		<PrimaryDNS>131.246.9.116</PrimaryDNS>
+		<SecondaryDNS>131.246.1.116</SecondaryDNS>
+		<PermanentMacAddress>52:54:00:98:8D:6D</PermanentMacAddress>
+		<IPV6Address></IPV6Address>
+	</IPAddress>
+
+	<NetworkAdapter version="1" timestamp="1492695223">
+		<Index>1</Index>
+		<ID IsKey="1">fb37ef08918e3153bae17b93e6e17573</ID>
+		<PermanentAddress></PermanentAddress>
+		<CurrentAddress></CurrentAddress>
+		<Type>Other</Type>
+		<Model>enp0s25</Model>
+	</NetworkAdapter>
+
+	<NetworkAdapter version="1" timestamp="1492695223">
+		<Index>2</Index>
+		<ID IsKey="1">528966d6d48634fb2221a2b75b313195</ID>
+		<PermanentAddress></PermanentAddress>
+		<CurrentAddress></CurrentAddress>
+		<Type>Other</Type>
+		<Model>virbr0</Model>
+	</NetworkAdapter>
+
+</Hardware>

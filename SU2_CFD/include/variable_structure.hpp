@@ -302,6 +302,10 @@ public:
 
     su2double *GetSolution_Save(void);
 
+    su2double GetSolution_Save(unsigned short val_var);
+
+    void SetForwardSolution(su2double *adj_sol);
+
 	/*!
 	 * \brief Get the solution at time n.
 	 * \return Pointer to the solution (at time n) vector.
