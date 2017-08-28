@@ -5159,7 +5159,7 @@ void CFEM_ElasticitySolver::Compute_StressConstraint(CGeometry *geometry, CSolve
 void CFEM_ElasticitySolver::BC_Roller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                                    unsigned short val_marker) {
     unsigned long iPoint, iVertex, jPoint;
-    su2double ElasMod = numerics->Get_YoungModulus();//1.0;//
+    su2double ElasMod = numerics->Get_YoungModulus();//1.0;//1.0; //
     unsigned short component;
 
     bool dynamic = (config->GetDynamic_Analysis() == DYNAMIC);
@@ -5229,7 +5229,7 @@ void CFEM_ElasticitySolver::BC_Roller(CGeometry *geometry, CSolver **solver_cont
 void CFEM_ElasticitySolver::BC_PointRoller(CGeometry *geometry, CSolver **solver_container, CNumerics *numerics, CConfig *config,
                                                    unsigned short val_marker) {
     unsigned long iPoint, iVertex, jPoint;
-    su2double ElasMod = 1.0;//numerics->Get_YoungModulus();
+    su2double ElasMod = numerics->Get_YoungModulus();//1.0
     unsigned short component;
 
     bool dynamic = (config->GetDynamic_Analysis() == DYNAMIC);

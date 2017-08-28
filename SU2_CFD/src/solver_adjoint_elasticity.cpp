@@ -2193,7 +2193,7 @@ void CDiscAdjFEASolver::RegisterVariables(CGeometry *geometry, CConfig *config, 
 
  /*   for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
           Density[iElem]=geometry->elem[iElem]->GetDensity()[0];
-    }*/
+    }*/ //TODOLISA warum auskommentiert
 
     if (!reset){
       AD::RegisterInput(E);
@@ -2204,8 +2204,6 @@ void CDiscAdjFEASolver::RegisterVariables(CGeometry *geometry, CConfig *config, 
           AD::RegisterInput(Density[iElem]);
       }
     }
-
-
 
   }
 
@@ -2498,22 +2496,17 @@ void CDiscAdjFEASolver::ExtractAdjoint_Variables(CGeometry *geometry, CConfig *c
     Global_Sens_Rho      = Local_Sens_Rho;
     Global_Sens_Rho_DL   = Local_Sens_Rho_DL;
 #endif
-    //std::cout<<"Derivative: ";
     su2double norm=0;
     unsigned long iElem;
+
     for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
         Global_Sens_Density[iElem] = SU2_TYPE::GetDerivative(Density[iElem]);
         AD::ResetInput(Density[iElem]);
-        //std::cout<<Global_Sens_Density[iElem]<<" ";
         norm+=Global_Sens_Density[iElem]*Global_Sens_Density[iElem];
         if(finitedifference){
-            //std::cout<<"stepsize: "<<std::endl;
-            //std::cout<<std::setprecision(15)<<Global_Sens_Density[iElem]<<" "<<Global_Sens_Density_Old[iElem]<<" ";
             Global_Sens_Density[iElem] = (Global_Sens_Density[iElem]-Global_Sens_Density_Old[iElem])/stepsize;
-            //std::cout<<std::setprecision(15)<<Global_Sens_Density[iElem]<<" "<<Global_Sens_Density_Old[iElem]<<" ";
         }
     }
-    //std::cout<<std::setprecision(7)<<std::endl;
     std::cout<<"Norm Derivative: "<<sqrt(norm)<<std::endl;
 
   }
@@ -2645,7 +2638,7 @@ void CDiscAdjFEASolver::SetSensDensity(CGeometry *geometry, CConfig *config){
       Sensitivity = SU2_TYPE::GetDerivative(Density);
       /*--- Set the index manually to zero. ---*/
 
-       AD::ResetInput(Density);
+      AD::ResetInput(Density);
   }
 }
 
@@ -2774,17 +2767,10 @@ void CDiscAdjFEASolver::DesignUpdateProjected(CGeometry *geometry, su2double ste
     }
     normsens=sqrt(normsens/(geometry->GetnElem()*geometry->GetnElem()));
     std::cout<<"Norm of Update: "<<normsens<<std::endl;
-    //std::cout<<"Update: ";
     for (iElem = 0; iElem < geometry->GetnElem(); iElem++) {
         DesignVarUpdate[iElem]=UpdateSens[iElem]*steplen;
-        //set box constraints
-        //if((Density[iElem]+DesignVarUpdate[iElem])>1.0)  DesignVarUpdate[iElem]=1.0-Density[iElem];
-        //if((Density[iElem]+DesignVarUpdate[iElem])<0.0)  DesignVarUpdate[iElem]=0.0-Density[iElem];
         Density[iElem]+=DesignVarUpdate[iElem];
-        //std::cout<<DesignVarUpdate[iElem]<<" ";
-        //TODOLisa: TestDesignUpdateBounds
     }
-    //std::cout<<endl;
 }
 
 void CDiscAdjFEASolver::BFGSUpdateProjected(CGeometry *geometry, CConfig *config, unsigned short ExtIter){
@@ -3550,7 +3536,6 @@ void CDiscAdjFEASolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config
         Global_Sens_Density[iElem] = SU2_TYPE::GetMixedDerivative(Density[iElem]);
         AD::ResetInput(Density[iElem]);
     }
-
 
 }
 

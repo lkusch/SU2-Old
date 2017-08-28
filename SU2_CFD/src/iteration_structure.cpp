@@ -3783,7 +3783,7 @@ void TopologyOptimization::PiggyBack(COutput *output,
       /*--- Write the convergence history (only screen output) ---*/
 
      //if(IntIter != nIntIter-1)
-     //   output->SetConvHistory_Body(NULL, geometry_container, solver_container, config_container, integration_container, true, 0.0, val_iZone);
+        output->SetConvHistory_Body(NULL, geometry_container, solver_container, config_container, integration_container, true, 0.0, val_iZone);
 
      /*--- Global sensitivities ---*/
      solver_container[val_iZone][MESH_0][ADJFEA_SOL]->SetSensitivity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]);
@@ -3831,20 +3831,20 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
                           CSurfaceMovement **surface_movement, CVolumetricMovement **volume_grid_movement, CFreeFormDefBox*** FFDBox, unsigned short val_iZone) {
 
     unsigned short ExtIter = config_container[ZONE_0]->GetExtIter();
-
     su2double steplen=config_container[ZONE_0]->GetOSStepSize();
+    unsigned short whilecounter=0;
 
+    //initialize design variables for optimization
     if(ExtIter==0) solver_container[val_iZone][MESH_0][ADJFEA_SOL]->InitializeDensity(geometry_container[val_iZone][MESH_0],config_container[ZONE_0]);
 
-    //print residuals!
-       cout << "log10Primal[RMS Density]: " << log10(solver_container[val_iZone][MESH_0][FEA_SOL]->GetRes_RMS(0))<<std::endl;
-       cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[val_iZone][MESH_0][ADJFEA_SOL]->GetRes_RMS(0))<<std::endl;
+    //print residuals TODOLISA
+    cout << "log10Primal[RMS Density]: " << log10(solver_container[val_iZone][MESH_0][FEA_SOL]->GetRes_RMS(0))<<std::endl;
+    cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[val_iZone][MESH_0][ADJFEA_SOL]->GetRes_RMS(0))<<std::endl;
 
-    //store old solution and density before starting line search
+    //store old solution variables (primal and adjoint) and design variables before starting line search
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreOldSolution();
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->StoreDensity(geometry_container[val_iZone][MESH_0]);
 
-    unsigned short whilecounter=0;
     do{
       //apply Armijo stepsize rule
       if ( whilecounter >0 ){
@@ -3853,11 +3853,13 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
 
       whilecounter=whilecounter+1;
 
+      //load old solution variables and design variables for each line search loop
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadOldSolution();
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->LoadDensity(geometry_container[val_iZone][MESH_0]);
 
       if((ExtIter>config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())){
-        //Update the density and update the constraint multiplier
+
+        //perform a filtering step of the update (once) and a projection onto the feasible set in each line search step
         if(whilecounter==1){
           solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DensityFiltering(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], true);
           solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->VolumeProjection(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], steplen);
@@ -3865,19 +3867,31 @@ void TopologyOptimization::OneShot(COutput *output, CIntegration ***integration_
         else{
           solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->VolumeProjection(geometry_container[val_iZone][MESH_0], config_container[ZONE_0], steplen);
         }
+
+        //update the design variables and update the constraint multiplier
         solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->DesignUpdateProjected(geometry_container[val_iZone][MESH_0], steplen);
         if(config_container[ZONE_0]->GetOneShotConstraint()==true && whilecounter==1) solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->UpdateMultiplier(config_container[ZONE_0]);
       }
 
+      //iterate primal, dual and design and calculate values for the reduced derivative of the doubly augmented Lagrangian
       OneShotStep(output, integration_container, geometry_container,
                solver_container, numerics_container, config_container,
                 surface_movement, volume_grid_movement, FFDBox, val_iZone, whilecounter);
     }
     while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())&&solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->CheckFirstWolfe(geometry_container[val_iZone][MESH_0],steplen)&&(whilecounter<config_container[ZONE_0]->GetSearchCounterMax())&&config_container[ZONE_0]->GetLineSearch()&&(steplen>1E-15));
+    //TODO Test One-Shot Stop if norm of update is too small
+
 
     if((ExtIter>=config_container[ZONE_0]->GetOneShotStart())&&(ExtIter<config_container[ZONE_0]->GetOneShotStop())){
       std::cout<<"searchsteps: "<<whilecounter<<std::endl;
+
+      //calculate the BFGS update for the preconditioner
       solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->BFGSUpdateProjected(geometry_container[val_iZone][MESH_0],config_container[ZONE_0],ExtIter);
+
+      //update penalty for continuation method
+      su2double penalty=solver_container[val_iZone][MESH_0][FEA_SOL]->GetPenal();
+      if(penalty<3.0) penalty=penalty+0.02;
+      solver_container[val_iZone][MESH_0][FEA_SOL]->SetPenal(penalty);
     }
 }
 
