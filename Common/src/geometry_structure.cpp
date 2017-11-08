@@ -1227,6 +1227,9 @@ void CGeometry::UpdateGeometry(CGeometry **geometry_container, CConfig *config) 
   
   if (config->GetKind_Solver() == DISC_ADJ_RANS)
   geometry_container[MESH_0]->ComputeWall_Distance(config);
+
+  if (config->GetKind_Solver() == ONE_SHOT_RANS)
+  geometry_container[MESH_0]->ComputeWall_Distance(config);
   
 }
 
