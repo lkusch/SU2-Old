@@ -699,7 +699,10 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
         ( Kind_Solver == ADJ_RANS          ) ||
         ( Kind_Solver == DISC_ADJ_EULER         ) ||
         ( Kind_Solver == DISC_ADJ_NAVIER_STOKES ) ||
-        ( Kind_Solver == DISC_ADJ_RANS          ) ) {
+        ( Kind_Solver == DISC_ADJ_RANS          ) ||
+        ( Kind_Solver == ONE_SHOT_EULER              ) ||
+        ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
+        ( Kind_Solver == ONE_SHOT_RANS               ) ) {
       
       Paraview_File << "\nSCALARS Surface_Sensitivity float 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
@@ -720,7 +723,10 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     }
     if  (( Kind_Solver == DISC_ADJ_EULER        ) ||
         ( Kind_Solver == DISC_ADJ_NAVIER_STOKES ) ||
-        ( Kind_Solver == DISC_ADJ_RANS          ) ) {
+        ( Kind_Solver == DISC_ADJ_RANS          ) ||
+        ( Kind_Solver == ONE_SHOT_EULER              ) ||
+        ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
+        ( Kind_Solver == ONE_SHOT_RANS               ) ) {
 
       Paraview_File << "\nSCALARS Sensitivity_x float 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";

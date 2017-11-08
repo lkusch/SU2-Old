@@ -164,7 +164,8 @@ CDriver::CDriver(char* confFile,
 
     if ((config_container[iZone]->GetKind_Solver() == RANS) ||
         (config_container[iZone]->GetKind_Solver() == ADJ_RANS) ||
-        (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS))
+        (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS) ||
+        (config_container[iZone]->GetKind_Solver() == ONE_SHOT_RANS))
       geometry_container[iZone][MESH_0]->ComputeWall_Distance(config_container[iZone]);
 
     /*--- Computation of positive surface area in the z-plane which is used for
@@ -336,7 +337,8 @@ CDriver::CDriver(char* confFile,
 
       if ( (config_container[iZone]->GetKind_Solver() == RANS) ||
           (config_container[iZone]->GetKind_Solver() == ADJ_RANS) ||
-          (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS))
+          (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS) ||
+          (config_container[iZone]->GetKind_Solver() == ONE_SHOT_RANS))
         geometry_container[iZone][MESH_0]->ComputeWall_Distance(config_container[iZone]);
     }
   }
@@ -795,6 +797,9 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
     case DISC_ADJ_EULER: euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; adj_turb = (!config->GetFrozen_Visc_Disc()); break;
+    case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; adj_turb = (!config->GetFrozen_Visc_Disc()); break;
   }
   
   /*--- Assign turbulence model booleans ---*/
@@ -895,7 +900,12 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
       solver_container[iMGlevel][ADJTURB_SOL] = new CAdjTurbSolver(geometry[iMGlevel], config, iMGlevel);
     }
     
-    if (disc_adj) {
+    if (config->GetBoolOneShot()) {
+      solver_container[iMGlevel][ADJFLOW_SOL] = new COneShotSolver(geometry[iMGlevel], config, solver_container[iMGlevel][FLOW_SOL], RUNTIME_FLOW_SYS, iMGlevel);
+      if (adj_turb)
+        solver_container[iMGlevel][ADJTURB_SOL] = new COneShotSolver(geometry[iMGlevel], config, solver_container[iMGlevel][TURB_SOL], RUNTIME_TURB_SYS, iMGlevel);
+    }
+    else if (disc_adj) {
       solver_container[iMGlevel][ADJFLOW_SOL] = new CDiscAdjSolver(geometry[iMGlevel], config, solver_container[iMGlevel][FLOW_SOL], RUNTIME_FLOW_SYS, iMGlevel);
       if (adj_turb)
         solver_container[iMGlevel][ADJTURB_SOL] = new CDiscAdjSolver(geometry[iMGlevel], config, solver_container[iMGlevel][TURB_SOL], RUNTIME_TURB_SYS, iMGlevel);
@@ -1003,6 +1013,9 @@ void CDriver::Solver_Postprocessing(CSolver ***solver_container, CGeometry **geo
     case DISC_ADJ_EULER: euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; break;
+    case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; break;
   }
   
   /*--- Assign turbulence model booleans ---*/
@@ -1099,6 +1112,9 @@ void CDriver::Integration_Preprocessing(CIntegration **integration_container,
     case DISC_ADJ_EULER : euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS : ns = true; turbulent = true; disc_adj = true; break;
+    case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; break;
 
   }
 
@@ -1156,6 +1172,9 @@ void CDriver::Integration_Postprocessing(CIntegration **integration_container,
     case DISC_ADJ_EULER : euler = true; disc_adj = true; break;
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS : ns = true; turbulent = true; disc_adj = true; break;
+    case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; break;
 
   }
 
@@ -1225,9 +1244,9 @@ void CDriver::Numerics_Preprocessing(CNumerics ****numerics_container,
   /*--- Assign booleans ---*/
   switch (config->GetKind_Solver()) {
     case TEMPLATE_SOLVER: template_solver = true; break;
-    case EULER : case DISC_ADJ_EULER: euler = true; break;
-    case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES: ns = true; break;
-    case RANS : case DISC_ADJ_RANS:  ns = true; turbulent = true; if (config->GetKind_Trans_Model() == LM) transition = true; break;
+    case EULER : case DISC_ADJ_EULER: case ONE_SHOT_EULER: euler = true; break;
+    case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES: case ONE_SHOT_NAVIER_STOKES: ns = true; break;
+    case RANS : case DISC_ADJ_RANS: case ONE_SHOT_RANS: ns = true; turbulent = true; if (config->GetKind_Trans_Model() == LM) transition = true; break;
     case POISSON_EQUATION: poisson = true; break;
     case WAVE_EQUATION: wave = true; break;
     case HEAT_EQUATION: heat = true; break;
@@ -1901,9 +1920,9 @@ void CDriver::Numerics_Postprocessing(CNumerics ****numerics_container,
   /*--- Assign booleans ---*/
   switch (config->GetKind_Solver()) {
     case TEMPLATE_SOLVER: template_solver = true; break;
-    case EULER : case DISC_ADJ_EULER: euler = true; break;
-    case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES: ns = true; break;
-    case RANS : case DISC_ADJ_RANS:  ns = true; turbulent = true; if (config->GetKind_Trans_Model() == LM) transition = true; break;
+    case EULER : case DISC_ADJ_EULER: case ONE_SHOT_EULER: euler = true; break;
+    case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES: case ONE_SHOT_NAVIER_STOKES: ns = true; break;
+    case RANS : case DISC_ADJ_RANS: case ONE_SHOT_RANS: ns = true; turbulent = true; if (config->GetKind_Trans_Model() == LM) transition = true; break;
     case POISSON_EQUATION: poisson = true; break;
     case WAVE_EQUATION: wave = true; break;
     case HEAT_EQUATION: heat = true; break;
@@ -2307,6 +2326,12 @@ void CDriver::Iteration_Preprocessing() {
     if (rank == MASTER_NODE)
         cout << ": discrete adjoint Euler/Navier-Stokes/RANS fluid iteration." << endl;
       iteration_container[iZone] = new CDiscAdjFluidIteration(config_container[iZone]);
+    break;
+
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
+    if (rank==MASTER_NODE)
+        cout << ": one-shot fluid iteration." << endl;
+      iteration_container[iZone] = new COneShotFluidIteration(config_container[iZone]);
     break;
   }
 
@@ -2938,6 +2963,7 @@ bool CDriver::Monitor(unsigned long ExtIter) {
       StopCalc = integration_container[ZONE_0][FEA_SOL]->GetConvergence(); break;
     case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS:
     case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
       StopCalc = integration_container[ZONE_0][ADJFLOW_SOL]->GetConvergence(); break;
   }
   
@@ -3566,8 +3592,9 @@ void CGeneralDriver::ResetConvergence() {
     break;
 
     case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS: case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
     integration_container[ZONE_0][ADJFLOW_SOL]->SetConvergence(false);
-      if( (config_container[ZONE_0]->GetKind_Solver() == ADJ_RANS) || (config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS) )
+      if( (config_container[ZONE_0]->GetKind_Solver() == ADJ_RANS) || (config_container[ZONE_0]->GetKind_Solver() == DISC_ADJ_RANS) || (config_container[ZONE_0]->GetKind_Solver() == ONE_SHOT_RANS) )
       integration_container[ZONE_0][ADJTURB_SOL]->SetConvergence(false);
     break;
 
@@ -3801,8 +3828,9 @@ void CFluidDriver::ResetConvergence() {
       break;
 
     case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS: case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
       integration_container[iZone][ADJFLOW_SOL]->SetConvergence(false);
-      if( (config_container[iZone]->GetKind_Solver() == ADJ_RANS) || (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS) )
+      if( (config_container[iZone]->GetKind_Solver() == ADJ_RANS) || (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS) || (config_container[iZone]->GetKind_Solver() == ONE_SHOT_RANS) )
         integration_container[iZone][ADJTURB_SOL]->SetConvergence(false);
       break;
     }
@@ -4096,6 +4124,7 @@ bool CTurbomachineryDriver::Monitor(unsigned long ExtIter) {
   case EULER: case NAVIER_STOKES: case RANS:
     StopCalc = integration_container[ZONE_0][FLOW_SOL]->GetConvergence(); break;
   case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+  case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
     StopCalc = integration_container[ZONE_0][ADJFLOW_SOL]->GetConvergence(); break;
   }
 
@@ -4270,6 +4299,8 @@ void CDiscAdjFluidDriver::Run() {
     AD::ClearAdjoints();
 
   }
+  cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
+  cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))<<std::endl;
 
 }
 
@@ -4291,6 +4322,9 @@ void CDiscAdjFluidDriver::SetRecording(unsigned short kind_recording){
       solver_container[iZone][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[iZone][iMesh], config_container[iZone]);
     }
     if (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS && !config_container[iZone]->GetFrozen_Visc_Disc()) {
+      solver_container[iZone][MESH_0][ADJTURB_SOL]->SetRecording(geometry_container[iZone][MESH_0], config_container[iZone]);
+    }
+    if (config_container[iZone]->GetKind_Solver() == ONE_SHOT_RANS && !config_container[iZone]->GetFrozen_Visc_Disc()) {
       solver_container[iZone][MESH_0][ADJTURB_SOL]->SetRecording(geometry_container[iZone][MESH_0], config_container[iZone]);
     }
   }
@@ -4398,6 +4432,7 @@ void CDiscAdjFluidDriver::SetObjFunction(){
       switch (config_container[iZone]->GetKind_Solver()) {
         case EULER:                   case NAVIER_STOKES:                   case RANS:
         case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
+        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
           output->OneDimensionalOutput(solver_container[iZone][MESH_0][FLOW_SOL], geometry_container[iZone][MESH_0], config_container[iZone]);
           break;
       }
@@ -4406,6 +4441,7 @@ void CDiscAdjFluidDriver::SetObjFunction(){
       switch (config_container[iZone]->GetKind_Solver()) {
         case EULER:                   case NAVIER_STOKES:                   case RANS:
         case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
+        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
           output->SetMassFlowRate(solver_container[iZone][MESH_0][FLOW_SOL], geometry_container[iZone][MESH_0], config_container[iZone]);
           break;
       }
@@ -4601,6 +4637,7 @@ void CDiscAdjTurbomachineryDriver::SetTurboPerformance(unsigned short targetZone
   output->ComputeTurboPerformance(solver_container[targetZone][MESH_0][FLOW_SOL], geometry_container[targetZone][MESH_0], config_container[targetZone]);
 
 }
+
 CHBDriver::CHBDriver(char* confFile,
     unsigned short val_nZone,
     unsigned short val_nDim,
@@ -4687,8 +4724,9 @@ void CHBDriver::ResetConvergence() {
       break;
 
     case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS: case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
       integration_container[iZone][ADJFLOW_SOL]->SetConvergence(false);
-      if( (config_container[iZone]->GetKind_Solver() == ADJ_RANS) || (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS) )
+      if( (config_container[iZone]->GetKind_Solver() == ADJ_RANS) || (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS) || (config_container[iZone]->GetKind_Solver() == ONE_SHOT_RANS) )
         integration_container[iZone][ADJTURB_SOL]->SetConvergence(false);
       break;
     }
@@ -5371,3 +5409,283 @@ void CFSIDriver::Update(unsigned short ZONE_FLOW, unsigned short ZONE_STRUCT) {
 
 }
 
+COneShotFluidDriver::COneShotFluidDriver(char* confFile,
+                                                 unsigned short val_nZone,
+                                                 unsigned short val_nDim, SU2_Comm MPICommunicator) : CDiscAdjFluidDriver(confFile, val_nZone,
+                                                                                    val_nDim, MPICommunicator) { }
+
+COneShotFluidDriver::~COneShotFluidDriver(){ }
+
+void COneShotFluidDriver::Run() {
+
+  unsigned short iZone = 0, checkConvergence;
+  unsigned long IntIter, nIntIter;
+
+  /*--- Note: Although unsteady code is in here: not applicable to the one-shot method yet! ---*/
+
+//S  bool unsteady;
+
+//S  unsteady = (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_1ST) || (config_container[MESH_0]->GetUnsteady_Simulation() == DT_STEPPING_2ND);
+
+  /*--- Begin Unsteady pseudo-time stepping internal loop, if not unsteady it does only one step --*/
+
+//S  if (unsteady)
+//S    nIntIter = config_container[MESH_0]->GetUnst_nIntIter();
+//S  else
+  nIntIter = 1;
+
+  /*--- For the adjoint iteration we need the derivatives of the iteration function with
+   *    respect to the conservative flow variables. Since these derivatives do not change in the steady state case
+   *    we only have to record if the current recording is different from cons. variables. ---*/
+
+//S  if (RecordingState != CONS_VARS || unsteady){
+
+    /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
+     *    as argument ensures that all information from a previous recording is removed. ---*/
+
+    SetRecording(NONE);
+
+    /*--- Store the computational graph of one direct iteration with the conservative variables as input. ---*/
+
+    SetRecording(CONS_VARS);
+
+//S  }
+
+  for (IntIter = 0; IntIter < nIntIter; IntIter++) {
+
+
+    /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
+   *    of the previous iteration. The values are passed to the AD tool. ---*/
+
+    for (iZone = 0; iZone < nZone; iZone++) {
+
+      config_container[iZone]->SetIntIter(IntIter);
+
+      iteration_container[iZone]->InitializeAdjoint(solver_container, geometry_container, config_container, iZone);
+
+    }
+
+    /*--- Initialize the adjoint of the objective function with 1.0. ---*/
+
+    SetAdj_ObjFunction();
+
+    /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
+
+    AD::ComputeAdjoint();
+
+    /*--- Extract the computed adjoint values of the input variables and store them for the next iteration. ---*/
+
+    for (iZone = 0; iZone < nZone; iZone++) {
+      iteration_container[iZone]->Iterate(output, integration_container, geometry_container,
+                                          solver_container, numerics_container, config_container,
+                                          surface_movement, grid_movement, FFDBox, iZone);
+    }
+
+    /*--- Clear the stored adjoint information to be ready for a new evaluation. ---*/
+
+    AD::ClearAdjoints();
+
+    /*--- Check convergence in each zone --*/
+
+    checkConvergence = 0;
+    for (iZone = 0; iZone < nZone; iZone++)
+      checkConvergence += (int) integration_container[iZone][ADJFLOW_SOL]->GetConvergence();
+
+    /*--- If convergence was reached in every zone --*/
+
+    if (checkConvergence == nZone) break;
+
+    /*--- Write the convergence history (only screen output) ---*/
+
+//S    if (unsteady)
+//S      output->SetConvHistory_Body(NULL, geometry_container, solver_container, config_container, integration_container, true, 0.0, ZONE_0);
+
+  }
+
+  /*--- Compute the geometrical sensitivities ---*/
+
+/*  if ((ExtIter+1 >= config_container[ZONE_0]->GetnExtIter()) ||
+      integration_container[ZONE_0][ADJFLOW_SOL]->GetConvergence() ||
+      (ExtIter % config_container[ZONE_0]->GetWrt_Sol_Freq() == 0) || unsteady){*/
+
+    /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
+     * as argument ensures that all information from a previous recording is removed. ---*/
+
+    SetRecording(NONE);
+
+    /*--- Store the computational graph of one direct iteration with the mesh coordinates as input. ---*/
+
+    SetRecording(MESH_COORDS);
+
+    /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
+     *    of the current iteration. The values are passed to the AD tool. ---*/
+
+    for (iZone = 0; iZone < nZone; iZone++) {
+
+      iteration_container[iZone]->InitializeAdjoint(solver_container, geometry_container, config_container, iZone);
+
+    }
+
+    /*--- Initialize the adjoint of the objective function with 1.0. ---*/
+
+    SetAdj_ObjFunction();
+
+    /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
+
+    AD::ComputeAdjoint();
+
+    /*--- Extract the computed sensitivity values. ---*/
+
+    for (iZone = 0; iZone < nZone; iZone++) {
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetSensitivity(geometry_container[iZone][MESH_0],config_container[iZone]);
+    }
+
+    /*--- Clear the stored adjoint information to be ready for a new evaluation. ---*/
+
+    AD::ClearAdjoints();
+
+    cout << "log10Ajdoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
+    cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))<<std::endl;
+
+//  }
+
+}
+
+
+void COneShotFluidDriver::SetRecording(unsigned short kind_recording){
+  unsigned short iZone, iMesh;
+
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  AD::Reset();
+
+  /*--- Prepare for recording by resetting the flow solution to the initial converged solution---*/
+
+  for (iZone = 0; iZone < nZone; iZone++) {
+    for (iMesh = 0; iMesh <= config_container[iZone]->GetnMGLevels(); iMesh++){
+      solver_container[iZone][iMesh][ADJFLOW_SOL]->SetRecording(geometry_container[iZone][iMesh], config_container[iZone]);
+    }
+    if (config_container[iZone]->GetKind_Solver() == DISC_ADJ_RANS && !config_container[iZone]->GetFrozen_Visc_Disc()) {
+      solver_container[iZone][MESH_0][ADJTURB_SOL]->SetRecording(geometry_container[iZone][MESH_0], config_container[iZone]);
+    }
+    if (config_container[iZone]->GetKind_Solver() == ONE_SHOT_RANS && !config_container[iZone]->GetFrozen_Visc_Disc()) {
+      solver_container[iZone][MESH_0][ADJTURB_SOL]->SetRecording(geometry_container[iZone][MESH_0], config_container[iZone]);
+    }
+  }
+
+
+  /*---Enable recording and register input of the flow iteration (conservative variables or node coordinates) --- */
+
+  if (kind_recording != NONE){
+
+    AD::StartRecording();
+    for (iZone = 0; iZone < nZone; iZone++) {
+      iteration_container[iZone]->RegisterInput(solver_container, geometry_container, config_container, iZone, kind_recording);
+    }
+
+  }
+
+  for (iZone = 0; iZone < nZone; iZone++) {
+    iteration_container[iZone]->SetDependencies(solver_container, geometry_container, config_container, iZone, kind_recording);
+  }
+
+  /*--- Do one iteration of the direct flow solver ---*/
+
+  DirectRun();
+
+  RecordingState = kind_recording;
+
+  for (iZone = 0; iZone < nZone; iZone++) {
+    iteration_container[iZone]->RegisterOutput(solver_container, geometry_container, config_container, output, iZone);
+  }
+
+  /*--- Extract the objective function and store it --- */
+
+  SetObjFunction();
+
+  AD::StopRecording();
+
+}
+
+void COneShotFluidDriver::SetAdj_ConstrFunction(){
+
+/*  int rank = MASTER_NODE;
+
+  bool time_stepping = config_container[ZONE_0]->GetUnsteady_Simulation() != STEADY;
+  unsigned long IterAvg_Obj = config_container[ZONE_0]->GetIter_Avg_Objective();
+  unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
+  su2double seeding = 1.0;
+
+  if (time_stepping){
+    if (ExtIter < IterAvg_Obj){
+      seeding = 1.0/((su2double)IterAvg_Obj);
+    }
+    else{
+      seeding = 0.0;
+    }
+  }
+
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  if (rank == MASTER_NODE){
+    SU2_TYPE::SetDerivative(ObjFunc, SU2_TYPE::GetValue(seeding));
+  } else {
+    SU2_TYPE::SetDerivative(ObjFunc, 0.0);
+  }*/
+
+}
+
+void COneShotFluidDriver::SetConstrFunction(){
+
+/*  bool output_1d       = config_container[ZONE_0]->GetWrt_1D_Output();
+  bool output_massflow = (config_container[ZONE_0]->GetKind_ObjFunc() == MASS_FLOW_RATE);
+
+  int rank = MASTER_NODE;
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  ObjFunc = 0.0;
+
+  for (iZone = 0; iZone < nZone; iZone++){
+    solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_ComboObj(0.0);
+  }
+
+  for (iZone = 0; iZone < nZone; iZone++){
+    if (output_1d) {
+      switch (config_container[iZone]->GetKind_Solver()) {
+        case EULER:                   case NAVIER_STOKES:                   case RANS:
+        case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
+        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
+          output->OneDimensionalOutput(solver_container[iZone][MESH_0][FLOW_SOL], geometry_container[iZone][MESH_0], config_container[iZone]);
+          break;
+      }
+    }
+    if (output_massflow && !output_1d) {
+      switch (config_container[iZone]->GetKind_Solver()) {
+        case EULER:                   case NAVIER_STOKES:                   case RANS:
+        case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
+        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
+          output->SetMassFlowRate(solver_container[iZone][MESH_0][FLOW_SOL], geometry_container[iZone][MESH_0], config_container[iZone]);
+          break;
+      }
+    }
+  }*/
+
+  /*--- Here we can add new (scalar) objective functions ---*/
+
+  /*--- Surface based obj. function ---*/
+
+/*  for (iZone = 0; iZone < nZone; iZone++){
+    solver_container[iZone][MESH_0][FLOW_SOL]->Evaluate_ObjFunc(config_container[iZone]);
+    ObjFunc += solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_ComboObj();
+  }
+
+  if (rank == MASTER_NODE){
+    AD::RegisterOutput(ObjFunc);
+  }*/
+}

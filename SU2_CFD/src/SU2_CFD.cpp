@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   
   unsigned short nZone, nDim;
   char config_file_name[MAX_STRING_SIZE];
-  bool fsi, turbo;
+  bool fsi, turbo, oneshot;
   
   /*--- MPI initialization, and buffer setting ---*/
   
@@ -74,6 +74,7 @@ int main(int argc, char *argv[]) {
   nDim  = CConfig::GetnDim(config->GetMesh_FileName(), config->GetMesh_FileFormat());
   fsi   = config->GetFSI_Simulation();
   turbo = config->GetBoolTurbomachinery();
+  oneshot = config->GetBoolOneShot();
 
   /*--- First, given the basic information about the number of zones and the
    solver types from the config, instantiate the appropriate driver for the problem
@@ -115,6 +116,10 @@ int main(int argc, char *argv[]) {
       if (turbo) {
 
         driver = new CDiscAdjTurbomachineryDriver(config_file_name, nZone, nDim, MPICommunicator);
+
+      } else if (oneshot) {
+
+        driver = new COneShotFluidDriver(config_file_name, nZone, nDim, MPICommunicator);
 
       } else {
 

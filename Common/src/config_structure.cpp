@@ -1886,6 +1886,12 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   
   /* DESCRIPTION: Multipoint design freestream pressure */
   addPythonOption("MULTIPOINT_FREESTREAM_PRESSURE");
+
+  /*--- Options for the one-shot optimization method ---*/
+  /*!\par CONFIG_CATEGORY: One-Shot method options \ingroup Config*/
+
+  /*!\brief ONE_SHOT \n DESCRIPTION: Use one-shot method for optimization \ingroup Config*/
+  addBoolOption("ONE_SHOT", One_Shot, false);
   
   /* END_CONFIG_OPTIONS */
 
@@ -3289,19 +3295,35 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
       }
 
     }
-
-    switch(Kind_Solver) {
-      case EULER:
-        Kind_Solver = DISC_ADJ_EULER;
-        break;
-      case RANS:
-        Kind_Solver = DISC_ADJ_RANS;
-        break;
-      case NAVIER_STOKES:
-        Kind_Solver = DISC_ADJ_NAVIER_STOKES;
-        break;
-      default:
-        break;
+    if(!One_Shot) { 
+      switch(Kind_Solver) {
+        case EULER:
+          Kind_Solver = DISC_ADJ_EULER;
+          break;
+        case RANS:
+          Kind_Solver = DISC_ADJ_RANS;
+          break;
+        case NAVIER_STOKES:
+          Kind_Solver = DISC_ADJ_NAVIER_STOKES;
+          break;
+        default:
+          break;
+      }
+    } else {
+      Restart_Flow = false;
+      switch(Kind_Solver) {
+        case EULER:
+          Kind_Solver = ONE_SHOT_EULER;
+          break;
+        case RANS:
+          Kind_Solver = ONE_SHOT_RANS;
+          break;
+        case NAVIER_STOKES:
+          Kind_Solver = ONE_SHOT_NAVIER_STOKES;
+          break;
+        default:
+          break;
+      }
     }
 
     RampOutletPressure = false;
@@ -3955,15 +3977,15 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
      cout <<"based on the physical case: ";
   }
     switch (Kind_Solver) {
-      case EULER: case DISC_ADJ_EULER:
+      case EULER: case DISC_ADJ_EULER: case ONE_SHOT_EULER:
         if (Kind_Regime == COMPRESSIBLE) cout << "Compressible Euler equations." << endl;
         if (Kind_Regime == INCOMPRESSIBLE) cout << "Incompressible Euler equations." << endl;
         break;
-      case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES:
+      case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES: case ONE_SHOT_NAVIER_STOKES:
         if (Kind_Regime == COMPRESSIBLE) cout << "Compressible Laminar Navier-Stokes' equations." << endl;
         if (Kind_Regime == INCOMPRESSIBLE) cout << "Incompressible Laminar Navier-Stokes' equations." << endl;
         break;
-      case RANS: case DISC_ADJ_RANS:
+      case RANS: case DISC_ADJ_RANS: case ONE_SHOT_RANS:
         if (Kind_Regime == COMPRESSIBLE) cout << "Compressible RANS equations." << endl;
         if (Kind_Regime == INCOMPRESSIBLE) cout << "Incompressible RANS equations." << endl;
         cout << "Turbulence model: ";
@@ -4402,7 +4424,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 		if (SmoothNumGrid) cout << "There are some smoothing iterations on the grid coordinates." << endl;
 
     if ((Kind_Solver == EULER) || (Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS) ||
-         (Kind_Solver == DISC_ADJ_EULER) || (Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) ) {
+         (Kind_Solver == DISC_ADJ_EULER) || (Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) ||
+         (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
 
       if (Kind_ConvNumScheme_Flow == SPACE_CENTERED) {
         if (Kind_Centered_Flow == JST) {
@@ -4450,7 +4473,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 
 		}
 
-    if ((Kind_Solver == RANS) || (Kind_Solver == DISC_ADJ_RANS)) {
+    if ((Kind_Solver == RANS) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) {
       if (Kind_ConvNumScheme_Turb == SPACE_UPWIND) {
         if (Kind_Upwind_Turb == SCALAR_UPWIND) cout << "Scalar upwind solver for the turbulence model."<< endl;
         switch (SpatialOrder_Turb) {
@@ -4552,7 +4575,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
     }
 
     if ((Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS) ||
-        (Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS)) {
+        (Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) ||
+        (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
         cout << "Average of gradients with correction (viscous flow terms)." << endl;
     }
 
@@ -4560,7 +4584,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
       cout << "Average of gradients with correction (viscous adjoint terms)." << endl;
     }
 
-    if ((Kind_Solver == RANS) || (Kind_Solver == DISC_ADJ_RANS)) {
+    if ((Kind_Solver == RANS) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) {
       cout << "Average of gradients with correction (viscous turbulence terms)." << endl;
     }
 
@@ -4614,7 +4638,8 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 	}
 
     if ((Kind_Solver == EULER) || (Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS) ||
-        (Kind_Solver == DISC_ADJ_EULER) || (Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS)) {
+        (Kind_Solver == DISC_ADJ_EULER) || (Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) ||
+        (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
       switch (Kind_TimeIntScheme_Flow) {
         case RUNGE_KUTTA_EXPLICIT:
           cout << "Runge-Kutta explicit method for the flow equations." << endl;
@@ -4740,7 +4765,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
 
     }
 
-    if ((Kind_Solver == RANS) || (Kind_Solver == DISC_ADJ_RANS))
+    if ((Kind_Solver == RANS) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS))
       if (Kind_TimeIntScheme_Turb == EULER_IMPLICIT)
         cout << "Euler implicit time integration for the turbulence model." << endl;
   }

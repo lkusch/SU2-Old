@@ -440,13 +440,13 @@ void CFluidIteration::Iterate(COutput *output,
   
   switch( config_container[val_iZone]->GetKind_Solver() ) {
       
-    case EULER: case DISC_ADJ_EULER:
+    case EULER: case DISC_ADJ_EULER: case ONE_SHOT_EULER:
       config_container[val_iZone]->SetGlobalParam(EULER, RUNTIME_FLOW_SYS, ExtIter); break;
       
-    case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES:
+    case NAVIER_STOKES: case DISC_ADJ_NAVIER_STOKES: case ONE_SHOT_NAVIER_STOKES:
       config_container[val_iZone]->SetGlobalParam(NAVIER_STOKES, RUNTIME_FLOW_SYS, ExtIter); break;
       
-    case RANS: case DISC_ADJ_RANS:
+    case RANS: case DISC_ADJ_RANS: case ONE_SHOT_RANS:
       config_container[val_iZone]->SetGlobalParam(RANS, RUNTIME_FLOW_SYS, ExtIter); break;
       
   }
@@ -458,7 +458,7 @@ void CFluidIteration::Iterate(COutput *output,
   
   
   if ((config_container[val_iZone]->GetKind_Solver() == RANS) ||
-      ((config_container[val_iZone]->GetKind_Solver() == DISC_ADJ_RANS) && !frozen_visc)) {
+      (((config_container[val_iZone]->GetKind_Solver() == DISC_ADJ_RANS) || (config_container[val_iZone]->GetKind_Solver() == ONE_SHOT_RANS)) && !frozen_visc)) {
     
     /*--- Solve the turbulence model ---*/
     
@@ -529,6 +529,7 @@ void CFluidIteration::Update(COutput *output,
     /*--- Update dual time solver for the turbulence model ---*/
     
     if ((config_container[val_iZone]->GetKind_Solver() == RANS) ||
+        (config_container[val_iZone]->GetKind_Solver() == ONE_SHOT_RANS) ||
         (config_container[val_iZone]->GetKind_Solver() == DISC_ADJ_RANS)) {
       integration_container[val_iZone][TURB_SOL]->SetDualTime_Solver(geometry_container[val_iZone][MESH_0], solver_container[val_iZone][MESH_0][TURB_SOL], config_container[val_iZone], MESH_0);
       integration_container[val_iZone][TURB_SOL]->SetConvergence(false);
@@ -1821,7 +1822,8 @@ void CDiscAdjFluidIteration::Iterate(COutput *output,
 
   /*--- Extract the adjoints of the conservative input variables and store them for the next iteration ---*/
 
-  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER)) {
+  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+      (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
 
     solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Solution(geometry_container[val_iZone][MESH_0], config_container[val_iZone]);
 
@@ -1833,7 +1835,7 @@ void CDiscAdjFluidIteration::Iterate(COutput *output,
                                                                           IntIter, log10(solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0)), MESH_0);
 
     }
-  if ((Kind_Solver == DISC_ADJ_RANS) && !frozen_visc) {
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
 
     solver_container[val_iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Solution(geometry_container[val_iZone][MESH_0],
                                                                               config_container[val_iZone]);
@@ -1849,13 +1851,14 @@ void CDiscAdjFluidIteration::InitializeAdjoint(CSolver ****solver_container, CGe
 
   /*--- Initialize the adjoints the conservative variables ---*/
 
-  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER)) {
+  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+      (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
 
     solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdjoint_Output(geometry_container[iZone][MESH_0],
                                                                   config_container[iZone]);
   }
 
-  if ((Kind_Solver == DISC_ADJ_RANS) && !frozen_visc) {
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
     solver_container[iZone][MESH_0][ADJTURB_SOL]->SetAdjoint_Output(geometry_container[iZone][MESH_0],
         config_container[iZone]);
   }
@@ -1871,14 +1874,15 @@ void CDiscAdjFluidIteration::RegisterInput(CSolver ****solver_container, CGeomet
     
     /*--- Register flow and turbulent variables as input ---*/
     
-    if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER)) {
+    if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+        (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
 
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterSolution(geometry_container[iZone][MESH_0], config_container[iZone]);
 
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterVariables(geometry_container[iZone][MESH_0], config_container[iZone]);
     }
     
-    if ((Kind_Solver == DISC_ADJ_RANS) && !frozen_visc) {
+    if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
       solver_container[iZone][MESH_0][ADJTURB_SOL]->RegisterSolution(geometry_container[iZone][MESH_0], config_container[iZone]);
     }
   }
@@ -1908,7 +1912,7 @@ void CDiscAdjFluidIteration::SetDependencies(CSolver ****solver_container, CGeom
 
   solver_container[iZone][MESH_0][FLOW_SOL]->Set_MPI_Solution(geometry_container[iZone][MESH_0], config_container[iZone]);
 
-  if ((Kind_Solver == DISC_ADJ_RANS) && !frozen_visc){
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc){
     solver_container[iZone][MESH_0][FLOW_SOL]->Preprocessing(geometry_container[iZone][MESH_0],solver_container[iZone][MESH_0], config_container[iZone], MESH_0, NO_RK_ITER, RUNTIME_FLOW_SYS, true);
     solver_container[iZone][MESH_0][TURB_SOL]->Postprocessing(geometry_container[iZone][MESH_0],solver_container[iZone][MESH_0], config_container[iZone], MESH_0);
     solver_container[iZone][MESH_0][TURB_SOL]->Set_MPI_Solution(geometry_container[iZone][MESH_0], config_container[iZone]);
@@ -1921,14 +1925,15 @@ void CDiscAdjFluidIteration::RegisterOutput(CSolver ****solver_container, CGeome
   unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
   bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();
   
-  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER)) {
+  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+      (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
   
   /*--- Register conservative variables as output of the iteration ---*/
   
     solver_container[iZone][MESH_0][FLOW_SOL]->RegisterOutput(geometry_container[iZone][MESH_0],config_container[iZone]);
   
   }
-  if ((Kind_Solver == DISC_ADJ_RANS) && !frozen_visc){
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc){
     solver_container[iZone][MESH_0][TURB_SOL]->RegisterOutput(geometry_container[iZone][MESH_0],
                                                                  config_container[iZone]);
   }
@@ -2237,3 +2242,13 @@ void FEM_StructuralIteration(COutput *output, CIntegration ***integration_contai
 
 
 }
+
+COneShotFluidIteration::COneShotFluidIteration(CConfig *config) : CDiscAdjFluidIteration(config) {
+
+  turbulent = ( config->GetKind_Solver() == ONE_SHOT_RANS );
+
+}
+
+COneShotFluidIteration::~COneShotFluidIteration(void) { }
+
+

@@ -2364,8 +2364,8 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
     case FEM_ELASTICITY: FirstIndex = FEA_SOL; SecondIndex = NONE; ThirdIndex = NONE; break;
     case ADJ_EULER : case ADJ_NAVIER_STOKES : FirstIndex = ADJFLOW_SOL; SecondIndex = NONE; ThirdIndex = NONE; break;
     case ADJ_RANS : FirstIndex = ADJFLOW_SOL; if (config->GetFrozen_Visc_Cont()) SecondIndex = NONE; else SecondIndex = ADJTURB_SOL; ThirdIndex = NONE; break;
-    case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: FirstIndex = ADJFLOW_SOL; SecondIndex = NONE; ThirdIndex = NONE; break;
-    case DISC_ADJ_RANS: FirstIndex = ADJFLOW_SOL; if (config->GetFrozen_Visc_Disc()) SecondIndex = NONE; else SecondIndex = ADJTURB_SOL; ThirdIndex = NONE; break;
+    case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: FirstIndex = ADJFLOW_SOL; SecondIndex = NONE; ThirdIndex = NONE; break;
+    case DISC_ADJ_RANS: case ONE_SHOT_RANS: FirstIndex = ADJFLOW_SOL; if (config->GetFrozen_Visc_Disc()) SecondIndex = NONE; else SecondIndex = ADJTURB_SOL; ThirdIndex = NONE; break;
     default: SecondIndex = NONE; ThirdIndex = NONE; break;
   }
   
@@ -2455,7 +2455,10 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
     
     if ((Kind_Solver == DISC_ADJ_EULER)         ||
         (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
-        (Kind_Solver == DISC_ADJ_RANS)) {
+        (Kind_Solver == DISC_ADJ_RANS)          ||
+        (Kind_Solver == ONE_SHOT_EULER)         ||
+        (Kind_Solver == ONE_SHOT_NAVIER_STOKES) ||
+        (Kind_Solver == ONE_SHOT_RANS)) {
       iVar_Sens    = nVar_Total; nVar_Total += 1;
       iVar_SensDim = nVar_Total; nVar_Total += nDim;
     }
@@ -2546,7 +2549,10 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
       (Kind_Solver == ADJ_RANS)  ||
       (Kind_Solver == DISC_ADJ_EULER) ||
       (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
-      (Kind_Solver == DISC_ADJ_RANS)) {
+      (Kind_Solver == DISC_ADJ_RANS) ||
+      (Kind_Solver == ONE_SHOT_EULER) ||
+      (Kind_Solver == ONE_SHOT_NAVIER_STOKES) ||
+      (Kind_Solver == ONE_SHOT_RANS)) {
     Aux_Sens = new su2double[geometry->GetnPoint()];
   }
   
@@ -3217,7 +3223,10 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
         (Kind_Solver == ADJ_RANS)          ||
         (Kind_Solver == DISC_ADJ_EULER)    ||
         (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
-        (Kind_Solver == DISC_ADJ_RANS)) {
+        (Kind_Solver == DISC_ADJ_RANS)          ||
+        (Kind_Solver == ONE_SHOT_EULER)         ||
+        (Kind_Solver == ONE_SHOT_NAVIER_STOKES) ||
+        (Kind_Solver == ONE_SHOT_RANS)) {
       
       /*--- First, loop through the mesh in order to find and store the
        value of the surface sensitivity at any surface nodes. They
@@ -3295,7 +3304,10 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
     
     if ((Kind_Solver == DISC_ADJ_EULER)    ||
         (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
-        (Kind_Solver == DISC_ADJ_RANS)) {
+        (Kind_Solver == DISC_ADJ_RANS)          ||
+        (Kind_Solver == ONE_SHOT_EULER)         ||
+        (Kind_Solver == ONE_SHOT_NAVIER_STOKES) ||
+        (Kind_Solver == ONE_SHOT_RANS)) {
       /*--- Loop over this partition to collect the current variable ---*/
       
       jPoint = 0;
@@ -3734,7 +3746,10 @@ void COutput::MergeSolution(CConfig *config, CGeometry *geometry, CSolver **solv
       ( Kind_Solver == ADJ_RANS               ) ||
       ( Kind_Solver == DISC_ADJ_EULER         ) ||
       ( Kind_Solver == DISC_ADJ_NAVIER_STOKES ) ||
-      ( Kind_Solver == DISC_ADJ_RANS          )) {
+      ( Kind_Solver == DISC_ADJ_RANS          ) ||
+      ( Kind_Solver == ONE_SHOT_EULER         ) ||
+      ( Kind_Solver == ONE_SHOT_NAVIER_STOKES ) ||
+      ( Kind_Solver == ONE_SHOT_RANS)) {
     delete [] Aux_Sens;
   }
   
@@ -4094,7 +4109,10 @@ void COutput::SetRestart(CConfig *config, CGeometry *geometry, CSolver **solver,
     }
     if (( Kind_Solver == DISC_ADJ_EULER              ) ||
         ( Kind_Solver == DISC_ADJ_NAVIER_STOKES      ) ||
-        ( Kind_Solver == DISC_ADJ_RANS               )) {
+        ( Kind_Solver == DISC_ADJ_RANS               ) ||
+        ( Kind_Solver == ONE_SHOT_EULER              ) ||
+        ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
+        ( Kind_Solver == ONE_SHOT_RANS)) {
       restart_file << "\t\"Surface_Sensitivity\"\t\"Sensitivity_x\"\t\"Sensitivity_y\"";
       if (geometry->GetnDim() == 3) {
         restart_file << "\t\"Sensitivity_z\"";
@@ -4260,7 +4278,7 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config, un
   bool engine        = ((config->GetnMarker_EngineInflow() != 0) || (config->GetnMarker_EngineExhaust() != 0));
   bool actuator_disk = ((config->GetnMarker_ActDiskInlet() != 0) || (config->GetnMarker_ActDiskOutlet() != 0));
   bool turbulent = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == ADJ_RANS) ||
-                    (config->GetKind_Solver() == DISC_ADJ_RANS));
+                    (config->GetKind_Solver() == DISC_ADJ_RANS) || (config->GetKind_Solver() == ONE_SHOT_RANS));
   bool cont_adj = config->GetContinuous_Adjoint();
   bool disc_adj = config->GetDiscrete_Adjoint();
   bool frozen_visc = (cont_adj && config->GetFrozen_Visc_Cont()) ||( disc_adj && config->GetFrozen_Visc_Disc());
@@ -4436,6 +4454,7 @@ void COutput::SetConvHistory_Header(ofstream *ConvHist_file, CConfig *config, un
       
     case ADJ_EULER      : case ADJ_NAVIER_STOKES      : case ADJ_RANS:
     case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
       if (!turbo) ConvHist_file[0] << begin << adj_coeff << adj_flow_resid;
       else ConvHist_file[0] << begin << adj_turbo_coeff << adj_flow_resid;
       if ((turbulent) && (!frozen_visc)) ConvHist_file[0] << adj_turb_resid;
@@ -4561,7 +4580,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
     bool transition = (config[val_iZone]->GetKind_Trans_Model() == LM);
     bool thermal = (config[val_iZone]->GetKind_Solver() == RANS or config[val_iZone]->GetKind_Solver()  == NAVIER_STOKES);
     bool turbulent = ((config[val_iZone]->GetKind_Solver() == RANS) || (config[val_iZone]->GetKind_Solver() == ADJ_RANS) ||
-                      (config[val_iZone]->GetKind_Solver() == DISC_ADJ_RANS));
+                      (config[val_iZone]->GetKind_Solver() == DISC_ADJ_RANS) || (config[val_iZone]->GetKind_Solver() == ONE_SHOT_RANS));
     bool cont_adj = config[val_iZone]->GetContinuous_Adjoint();
     bool disc_adj = config[val_iZone]->GetDiscrete_Adjoint();
     bool adjoint =  cont_adj || disc_adj;
@@ -4706,6 +4725,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
       case EULER:                   case NAVIER_STOKES:                   case RANS:
       case ADJ_EULER:               case ADJ_NAVIER_STOKES:               case ADJ_RANS:
       case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
+      case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
         
         /*--- Flow solution coefficients ---*/
         
@@ -5039,8 +5059,8 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
         switch (config[val_iZone]->GetKind_Solver()) {
             
           case EULER : case NAVIER_STOKES: case RANS:
-          case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS: case DISC_ADJ_EULER:
-          case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+          case ADJ_EULER: case ADJ_NAVIER_STOKES: case ADJ_RANS: case DISC_ADJ_EULER: case ONE_SHOT_EULER:
+          case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS: case ONE_SHOT_RANS:  case ONE_SHOT_NAVIER_STOKES:
             
             /*--- Direct coefficients ---*/
             SPRINTF (direct_coeff, ", %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e, %14.8e",
@@ -5351,6 +5371,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
                 break;
 
               case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+              case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
                 cout << endl;
                 cout << "------------------------ Discrete Adjoint Summary -----------------------" << endl;
                 cout << "Total Geometry Sensitivity (updated every "  << config[val_iZone]->GetWrt_Sol_Freq() << " iterations): ";
@@ -5529,6 +5550,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
 
             case ADJ_EULER :              case ADJ_NAVIER_STOKES :
             case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:
+            case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:
 
               /*--- Visualize the maximum residual ---*/
               iPointMaxResid = solver_container[val_iZone][FinestMesh][ADJFLOW_SOL]->GetPoint_Max(0);
@@ -5565,7 +5587,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
               }
               break;
 
-            case ADJ_RANS : case DISC_ADJ_RANS:
+            case ADJ_RANS : case DISC_ADJ_RANS: case ONE_SHOT_RANS:
 
               /*--- Visualize the maximum residual ---*/
               iPointMaxResid = solver_container[val_iZone][FinestMesh][ADJFLOW_SOL]->GetPoint_Max(0);
@@ -5844,6 +5866,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
           
         case ADJ_EULER :              case ADJ_NAVIER_STOKES :
         case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:
+        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:
           
           if (!DualTime_Iteration) {
             ConvHist_file[0] << begin << adjoint_coeff << adj_flow_resid << end;
@@ -5884,7 +5907,7 @@ void COutput::SetConvHistory_Body(ofstream *ConvHist_file,
           }
           break;
           
-        case ADJ_RANS : case DISC_ADJ_RANS:
+        case ADJ_RANS : case DISC_ADJ_RANS: case ONE_SHOT_RANS:
           
           if (!DualTime_Iteration) {
             ConvHist_file[0] << begin << adjoint_coeff << adj_flow_resid;
@@ -7522,6 +7545,7 @@ void COutput::SetResult_Files(CSolver ****solver_container, CGeometry ***geometr
         
 
       case ADJ_EULER : case ADJ_NAVIER_STOKES : case ADJ_RANS : case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+      case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
         if (Wrt_Csv) SetSurfaceCSV_Adjoint(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0][ADJFLOW_SOL], solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
         break;
         
@@ -10498,7 +10522,7 @@ void COutput::WriteTurboPerfConvHistory(CConfig *config){
   unsigned short iMarker_Monitoring;
   string inMarker_Tag, outMarker_Tag, inMarkerTag_Mix;
   unsigned short nZone       = config->GetnZone();
-  bool turbulent = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS));
+  bool turbulent = ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS) || (config->GetKind_Solver() == ONE_SHOT_RANS));
   bool menter_sst       = (config->GetKind_Turb_Model() == SST);
 
   unsigned short nBladesRow, nStages;
@@ -11206,6 +11230,7 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         break;
       case ADJ_EULER : case ADJ_NAVIER_STOKES : case ADJ_RANS :
       case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+      case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
         if (Wrt_Csv) SetSurfaceCSV_Adjoint(config[iZone], geometry[iZone][MESH_0],
                                            solver_container[iZone][MESH_0][ADJFLOW_SOL],
                                            solver_container[iZone][MESH_0][FLOW_SOL], iExtIter, iZone);
@@ -11226,6 +11251,7 @@ void COutput::SetResult_Files_Parallel(CSolver ****solver_container,
         break;
       case ADJ_EULER : case ADJ_NAVIER_STOKES : case ADJ_RANS :
       case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+      case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
         LoadLocalData_AdjFlow(config[iZone], geometry[iZone][MESH_0], solver_container[iZone][MESH_0], iZone);
         break;
       case FEM_ELASTICITY:
@@ -11934,6 +11960,8 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
     case ADJ_RANS : FirstIndex = ADJFLOW_SOL; if (config->GetFrozen_Visc_Cont()) SecondIndex = NONE; else SecondIndex = ADJTURB_SOL; break;
     case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: FirstIndex = ADJFLOW_SOL; SecondIndex = NONE;  break;
     case DISC_ADJ_RANS: FirstIndex = ADJFLOW_SOL; if (config->GetFrozen_Visc_Disc()) SecondIndex = NONE; else SecondIndex = ADJTURB_SOL;  break;
+    case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: FirstIndex = ADJFLOW_SOL; SecondIndex = NONE;  break;
+    case ONE_SHOT_RANS: FirstIndex = ADJFLOW_SOL; if (config->GetFrozen_Visc_Disc()) SecondIndex = NONE; else SecondIndex = ADJTURB_SOL;  break;
   }
   
   nVar_First = solver[FirstIndex]->GetnVar();
@@ -11997,7 +12025,10 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
 
   if ((Kind_Solver == DISC_ADJ_EULER)         ||
       (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
-      (Kind_Solver == DISC_ADJ_RANS)) {
+      (Kind_Solver == DISC_ADJ_RANS)          ||
+      (Kind_Solver == ONE_SHOT_EULER)         ||
+      (Kind_Solver == ONE_SHOT_NAVIER_STOKES) ||
+      (Kind_Solver == ONE_SHOT_RANS)) {
     nVar_Par += nDim;
     Variable_Names.push_back("Sensitivity_x");
     Variable_Names.push_back("Sensitivity_y");
@@ -12212,7 +12243,10 @@ void COutput::LoadLocalData_AdjFlow(CConfig *config, CGeometry *geometry, CSolve
 
       if ((Kind_Solver == DISC_ADJ_EULER)         ||
           (Kind_Solver == DISC_ADJ_NAVIER_STOKES) ||
-          (Kind_Solver == DISC_ADJ_RANS)) {
+          (Kind_Solver == DISC_ADJ_RANS)          ||
+          (Kind_Solver == ONE_SHOT_EULER)         ||
+          (Kind_Solver == ONE_SHOT_NAVIER_STOKES) ||
+          (Kind_Solver == ONE_SHOT_RANS)) {
         Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(0); iVar++;
         Local_Data[jPoint][iVar] = solver[ADJFLOW_SOL]->node[iPoint]->GetSensitivity(1); iVar++;
         if (geometry->GetnDim()== 3) {

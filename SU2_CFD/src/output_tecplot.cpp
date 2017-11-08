@@ -91,6 +91,7 @@ void COutput::SetTecplotASCII(CConfig *config, CGeometry *geometry, CSolver **so
   
   if ((Kind_Solver == EULER || Kind_Solver == NAVIER_STOKES || Kind_Solver == RANS ||
        Kind_Solver == ADJ_EULER || Kind_Solver == ADJ_NAVIER_STOKES || Kind_Solver == ADJ_RANS ||
+       Kind_Solver == ONE_SHOT_EULER || Kind_Solver == ONE_SHOT_NAVIER_STOKES || Kind_Solver == ONE_SHOT_RANS ||
        Kind_Solver == DISC_ADJ_EULER || Kind_Solver == DISC_ADJ_NAVIER_STOKES || Kind_Solver == DISC_ADJ_RANS) &&
       (val_nZone > 1) ) {
     SPRINTF (buffer, "_%d", SU2_TYPE::Int(val_iZone));
@@ -198,7 +199,10 @@ void COutput::SetTecplotASCII(CConfig *config, CGeometry *geometry, CSolver **so
 
       if (( Kind_Solver == DISC_ADJ_EULER              ) ||
           ( Kind_Solver == DISC_ADJ_NAVIER_STOKES      ) ||
-          ( Kind_Solver == DISC_ADJ_RANS               )) {
+          ( Kind_Solver == DISC_ADJ_RANS               ) ||
+          ( Kind_Solver == ONE_SHOT_EULER              ) ||
+          ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
+          ( Kind_Solver == ONE_SHOT_RANS               )) {
         Tecplot_File << ", \"Surface_Sensitivity\", \"Sensitivity_x\", \"Sensitivity_y\"";
         if (geometry->GetnDim() == 3) {
           Tecplot_File << ",\"Sensitivity_z\"";
@@ -499,7 +503,10 @@ void COutput::SetTecplotASCII_LowMemory(CConfig *config, CGeometry *geometry, CS
 
       if (( Kind_Solver == DISC_ADJ_EULER              ) ||
           ( Kind_Solver == DISC_ADJ_NAVIER_STOKES      ) ||
-          ( Kind_Solver == DISC_ADJ_RANS               )) {
+          ( Kind_Solver == DISC_ADJ_RANS               ) ||
+          ( Kind_Solver == ONE_SHOT_EULER              ) ||
+          ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
+          ( Kind_Solver == ONE_SHOT_RANS               )) {
         Tecplot_File << ", \"Surface_Sensitivity\", \"Sensitivity_x\", \"Sensitivity_y\"";
         if (geometry->GetnDim() == 3) {
           Tecplot_File << ",\"Sensitivity_z\"";
@@ -1193,6 +1200,7 @@ void COutput::WriteTecplotASCII_Parallel(CConfig *config, CGeometry *geometry, C
   
   if ((Kind_Solver == EULER || Kind_Solver == NAVIER_STOKES || Kind_Solver == RANS ||
        Kind_Solver == ADJ_EULER || Kind_Solver == ADJ_NAVIER_STOKES || Kind_Solver == ADJ_RANS ||
+       Kind_Solver == ONE_SHOT_EULER || Kind_Solver == ONE_SHOT_NAVIER_STOKES || Kind_Solver == ONE_SHOT_RANS ||
        Kind_Solver == DISC_ADJ_EULER || Kind_Solver == DISC_ADJ_NAVIER_STOKES || Kind_Solver == DISC_ADJ_RANS) &&
       (val_nZone > 1) ) {
     SPRINTF (buffer, "_%d", SU2_TYPE::Int(val_iZone));

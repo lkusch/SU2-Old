@@ -688,3 +688,57 @@ void CDiscAdjSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfi
   Restart_Vars = NULL; Restart_Data = NULL;
 
 }
+
+COneShotSolver::COneShotSolver(void) : CDiscAdjSolver () {
+
+}
+
+COneShotSolver::COneShotSolver(CGeometry *geometry, CConfig *config)  : CDiscAdjSolver(geometry, config) {
+
+}
+
+COneShotSolver::COneShotSolver(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short Kind_Solver, unsigned short iMesh)  : CDiscAdjSolver(geometry, config, direct_solver, Kind_Solver, iMesh) {
+
+}
+
+COneShotSolver::~COneShotSolver(void) {
+
+}
+
+void COneShotSolver::SetRecording(CGeometry* geometry, CConfig *config){
+
+
+  bool time_n_needed  = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
+      (config->GetUnsteady_Simulation() == DT_STEPPING_2ND)),
+  time_n1_needed = config->GetUnsteady_Simulation() == DT_STEPPING_2ND;
+
+  unsigned long iPoint;
+  unsigned short iVar;
+
+  /*--- For the one-shot solver the solution is not reset in each iteration step to the initial solution ---*/
+
+  if (time_n_needed) {
+    for (iPoint = 0; iPoint < nPoint; iPoint++) {
+      for (iVar = 0; iVar < nVar; iVar++) {
+        AD::ResetInput(direct_solver->node[iPoint]->GetSolution_time_n()[iVar]);
+      }
+    }
+  }
+  if (time_n1_needed) {
+    for (iPoint = 0; iPoint < nPoint; iPoint++) {
+      for (iVar = 0; iVar < nVar; iVar++) {
+        AD::ResetInput(direct_solver->node[iPoint]->GetSolution_time_n1()[iVar]);
+      }
+    }
+  }
+
+  /*--- Set the Jacobian to zero since this is not done inside the fluid iteration
+   * when running the discrete adjoint solver. ---*/
+
+  direct_solver->Jacobian.SetValZero();
+
+  /*--- Set indices to zero ---*/
+
+  RegisterVariables(geometry, config, true);
+
+}

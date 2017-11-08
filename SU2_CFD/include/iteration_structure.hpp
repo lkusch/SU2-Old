@@ -1053,3 +1053,27 @@ public:
 void FEM_StructuralIteration(COutput *output, CIntegration ***integration_container, CGeometry ***geometry_container,
                   CSolver ****solver_container, CNumerics *****numerics_container, CConfig **config_container,
                   CSurfaceMovement **surface_movement, CVolumetricMovement **grid_movement, CFreeFormDefBox*** FFDBox);
+
+class COneShotFluidIteration : public CDiscAdjFluidIteration {
+
+private:
+
+  CFluidIteration* fluid_iteration; /*!< \brief Pointer to the fluid iteration class. */
+  unsigned short CurrentRecording; /*!< \brief Stores the current status of the recording. */
+  bool turbulent;       /*!< \brief Stores the turbulent flag. */
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   * \param[in] config - Definition of the particular problem.
+   */
+  COneShotFluidIteration(CConfig *config);
+
+  /*!
+   * \brief Destructor of the class.
+   */
+  ~COneShotFluidIteration(void);
+
+};
+

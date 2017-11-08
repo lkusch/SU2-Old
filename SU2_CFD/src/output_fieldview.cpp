@@ -240,7 +240,10 @@ void COutput::SetFieldViewASCII(CConfig *config, CGeometry *geometry, unsigned s
 
     if (( Kind_Solver == DISC_ADJ_EULER              ) ||
         ( Kind_Solver == DISC_ADJ_NAVIER_STOKES      ) ||
-        ( Kind_Solver == DISC_ADJ_RANS               ) ) {
+        ( Kind_Solver == DISC_ADJ_RANS               ) ||
+        ( Kind_Solver == ONE_SHOT_EULER              ) ||
+        ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
+        ( Kind_Solver == ONE_SHOT_RANS               ) ) {
       if (nDim == 2) FieldView_File << "Surface_Sensitivity\nSensitivity_x\nSensitivity_y" << endl;
       else FieldView_File << "Surface_Sensitivity\nSensitivity_x\nSensitivity_y\nSensitivity_z" << endl;
     }

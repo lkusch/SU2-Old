@@ -208,7 +208,10 @@ enum ENUM_SOLVER {
   TEMPLATE_SOLVER = 30,                 /*!< \brief Definition of template solver. */
   DISC_ADJ_EULER = 35,
   DISC_ADJ_RANS = 36,
-  DISC_ADJ_NAVIER_STOKES = 37
+  DISC_ADJ_NAVIER_STOKES = 37,
+  ONE_SHOT_EULER = 38,                  /*!< \brief Definition of the one-shot Euler's optimization. */
+  ONE_SHOT_RANS = 39,                   /*!< \brief Definition of the RANS' optimization. */
+  ONE_SHOT_NAVIER_STOKES = 40           /*!< \brief Definition of the Navier-Stokes' optimization. */
 };
 /* BEGIN_CONFIG_ENUMS */
 static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVER>
@@ -227,6 +230,9 @@ static const map<string, ENUM_SOLVER> Solver_Map = CCreateMap<string, ENUM_SOLVE
 ("DISC_ADJ_RANS", DISC_ADJ_RANS)
 ("DISC_ADJ_NAVIERSTOKES", DISC_ADJ_EULER)
 ("FLUID_STRUCTURE_INTERACTION", FLUID_STRUCTURE_INTERACTION)
+("ONE_SHOT_EULER", ONE_SHOT_EULER)
+("ONE_SHOT_RANS", ONE_SHOT_RANS)
+("ONE_SHOT_NAVIER_STOKES", ONE_SHOT_NAVIER_STOKES)
 
 ("TEMPLATE_SOLVER", TEMPLATE_SOLVER);
 
@@ -403,12 +409,14 @@ const int EL_HEXA = 1;		/*!< \brief Elements of eight nodes (3D). */
 enum ENUM_MATH_PROBLEM {
   DIRECT = 0,		/*!< \brief Direct problem */
   CONTINUOUS_ADJOINT = 1,		/*!< \brief Continuous adjoint problem */
-  DISCRETE_ADJOINT = 2 /*< \brief AD-based discrete adjoint problem. */
+  DISCRETE_ADJOINT = 2,  /*!< \brief AD-based discrete adjoint problem. */
+  DISCRETE_ADJOINT_ONE_SHOT = 3  /*!< \brief one-shot discrete adjoint problem (piggy-back). */
 };
 static const map<string, ENUM_MATH_PROBLEM> Math_Problem_Map = CCreateMap<string, ENUM_MATH_PROBLEM>
 ("DIRECT", DIRECT)
 ("CONTINUOUS_ADJOINT", CONTINUOUS_ADJOINT)
-("DISCRETE_ADJOINT", DISCRETE_ADJOINT);
+("DISCRETE_ADJOINT", DISCRETE_ADJOINT)
+("DISCRETE_ADJOINT_ONE_SHOT", DISCRETE_ADJOINT_ONE_SHOT);
 
 /*!
  * \brief types of spatial discretizations
@@ -2156,6 +2164,12 @@ public:
       this->disc_adjoint = true;
       this->cont_adjoint= false;
       this->restart = true;
+      return "";
+    }
+    if (option_value[0] == "DISCRETE_ADJOINT_ONE_SHOT") {
+      this->disc_adjoint = true;
+      this->cont_adjoint= false;
+      this->restart = false;
       return "";
     }
     return "option in math problem map not considered in constructor";

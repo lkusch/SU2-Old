@@ -11822,7 +11822,7 @@ public:
  * \version 5.0.0 "Raven"
  */
 class CDiscAdjSolver : public CSolver {
-private:
+protected:
   unsigned short KindDirect_Solver;
   CSolver *direct_solver;
   su2double *Sens_Mach, /*!< \brief Mach sensitivity coefficient for each boundary. */
@@ -12008,6 +12008,49 @@ public:
    * \param[in] val_update_geo - Flag for updating coords and grid velocity.
    */
   void LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig *config, int val_iter, bool val_update_geo);
+
+};
+
+/*!
+ * \class COneShotSolver
+ * \brief Main class for defining the one-shot optimization.
+ * \ingroup One_Shot
+ * \author L. Kusch
+ * \version 5.0.0 "Raven"
+ */
+class COneShotSolver : public CDiscAdjSolver {
+
+public:
+
+  /*!
+   * \brief Constructor of the class.
+   */
+  COneShotSolver(void);
+
+  /*!
+   * \overload
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] iMesh - Index of the mesh in multigrid computations.
+   */
+  COneShotSolver(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \overload
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] solver - Initialize the discrete adjoint solver with the corresponding direct solver.
+   * \param[in] Kind_Solver - The kind of direct solver.
+   */
+  COneShotSolver(CGeometry *geometry, CConfig *config, CSolver* solver, unsigned short Kind_Solver, unsigned short iMesh);
+
+    ~COneShotSolver(void);
+
+  /*!
+   * \brief Prepare the solver for a new recording.
+   * \param[in] kind_recording - Kind of AD recording.
+   */
+  void SetRecording(CGeometry *geometry, CConfig *config);
 
 };
 #include "solver_structure.inl"
