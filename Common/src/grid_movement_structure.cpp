@@ -215,7 +215,7 @@ void CVolumetricMovement::SetVolume_Deformation(CGeometry *geometry, CConfig *co
     		precond = new CJacobiPreconditioner(StiffMatrix, geometry, config);
     	}
 
-    } else if (Derivative && (config->GetKind_SU2() == SU2_DOT)) {
+    } else if (Derivative && ((config->GetKind_SU2() == SU2_DOT))) {
 
     	/*--- Build the ILU or Jacobi preconditioner for the transposed system ---*/
 
@@ -1688,7 +1688,7 @@ void CVolumetricMovement::SetBoundaryDisplacements(CGeometry *geometry, CConfig 
     if (((config->GetMarker_All_Moving(iMarker) == YES) && (Kind_SU2 == SU2_CFD)) ||
         ((config->GetMarker_All_DV(iMarker) == YES) && (Kind_SU2 == SU2_DEF)) ||
         ((config->GetDirectDiff() == D_DESIGN) && (Kind_SU2 == SU2_CFD) && (config->GetMarker_All_DV(iMarker) == YES)) ||
-        ((config->GetMarker_All_DV(iMarker) == YES) && (Kind_SU2 == SU2_DOT))) {
+        ((config->GetMarker_All_DV(iMarker) == YES) && ((Kind_SU2 == SU2_DOT)))) {
       for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
         iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
         VarCoord = geometry->vertex[iMarker][iVertex]->GetVarCoord();

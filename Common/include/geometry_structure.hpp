@@ -1056,6 +1056,8 @@ public:
    */
   virtual void SetSensitivity(CConfig *config);
 
+  virtual void InitializeSensitivity();
+
   /*!
    * \brief A virtual member.
    * \param iPoint - Point
@@ -1862,6 +1864,8 @@ void UpdateTurboVertex(CConfig *config,unsigned short val_iZone, unsigned short 
    * \param[in] config - Definition of the particular problem.
    */
   void SetSensitivity(CConfig *config);
+
+  void InitializeSensitivity();
 
   /*!
    * \brief Get the Sensitivity at a specific point.

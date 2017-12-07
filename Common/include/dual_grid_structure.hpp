@@ -885,6 +885,7 @@ class CVertex : public CDualGrid {
 protected:
 	unsigned long *Nodes;	/*!< \brief Vector to store the global nodes of an element. */
 	su2double *Normal;			/*!< \brief Normal coordinates of the element and its center of gravity. */
+    su2double *Normal_Old;      /*!< \brief Stores Normal coordinates of the element and its center of gravity. */
 	su2double Aux_Var;			/*!< \brief Auxiliar variable defined only on the surface. */
 	su2double CartCoord[3];		/*!< \brief Vertex cartesians coordinates. */
 	su2double VarCoord[3];		/*!< \brief Used for storing the coordinate variation due to a surface modification. */
@@ -955,6 +956,9 @@ public:
 	 * \return Dimensional normal vector, the modulus is the area of the face.
 	 */
 	su2double *GetNormal(void);
+
+    su2double *GetNormal_Old(void);
+    void GetNormal_Old(su2double *val_normal);
 	
 	/*! 
 	 * \brief Initialize normal vector.
@@ -985,6 +989,8 @@ public:
 	 * \return Value of the normal vector.
 	 */
 	void SetNormal(su2double *val_face_normal);
+
+    void SetNormal_Old(su2double *val_face_normal);
 	
 	/*! 
 	 * \brief Add a vector to the normal vector.

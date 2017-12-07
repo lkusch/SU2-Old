@@ -95,9 +95,10 @@ CPoint::CPoint(unsigned short val_nDim, unsigned long val_globalindex, CConfig *
 
   /*--- For smoothing the numerical grid coordinates ---*/
   if ( config->GetSmoothNumGrid() ) {
-    Coord_Old = new su2double[nDim];
+    //Coord_Old = new su2double[nDim];
     Coord_Sum = new su2double[nDim];
   }
+  Coord_Old = new su2double[nDim];
 
   /*--- Storage of grid velocities for dynamic meshes ---*/
 
@@ -187,9 +188,10 @@ CPoint::CPoint(su2double val_coord_0, su2double val_coord_1, unsigned long val_g
 
   /*--- For smoothing the numerical grid coordinates ---*/
   if ( config->GetSmoothNumGrid() ) {
-    Coord_Old = new su2double[nDim];
+    //Coord_Old = new su2double[nDim];
     Coord_Sum = new su2double[nDim];
   }
+  Coord_Old = new su2double[nDim];
 
   /*--- Storage of grid velocities for dynamic meshes ---*/
   if ( config->GetGrid_Movement() ) {
@@ -282,9 +284,10 @@ CPoint::CPoint(su2double val_coord_0, su2double val_coord_1, su2double val_coord
 
   /*--- For smoothing the numerical grid coordinates ---*/
   if (config->GetSmoothNumGrid()) {
-    Coord_Old = new su2double[nDim];
+    //Coord_Old = new su2double[nDim];
     Coord_Sum = new su2double[nDim];
   }
+  Coord_Old = new su2double[nDim];
 
   /*--- Storage of grid velocities for dynamic meshes ---*/
 
@@ -541,17 +544,21 @@ CVertex::CVertex(unsigned long val_point, unsigned short val_nDim) : CDualGrid(v
   
   Nodes  = NULL;
   Normal = NULL;
+  Normal_Old = NULL;
 
   /*--- Allocate node, and face normal ---*/
   
   Nodes  = new unsigned long[1]; 
   Normal = new su2double [nDim];
+  Normal_Old = new su2double [nDim];
 
   /*--- Initializate the structure ---*/
   
   Nodes[0] = val_point;
-  for (iDim = 0; iDim < nDim; iDim ++) 
+  for (iDim = 0; iDim < nDim; iDim ++){
     Normal[iDim] = 0.0;
+    Normal_Old[iDim] = 0.0;
+  }
 
   /*--- Set to zero the variation of the coordinates ---*/
   
@@ -662,5 +669,6 @@ CTurboVertex::~CTurboVertex() {
 	if (Normal != NULL) delete[] Normal;
 	if (Nodes != NULL) delete[] Nodes;
 	if (TurboNormal != NULL) delete [] TurboNormal;
+    if (Normal_Old != NULL) delete[] Normal_Old;
 
 }
