@@ -1637,3 +1637,16 @@ inline unsigned short CConfig::GetFFD_Blending(void){return FFD_Blending;}
 inline su2double* CConfig::GetFFD_BSplineOrder(){return FFD_BSpline_Order;}
 
 inline bool CConfig::GetBoolOneShot(void) { return One_Shot;}
+
+inline unsigned short CConfig::GetOneShotStart(void) { return One_Shot_Start; }
+
+inline su2double CConfig::GetOneShotAlpha(void) { return One_Shot_Alpha; }
+inline su2double CConfig::GetOneShotBeta(void) { return One_Shot_Beta; }
+inline su2double CConfig::GetFDStep(void) { return One_Shot_FD; }
+inline su2double CConfig::GetOSScale(void) { return One_Shot_Scale; }
+inline su2double CConfig::GetSensScale(void) { return OS_Sens_Scale; }
+inline su2double CConfig::GetObjScale(void) { return Obj_Func_Scale; }
+
+inline void CConfig::SetOneShotAlpha(su2double input) { One_Shot_Alpha = input; }
+
+inline void CConfig::SetOneShotBeta(su2double input) { One_Shot_Beta = input; }

@@ -51,6 +51,9 @@ CVariable::CVariable(void) {
   Res_TruncError = NULL;
   Residual_Old = NULL;
   Residual_Sum = NULL;
+  Solution_Store = NULL;
+  Solution_Delta = NULL;
+  Solution_Save = NULL;
   
 }
 
@@ -70,6 +73,9 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   Res_TruncError = NULL;
   Residual_Old = NULL;
   Residual_Sum = NULL;
+  Solution_Store = NULL;
+  Solution_Delta = NULL;
+  Solution_Save = NULL;
   
   /*--- Initialize the number of solution variables. This version
    of the constructor will be used primarily for converting the
@@ -103,6 +109,9 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   Res_TruncError = NULL;
   Residual_Old = NULL;
   Residual_Sum = NULL;
+  Solution_Store = NULL;
+  Solution_Delta = NULL;
+  Solution_Save = NULL;
   
   /*--- Initializate the number of dimension and number of variables ---*/
   nDim = val_nDim;
@@ -118,6 +127,9 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
     Solution[iVar] = 0.0;
 
   Solution_Old = new su2double [nVar];
+  Solution_Store = new su2double [nVar];
+  Solution_Delta = new su2double [nVar];
+  Solution_Save = new su2double [nVar];
   
   Gradient = new su2double* [nVar];
   for (iVar = 0; iVar < nVar; iVar++) {
@@ -148,6 +160,9 @@ CVariable::~CVariable(void) {
   if (Res_TruncError      != NULL) delete [] Res_TruncError;
   if (Residual_Old        != NULL) delete [] Residual_Old;
   if (Residual_Sum        != NULL) delete [] Residual_Sum;
+  if (Solution_Store        != NULL) delete [] Solution_Store;
+  if (Solution_Save        != NULL) delete [] Solution_Save;
+  if (Solution_Delta      != NULL) delete [] Solution_Delta;
   
   if (Gradient != NULL) {
     for (iVar = 0; iVar < nVar; iVar++)
@@ -185,7 +200,7 @@ void CVariable::SetUnd_Lapl(unsigned short val_var, su2double val_und_lapl) {
 }
 
 void CVariable::SetSolution(su2double *val_solution) {
-  
+
   for (unsigned short iVar = 0; iVar < nVar; iVar++)
     Solution[iVar] = val_solution[iVar];
   
@@ -417,3 +432,17 @@ CBaselineVariable::CBaselineVariable(su2double *val_solution, unsigned short val
 }
 
 CBaselineVariable::~CBaselineVariable(void) { }
+
+void CVariable::Set_StoreSolution() {
+
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    Solution_Store[iVar] = Solution[iVar];
+
+}
+
+void CVariable::Set_SaveSolution() {
+
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    Solution_Save[iVar] = Solution[iVar];
+
+}

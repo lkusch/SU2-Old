@@ -889,6 +889,9 @@ private:
   su2double *Body_Force_Vector;  /*!< \brief Values of the prescribed body force vector. */
   su2double *FreeStreamTurboNormal; /*!< \brief Direction to initialize the flow in turbomachinery computation */
   bool One_Shot; /*!< \brief option for one-shot optimization method */
+  unsigned short One_Shot_Start;
+  su2double One_Shot_Alpha, One_Shot_Beta;
+  su2double One_Shot_FD, One_Shot_Scale, Obj_Func_Scale, OS_Sens_Scale;
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -7434,6 +7437,18 @@ public:
    * \return boolean.
    */
   bool GetBoolOneShot(void);
+
+  unsigned short GetOneShotStart(void);
+
+  su2double GetOneShotAlpha(void);
+  su2double GetOneShotBeta(void);
+  su2double GetFDStep(void);
+  su2double GetOSScale(void);
+  su2double GetSensScale(void);
+  su2double GetObjScale(void);
+  void SetOneShotAlpha(su2double input);
+  void SetOneShotBeta(su2double input);
+
 };
 
 #include "config_structure.inl"

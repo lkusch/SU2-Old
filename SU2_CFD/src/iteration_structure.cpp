@@ -360,6 +360,16 @@ void CIteration::Iterate(COutput *output,
                          CVolumetricMovement **grid_movement,
                          CFreeFormDefBox*** FFDBox,
                          unsigned short val_iZone) { }
+void CIteration::Iterate_No_Residual(COutput *output,
+                         CIntegration ***integration_container,
+                         CGeometry ***geometry_container,
+                         CSolver ****solver_container,
+                         CNumerics *****numerics_container,
+                         CConfig **config_container,
+                         CSurfaceMovement **surface_movement,
+                         CVolumetricMovement **grid_movement,
+                         CFreeFormDefBox*** FFDBox,
+                         unsigned short val_iZone) { }
 void CIteration::Update(COutput *output,
                         CIntegration ***integration_container,
                         CGeometry ***geometry_container,
@@ -2268,5 +2278,134 @@ COneShotFluidIteration::COneShotFluidIteration(CConfig *config) : CDiscAdjFluidI
 }
 
 COneShotFluidIteration::~COneShotFluidIteration(void) { }
+
+void COneShotFluidIteration::RegisterInput(CSolver ****solver_container, CGeometry ***geometry_container, CConfig **config_container, unsigned short iZone, unsigned short kind_recording){
+
+  /*--- For the one-shot strategy conservative variables as well as mesh coordinates are recorded. Furthermore, we need to record the mesh coordinates in every flow iteration,
+   *  thus we make use of the COMBINED recording in each step ---*/
+
+  unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
+  bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();
+
+  if (kind_recording == CONS_VARS || kind_recording == COMBINED){
+
+    /*--- Register flow and turbulent variables as input ---*/
+
+    if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+        (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
+
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterSolution(geometry_container[iZone][MESH_0], config_container[iZone]);
+
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->RegisterVariables(geometry_container[iZone][MESH_0], config_container[iZone]);
+    }
+
+    if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
+      solver_container[iZone][MESH_0][ADJTURB_SOL]->RegisterSolution(geometry_container[iZone][MESH_0], config_container[iZone]);
+    }
+  }
+
+  if (kind_recording == MESH_COORDS || kind_recording == COMBINED){
+
+    /*--- Register node coordinates as input ---*/
+
+    geometry_container[iZone][MESH_0]->RegisterCoordinates(config_container[iZone]);
+
+  }
+
+}
+
+void COneShotFluidIteration::SetDependencies(CSolver ****solver_container, CGeometry ***geometry_container, CConfig **config_container, unsigned short iZone, unsigned short kind_recording){
+
+  /*--- For the one-shot strategy conservative variables as well as mesh coordinates are recorded. Furthermore, we need to record the mesh coordinates in every flow iteration,
+   *  thus we make use of the COMBINED recording in each step ---*/
+
+  unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
+  bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();
+  if ((kind_recording == MESH_COORDS) || (kind_recording == NONE) || (kind_recording == COMBINED)){
+
+    /*--- Update geometry to get the influence on other geometry variables (normals, volume etc) ---*/
+
+    geometry_container[iZone][MESH_0]->UpdateGeometry(geometry_container[iZone], config_container[iZone]);
+
+  }
+
+  /*--- Compute coupling between flow and turbulent equations ---*/
+
+  solver_container[iZone][MESH_0][FLOW_SOL]->Set_MPI_Solution(geometry_container[iZone][MESH_0], config_container[iZone]);
+
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc){
+    solver_container[iZone][MESH_0][FLOW_SOL]->Preprocessing(geometry_container[iZone][MESH_0],solver_container[iZone][MESH_0], config_container[iZone], MESH_0, NO_RK_ITER, RUNTIME_FLOW_SYS, true);
+    solver_container[iZone][MESH_0][TURB_SOL]->Postprocessing(geometry_container[iZone][MESH_0],solver_container[iZone][MESH_0], config_container[iZone], MESH_0);
+    solver_container[iZone][MESH_0][TURB_SOL]->Set_MPI_Solution(geometry_container[iZone][MESH_0], config_container[iZone]);
+  }
+
+}
+
+void COneShotFluidIteration::InitializeAdjointUpdate(CSolver ****solver_container, CGeometry ***geometry_container, CConfig **config_container, unsigned short iZone){
+
+  unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
+  bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();
+
+  /*--- Initialize the adjoints the conservative variables ---*/
+
+  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+      (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
+
+    solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdjoint_OutputUpdate(geometry_container[iZone][MESH_0],
+                                                                  config_container[iZone]);
+  }
+
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
+    solver_container[iZone][MESH_0][ADJTURB_SOL]->SetAdjoint_OutputUpdate(geometry_container[iZone][MESH_0],
+        config_container[iZone]);
+  }
+}
+
+void COneShotFluidIteration::Iterate_No_Residual(COutput *output,
+                                        CIntegration ***integration_container,
+                                        CGeometry ***geometry_container,
+                                        CSolver ****solver_container,
+                                        CNumerics *****numerics_container,
+                                        CConfig **config_container,
+                                        CSurfaceMovement **surface_movement,
+                                        CVolumetricMovement **volume_grid_movement,
+                                        CFreeFormDefBox*** FFDBox,
+                                        unsigned short val_iZone) {
+
+  unsigned long ExtIter = config_container[val_iZone]->GetExtIter();
+  unsigned short Kind_Solver = config_container[val_iZone]->GetKind_Solver();
+  unsigned long IntIter = 0;
+  bool unsteady = config_container[val_iZone]->GetUnsteady_Simulation() != STEADY;
+  bool frozen_visc = config_container[val_iZone]->GetFrozen_Visc_Disc();
+
+  if (!unsteady)
+    IntIter = ExtIter;
+  else {
+    IntIter = config_container[val_iZone]->GetIntIter();
+  }
+
+  /*--- Extract the adjoints of the conservative input variables and store them for the next iteration ---*/
+
+  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+      (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
+
+    solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Solution_Clean(geometry_container[val_iZone][MESH_0], config_container[val_iZone]);
+
+    solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_Variables(geometry_container[val_iZone][MESH_0], config_container[val_iZone]);
+
+    /*--- Set the convergence criteria (only residual possible) ---*/
+
+    integration_container[val_iZone][ADJFLOW_SOL]->Convergence_Monitoring(geometry_container[val_iZone][MESH_0], config_container[val_iZone],
+                                                                          IntIter, log10(solver_container[val_iZone][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0)), MESH_0);
+
+    }
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
+
+    solver_container[val_iZone][MESH_0][ADJTURB_SOL]->ExtractAdjoint_Solution_Clean(geometry_container[val_iZone][MESH_0],
+                                                                              config_container[val_iZone]);
+  }
+
+  }
+
 
 

@@ -3049,6 +3049,7 @@ public:
    * \param[in] config - The particular config.
    */
   virtual void SetAdjoint_Output(CGeometry *geometry, CConfig *config);
+  virtual void SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config);
   
   /*!
    * \brief A virtual member.
@@ -3057,6 +3058,7 @@ public:
    * \param[in] config - The particular config.
    */
   virtual void ExtractAdjoint_Solution(CGeometry *geometry,  CConfig *config);
+  virtual void ExtractAdjoint_Solution_Clean(CGeometry *geometry,  CConfig *config);
   
   /*!
    * \brief  A virtual member.
@@ -3562,6 +3564,44 @@ public:
    */
   virtual void SetFreeStream_TurboSolution(CConfig *config);
 
+  virtual void StoreSolution_Direct();
+
+  virtual void LoadSolution_Direct();
+
+  virtual void SetGeometrySensitivityGradient(CGeometry *geometry);
+  virtual void SetGeometrySensitivityLagrangian(CGeometry *geometry);
+
+  virtual void StoreMeshPoints(CConfig *config, CGeometry *geometry);
+
+  virtual void LoadMeshPoints(CConfig *config, CGeometry *geometry);
+
+  virtual void SaveSensitivity(CGeometry *geometry);
+
+  virtual void StoreSolution();
+
+  virtual void LoadSolution();
+
+  virtual void LoadAdjointSolution();
+
+  virtual void StoreSaveSolution();
+
+  virtual void LoadSaveSolution();
+
+  virtual void LoadAdjointSaveSolution();
+
+  virtual su2double CalculateLagrangian(CConfig *config);
+
+  virtual void CalculateAlphaBeta(CConfig *config);
+
+  virtual void SetAlphaBeta(CConfig *config);
+
+  virtual void ResetSensitivityLagrangian(CGeometry *geometry);
+
+  virtual void UpdateSensitivityLagrangian(CGeometry *geometry, su2double factor);
+
+  virtual void UpdateStateVariable(CConfig *config);
+
+  virtual void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);
 
 };
 
@@ -11615,7 +11655,8 @@ public:
  * \version 5.0.0 "Raven"
  */
 class COneShotSolver : public CDiscAdjSolver {
-
+private:
+  su2double theta, rho;
 public:
 
   /*!
@@ -11640,13 +11681,56 @@ public:
    */
   COneShotSolver(CGeometry *geometry, CConfig *config, CSolver* solver, unsigned short Kind_Solver, unsigned short iMesh);
 
-    ~COneShotSolver(void);
+  ~COneShotSolver(void);
 
   /*!
    * \brief Prepare the solver for a new recording.
    * \param[in] kind_recording - Kind of AD recording.
    */
   void SetRecording(CGeometry *geometry, CConfig *config);
+
+  void StoreSolution_Direct();
+
+  void LoadSolution_Direct();
+
+  void SetGeometrySensitivityGradient(CGeometry *geometry);
+  void SetGeometrySensitivityLagrangian(CGeometry *geometry);
+
+  void StoreMeshPoints(CConfig *config, CGeometry *geometry);
+
+  void LoadMeshPoints(CConfig *config, CGeometry *geometry);
+
+  void SaveSensitivity(CGeometry* geometry);
+
+  void StoreSolution();
+
+  void LoadSolution();
+
+  void LoadAdjointSolution();
+
+  void StoreSaveSolution();
+
+  void LoadSaveSolution();
+
+  void LoadAdjointSaveSolution();
+
+  su2double CalculateLagrangian(CConfig* config);
+
+  void CalculateAlphaBeta(CConfig *config);
+
+  void SetAlphaBeta(CConfig *config);
+
+  void ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config);
+
+  void SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config);
+
+  void ResetSensitivityLagrangian(CGeometry *geometry);
+
+  void UpdateSensitivityLagrangian(CGeometry *geometry, su2double factor);
+
+  void UpdateStateVariable(CConfig *config);
+
+  void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);
 
 };
 #include "solver_structure.inl"

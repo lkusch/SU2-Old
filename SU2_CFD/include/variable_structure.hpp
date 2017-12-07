@@ -57,6 +57,9 @@ class CVariable {
 protected:
   
   su2double *Solution,    /*!< \brief Solution of the problem. */
+  *Solution_Store,
+  *Solution_Delta,
+  *Solution_Save,
   *Solution_Old;      /*!< \brief Old solution of the problem R-K. */
   bool Non_Physical;      /*!< \brief Non-physical points in the solution (force first order). */
   su2double *Solution_time_n,  /*!< \brief Solution of the problem at time n for dual-time stepping technique. */
@@ -2025,6 +2028,8 @@ public:
    * \param[in] val - value of the Sensitivity
    */
   virtual void SetSensitivity(unsigned short iDim, su2double val);
+  virtual void SetSensitivity_Old(unsigned short iDim, su2double val);
+  virtual void SetSensitivity_Lagrangian(unsigned short iDim, su2double val);
   
   /*!
    * \brief Get the Sensitivity at the node
@@ -2032,6 +2037,8 @@ public:
    * \return value of the Sensitivity
    */
   virtual su2double GetSensitivity(unsigned short iDim);
+  virtual su2double GetSensitivity_Old(unsigned short iDim);
+  virtual su2double GetSensitivity_Lagrangian(unsigned short iDim);
   
   virtual void SetDual_Time_Derivative(unsigned short iVar, su2double der);
   
@@ -2040,6 +2047,24 @@ public:
   virtual su2double GetDual_Time_Derivative(unsigned short iVar);
   
   virtual su2double GetDual_Time_Derivative_n(unsigned short iVar);
+
+  void Set_StoreSolution(void);
+
+  su2double *GetSolution_Store(void);
+
+  su2double *GetSolution_Delta(void);
+
+  su2double GetSolution_Store(unsigned short iVar);
+
+  su2double GetSolution_Delta(unsigned short iVar);
+
+  void SetSolution_Delta(unsigned short val_var, su2double val_solution_delta);
+
+  void Set_SaveSolution(void);
+
+  su2double *GetSolution_Save(void);
+
+  su2double GetSolution_Save(unsigned short iVar);
 };
 
 /*!
@@ -4274,6 +4299,8 @@ private:
   su2double* Solution_Direct;
   su2double* DualTime_Derivative;
   su2double* DualTime_Derivative_n;
+  su2double* Sensitivity_Old;
+  su2double* Sensitivity_Lagrangian;
   
 public:
   /*!
@@ -4301,6 +4328,8 @@ public:
    * \param[in] val - value of the Sensitivity
    */
   void SetSensitivity(unsigned short iDim, su2double val);
+  void SetSensitivity_Old(unsigned short iDim, su2double val);
+  void SetSensitivity_Lagrangian(unsigned short iDim, su2double val);
   
   /*!
    * \brief Get the Sensitivity at the node
@@ -4308,6 +4337,8 @@ public:
    * \return value of the Sensitivity
    */
   su2double GetSensitivity(unsigned short iDim);
+  su2double GetSensitivity_Old(unsigned short iDim);
+  su2double GetSensitivity_Lagrangian(unsigned short iDim);
   
   void SetDual_Time_Derivative(unsigned short iVar, su2double der);
   
@@ -4322,5 +4353,22 @@ public:
   su2double* GetSolution_Direct();
 };
 
+/*!
+ * \class COneShotVariable
+ * \brief Main class for defining the variables of the one shot solver.
+ * \ingroup One_Shot
+ * \author L.Kusch
+ * \version 5.0.0 "Raven"
+ */
+class COneShotVariable : public CDiscAdjVariable{
+private:
+//  su2double* Solution_Store;
+public:
+  COneShotVariable(void);
+  ~COneShotVariable(void);
+  COneShotVariable(su2double *val_solution, unsigned short val_ndim, unsigned short val_nvar, CConfig *config);
+//  void Set_StoreSolution();
+//  su2double* GetSolution_Store();
+};
 
 #include "variable_structure.inl"

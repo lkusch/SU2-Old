@@ -913,8 +913,22 @@ class COneShotFluidDriver : public CDiscAdjFluidDriver {
 
 protected:
   unsigned short RecordingState; /*!< \brief The kind of recording the tape currently holds.*/
-  su2double ObjFunc;             /*!< \brief The value of the objective function.*/
   CIteration** direct_iteration; /*!< \brief A pointer to the direct iteration.*/
+  su2double* Gradient;
+  su2double* Gradient_Old;
+  su2double* Gradient_Save;
+  su2double* Gradient_Save_Old;
+  su2double* DesignVarUpdate;
+  su2double* SearchDirection;
+  su2double** Hessian;
+  su2double* DesignVariable;
+  su2double* LagrangeGradient;
+  su2double* LagrangeGradient_Old;
+  unsigned short nDV;
+  unsigned short nDV_Total;
+  su2double Lagrangian, Lagrangian_Old;
+  su2double lb, ub, epsilon, cwolfeone;
+  bool* activeset;
 
 public:
 
@@ -940,6 +954,12 @@ public:
 
   void Run();
 
+  void RunBFGS();
+
+  void OneShotStep();
+
+  void PiggyBack();
+
   /*!
    * \brief Record one iteration of a flow iteration in within multiple zones.
    * \param[in] kind_recording - Type of recording (either CONS_VARS, MESH_COORDS, COMBINED or NONE)
@@ -950,10 +970,44 @@ public:
   /*!
    * \brief Set the constraint functions. It is virtual because it depends on the kind of physics.
    */
-  virtual void SetConstrFunction();
+  void SetConstrFunction();
 
   /*!
    * \brief Initialize the adjoint value of the constraint functions.
    */
   void SetAdj_ConstrFunction();
+
+  void SetProjection_AD(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, su2double* Gradient);
+
+  void SurfaceDeformation(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, CVolumetricMovement *grid_movement);
+
+  void BFGSUpdate();
+
+  bool CheckFirstWolfe(su2double alpha);
+
+  void ComputeSearchDirection();
+
+  void ComputeDesignVarUpdate(su2double alpha);
+
+  void StoreOldGradient();
+
+  su2double SetProjection(unsigned short iDV, su2double value, bool active);
+
+  su2double BoundProjection(su2double value);
+
+  void CalculateLagrangian();
+
+  void CalculateObjectiveLagrangian();
+
+  void ComputeActiveSet();
+
+  void SetLagrangeGradient();
+
+  void SaveGradient();
+
+  void ComputeAlphaTerm();
+
+  void ComputeBetaTerm();
+
+  void SetAdj_ObjFunction_Zero();
 };

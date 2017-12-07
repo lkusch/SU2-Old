@@ -1179,12 +1179,20 @@ inline su2double CVariable::GetDual_Time_Derivative_n(unsigned short iVar) { ret
 inline su2double CDiscAdjVariable::GetDual_Time_Derivative_n(unsigned short iVar) { return DualTime_Derivative_n[iVar];}
 
 inline void CVariable::SetSensitivity(unsigned short iDim, su2double val) {}
+inline void CVariable::SetSensitivity_Old(unsigned short iDim, su2double val) {}
+inline void CVariable::SetSensitivity_Lagrangian(unsigned short iDim, su2double val) {}
 
 inline su2double CVariable::GetSensitivity(unsigned short iDim) { return 0.0; }
+inline su2double CVariable::GetSensitivity_Old(unsigned short iDim) { return 0.0; }
+inline su2double CVariable::GetSensitivity_Lagrangian(unsigned short iDim) { return 0.0; }
 
 inline void CDiscAdjVariable::SetSensitivity(unsigned short iDim, su2double val) {Sensitivity[iDim] = val;}
+inline void CDiscAdjVariable::SetSensitivity_Old(unsigned short iDim, su2double val) {Sensitivity_Old[iDim] = val;}
+inline void CDiscAdjVariable::SetSensitivity_Lagrangian(unsigned short iDim, su2double val) {Sensitivity_Lagrangian[iDim] = val;}
 
 inline su2double CDiscAdjVariable::GetSensitivity(unsigned short iDim) { return Sensitivity[iDim];}
+inline su2double CDiscAdjVariable::GetSensitivity_Old(unsigned short iDim) { return Sensitivity_Old[iDim];}
+inline su2double CDiscAdjVariable::GetSensitivity_Lagrangian(unsigned short iDim) { return Sensitivity_Lagrangian[iDim];}
 
 inline su2double* CDiscAdjVariable::GetSolution_Direct() { return Solution_Direct; }
 
@@ -1193,3 +1201,17 @@ inline void CDiscAdjVariable::SetSolution_Direct(su2double *val_solution_direct)
     Solution_Direct[iVar] = val_solution_direct[iVar];
   }
 }
+
+//inline void CVariable::Set_StoreSolution() {}
+
+inline su2double* CVariable::GetSolution_Store() { return Solution_Store; }
+inline su2double CVariable::GetSolution_Store(unsigned short iVar) { return Solution_Store[iVar]; }
+
+inline su2double* CVariable::GetSolution_Save() { return Solution_Save; }
+inline su2double CVariable::GetSolution_Save(unsigned short iVar) { return Solution_Save[iVar]; }
+
+inline su2double* CVariable::GetSolution_Delta() { return Solution_Delta; }
+inline void CVariable::SetSolution_Delta(unsigned short val_var, su2double val_solution_delta) { Solution_Delta[val_var] = val_solution_delta; }
+inline su2double CVariable::GetSolution_Delta(unsigned short iVar) { return Solution_Delta[iVar]; }
+
+//inline su2double* COneShotVariable::GetSolution_Store() { return Solution_Store; }

@@ -126,6 +126,17 @@ public:
                        CVolumetricMovement **grid_movement,
                        CFreeFormDefBox*** FFDBox,
                        unsigned short val_iZone);
+
+  virtual void Iterate_No_Residual(COutput *output,
+                       CIntegration ***integration_container,
+                       CGeometry ***geometry_container,
+                       CSolver ****solver_container,
+                       CNumerics *****numerics_container,
+                       CConfig **config_container,
+                       CSurfaceMovement **surface_movement,
+                       CVolumetricMovement **grid_movement,
+                       CFreeFormDefBox*** FFDBox,
+                       unsigned short val_iZone);
   
   /*!
    * \brief A virtual member.
@@ -166,6 +177,11 @@ public:
                             unsigned short val_iZone);
 
   virtual void InitializeAdjoint(CSolver ****solver_container,
+                                 CGeometry ***geometry_container,
+                                 CConfig **config_container,
+                                 unsigned short iZone){}
+
+  virtual void InitializeAdjointUpdate(CSolver ****solver_container,
                                  CGeometry ***geometry_container,
                                  CConfig **config_container,
                                  unsigned short iZone){}
@@ -1072,6 +1088,52 @@ public:
    * \brief Destructor of the class.
    */
   ~COneShotFluidIteration(void);
+
+  /*!
+   * \brief Registers all output variables of the fluid iteration.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] iZone - Index of the zone.
+   * \param[in] kind_recording - Kind of recording, either FLOW_VARIABLES or GEOMETRY_VARIABLES
+   */
+  void RegisterInput(CSolver ****solver_container,
+                     CGeometry*** geometry_container,
+                     CConfig** config_container,
+                     unsigned short iZone,
+                     unsigned short kind_recording);
+
+  /*!
+   * \brief Compute necessary variables that depend on the conservative variables or the mesh node positions
+   * (e.g. turbulent variables, normals, volumes).
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] iZone - Index of the zone.
+   * \param[in] kind_recording - The kind of recording (geometry or flow).
+   */
+  void SetDependencies(CSolver ****solver_container,
+                       CGeometry ***geometry_container,
+                       CConfig **config_container,
+                       unsigned short iZone,
+                       unsigned short kind_recording);
+
+  void InitializeAdjointUpdate(CSolver ****solver_container,
+                         CGeometry*** geometry_container,
+                         CConfig** config_container,
+                         unsigned short iZone);
+
+  void Iterate_No_Residual(COutput *output,
+               CIntegration ***integration_container,
+               CGeometry ***geometry_container,
+               CSolver ****solver_container,
+               CNumerics *****numerics_container,
+               CConfig **config_container,
+               CSurfaceMovement **surface_movement,
+               CVolumetricMovement **grid_movement,
+               CFreeFormDefBox*** FFDBox,
+               unsigned short val_iZone);
+
 
 };
 

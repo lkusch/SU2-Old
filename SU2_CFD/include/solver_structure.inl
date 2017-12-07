@@ -857,8 +857,10 @@ inline void CSolver::RegisterSolution(CGeometry *geometry_container, CConfig *co
 inline void CSolver::RegisterOutput(CGeometry *geometry_container, CConfig *config){}
 
 inline void CSolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){}
+inline void CSolver::SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config){}
+inline void CSolver::ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetSurface_Sensitivity(CGeometry *geometry, CConfig *config){}
 
@@ -1926,4 +1928,43 @@ inline void CTurbSSTSolver::SetFreeStream_Solution(CConfig *config){
     node[iPoint]->SetSolution(1, omega_Inf);
   }
 }
+
+inline void CSolver::StoreSolution_Direct(){}
+
+inline void CSolver::LoadSolution_Direct(){}
+
+inline void CSolver::SetGeometrySensitivityGradient(CGeometry *geometry){}
+inline void CSolver::SetGeometrySensitivityLagrangian(CGeometry *geometry){}
+
+inline void CSolver::StoreMeshPoints(CConfig *config, CGeometry *geometry){}
+
+inline void CSolver::LoadMeshPoints(CConfig *config, CGeometry *geometry){}
+
+inline void CSolver::SaveSensitivity(CGeometry *geometry){}
+
+inline void CSolver::ResetSensitivityLagrangian(CGeometry *geometry){}
+
+inline void CSolver::UpdateSensitivityLagrangian(CGeometry *geometry, su2double factor){}
+
+inline su2double CSolver::CalculateLagrangian(CConfig *config){return 0.0;}
+
+inline void CSolver::CalculateAlphaBeta(CConfig *config){}
+
+inline void CSolver::SetAlphaBeta(CConfig *config){}
+
+inline void CSolver::StoreSolution(){}
+
+inline void CSolver::LoadSolution(){}
+
+inline void CSolver::LoadAdjointSolution(){}
+
+inline void CSolver::StoreSaveSolution(){}
+
+inline void CSolver::LoadSaveSolution(){}
+
+inline void CSolver::LoadAdjointSaveSolution(){}
+
+inline void CSolver::UpdateStateVariable(CConfig *config){}
+
+inline void CSolver::SetFiniteDifferenceSens(CGeometry *geometry, CConfig* config){}
 
