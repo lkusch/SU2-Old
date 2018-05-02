@@ -8577,7 +8577,9 @@ void CEulerSolver::Evaluate_ObjFunc(CConfig *config) {
         Total_ComboObj+=Weight_ObjFunc*config->GetSurface_Mach(0);
         break;
       case CUSTOM_OBJFUNC:
+        Total_Custom_ObjFunc=config->GetSurface_FlowUniformityIndex(1);
         Total_ComboObj+=Weight_ObjFunc*Total_Custom_ObjFunc;
+        //Total_ComboObj+=Weight_ObjFunc*config->GetSurface_FlowUniformityIndex(0);
         break;
       default:
         break;

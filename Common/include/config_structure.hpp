@@ -350,6 +350,7 @@ private:
   su2double *Surface_NormalVelocity;    /*!< \brief Normal velocity at the boundaries. */
   su2double *Surface_TotalTemperature;   /*!< \brief Total temperature at the boundaries. */
   su2double *Surface_TotalPressure;    /*!< \brief Total pressure at the boundaries. */
+  su2double *Surface_FlowUniformityIndex;
   su2double *Surface_DC60;    /*!< \brief Specified fan face mach for nacelle boundaries. */
   su2double *Surface_IDC;    /*!< \brief Specified fan face mach for nacelle boundaries. */
   su2double *Surface_IDC_Mach;    /*!< \brief Specified fan face mach for nacelle boundaries. */
@@ -6657,6 +6658,8 @@ public:
    */
   void SetSurface_TotalPressure(unsigned short val_imarker, su2double val_surface_totalpressure);
   
+  void SetSurface_FlowUniformityIndex(unsigned short val_imarker, su2double val_surface_flowuniformityindex);
+  
   /*!
    * \brief Get the back pressure (static) at an outlet boundary.
    * \param[in] val_index - Index corresponding to the outlet boundary.
@@ -6886,6 +6889,8 @@ public:
    * \return The total pressure.
    */
   su2double GetSurface_TotalPressure(unsigned short val_imarker);
+  
+  su2double GetSurface_FlowUniformityIndex(unsigned short val_imarker);
    
   /*!
    * \brief Get the back pressure (static) at an outlet boundary.
