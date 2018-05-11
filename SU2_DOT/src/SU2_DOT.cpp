@@ -2,18 +2,24 @@
  * \file SU2_DOT.cpp
  * \brief Main file of the Gradient Projection Code (SU2_DOT).
  * \author F. Palacios, T. Economon
- * \version 5.0.0 "Raven"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Original Developers: Dr. Francisco D. Palacios.
- *                          Dr. Thomas D. Economon.
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
- *                 Prof. Edwin van der Weide's group at the University of Twente.
- *                 Prof. Vincent Terrapon's group at the University of Liege.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
+ *
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -37,7 +43,7 @@ int main(int argc, char *argv[]) {
   unsigned short iZone, nZone = SINGLE_ZONE;
   su2double StartTime = 0.0, StopTime = 0.0, UsedTime = 0.0;
   
-  char config_file_name[MAX_STRING_SIZE], *cstr;
+  char config_file_name[MAX_STRING_SIZE], *cstr = NULL;
   ofstream Gradient_file;
 
   su2double** Gradient;
@@ -62,7 +68,8 @@ int main(int argc, char *argv[]) {
   CGeometry **geometry_container      = NULL;
   CSurfaceMovement **surface_movement = NULL;
   CVolumetricMovement **grid_movement = NULL;
-  
+  COutput *output                     = NULL;
+
   /*--- Load in the number of zones and spatial dimensions in the mesh file (if no config
    file is specified, default.cfg is used) ---*/
   
@@ -159,10 +166,12 @@ int main(int argc, char *argv[]) {
   
   /*--- Check the orientation before computing geometrical quantities ---*/
   
-    if (rank == MASTER_NODE) cout << "Checking the numerical grid orientation of the elements." <<endl;
     geometry_container[iZone]->SetBoundVolume();
-    geometry_container[iZone]->Check_IntElem_Orientation(config_container[iZone]);
-    geometry_container[iZone]->Check_BoundElem_Orientation(config_container[iZone]);
+    if (config_container[iZone]->GetReorientElements()) {
+      if (rank == MASTER_NODE) cout << "Checking the numerical grid orientation of the elements." <<endl;
+      geometry_container[iZone]->Check_IntElem_Orientation(config_container[iZone]);
+      geometry_container[iZone]->Check_BoundElem_Orientation(config_container[iZone]);
+    }
   
   /*--- Create the edge structure ---*/
   
@@ -205,7 +214,7 @@ int main(int argc, char *argv[]) {
    if (config_container[ZONE_0]->GetDiscrete_Adjoint()){
      if (rank == MASTER_NODE)
        cout << endl <<"------------------------ Mesh sensitivity Output ------------------------" << endl;
-     COutput *output = new COutput(config_container[ZONE_0]);
+     output = new COutput(config_container[ZONE_0]);
      output->SetSensitivity_Files(geometry_container, config_container, nZone);
    }
 
@@ -269,11 +278,59 @@ int main(int argc, char *argv[]) {
 
    }
 
+  if (rank == MASTER_NODE)
+    cout << endl <<"------------------------- Solver Postprocessing -------------------------" << endl;
+  
+  if (geometry_container != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (geometry_container[iZone] != NULL) {
+        delete geometry_container[iZone];
+      }
+    }
+    delete [] geometry_container;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CGeometry container." << endl;
+  
+  if (surface_movement != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (surface_movement[iZone] != NULL) {
+        delete surface_movement[iZone];
+      }
+    }
+    delete [] surface_movement;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CSurfaceMovement class." << endl;
+  
+  if (grid_movement != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (grid_movement[iZone] != NULL) {
+        delete grid_movement[iZone];
+      }
+    }
+    delete [] grid_movement;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CVolumetricMovement class." << endl;
+  
+  delete config;
+  config = NULL;
+  if (config_container != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (config_container[iZone] != NULL) {
+        delete config_container[iZone];
+      }
+    }
+    delete [] config_container;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CConfig container." << endl;
+  
+  if (output != NULL) delete output;
+  if (rank == MASTER_NODE) cout << "Deleted COutput class." << endl;
 
-
-    /*--- Synchronization point after a single solver iteration. Compute the
-     wall clock time required. ---*/
-
+  if (cstr != NULL) delete cstr;
+  
+  /*--- Synchronization point after a single solver iteration. Compute the
+   wall clock time required. ---*/
+  
 #ifdef HAVE_MPI
   StopTime = MPI_Wtime();
 #else
@@ -281,7 +338,7 @@ int main(int argc, char *argv[]) {
 #endif
   
   /*--- Compute/print the total time for performance benchmarking. ---*/
-  
+
   UsedTime = StopTime-StartTime;
   if (rank == MASTER_NODE) {
     cout << "\nCompleted in " << fixed << UsedTime << " seconds on "<< size;
@@ -324,6 +381,7 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
   
   unsigned short nFFDBox = MAX_NUMBER_FFD;
   FFDBox = new CFreeFormDefBox*[nFFDBox];
+  for (iFFDBox = 0; iFFDBox < MAX_NUMBER_FFD; iFFDBox++) FFDBox[iFFDBox] = NULL;
 
   for (iDV = 0; iDV  < nDV; iDV++){
     nDV_Value = config->GetnDV_Value(iDV);
@@ -546,6 +604,20 @@ void SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
     Gradient[iDV][0] += localGradient;
     }
   }
+  
+  /*--- Delete memory for parameterization. ---*/
+  
+  if (FFDBox != NULL) {
+    for (iFFDBox = 0; iFFDBox < MAX_NUMBER_FFD; iFFDBox++) {
+      if (FFDBox[iFFDBox] != NULL) {
+        delete FFDBox[iFFDBox];
+      }
+    }
+    delete [] FFDBox;
+  }
+  
+  delete [] UpdatePoint;
+  
 }
   
 
@@ -601,6 +673,15 @@ void SetProjection_AD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
   
   AD::StopRecording();
   
+  /*--- Create a structure to identify points that have been already visited. 
+   * We need that to make sure to set the sensitivity of surface points only once
+   *  (Markers share points, so we would visit them more than once in the loop over the markers below) ---*/
+  
+  bool* visited = new bool[geometry->GetnPoint()];
+  for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++){
+    visited[iPoint] = false;
+  }
+  
   /*--- Initialize the derivatives of the output of the surface deformation routine
    * with the discrete adjoints from the CFD solution ---*/
   
@@ -609,26 +690,31 @@ void SetProjection_AD(CGeometry *geometry, CConfig *config, CSurfaceMovement *su
       nVertex = geometry->nVertex[iMarker];
       for (iVertex = 0; iVertex <nVertex; iVertex++) {
         iPoint      = geometry->vertex[iMarker][iVertex]->GetNode();
-        VarCoord    = geometry->vertex[iMarker][iVertex]->GetVarCoord();
-        Normal      = geometry->vertex[iMarker][iVertex]->GetNormal();
-        
-        Area = 0.0;
-        for (iDim = 0; iDim < nDim; iDim++){
-          Area += Normal[iDim]*Normal[iDim];
-        }
-        Area = sqrt(Area);
-        
-        for (iDim = 0; iDim < nDim; iDim++){
-          if (config->GetDiscrete_Adjoint()){
-            Sensitivity = geometry->GetSensitivity(iPoint, iDim);
-          } else {
-            Sensitivity = -Normal[iDim]*geometry->vertex[iMarker][iVertex]->GetAuxVar()/Area;
+        if (!visited[iPoint]){
+          VarCoord    = geometry->vertex[iMarker][iVertex]->GetVarCoord();
+          Normal      = geometry->vertex[iMarker][iVertex]->GetNormal();
+          
+          Area = 0.0;
+          for (iDim = 0; iDim < nDim; iDim++){
+            Area += Normal[iDim]*Normal[iDim];
           }
-          SU2_TYPE::SetDerivative(VarCoord[iDim], SU2_TYPE::GetValue(Sensitivity));
+          Area = sqrt(Area);
+          
+          for (iDim = 0; iDim < nDim; iDim++){
+            if (config->GetDiscrete_Adjoint()){
+              Sensitivity = geometry->GetSensitivity(iPoint, iDim);
+            } else {
+              Sensitivity = -Normal[iDim]*geometry->vertex[iMarker][iVertex]->GetAuxVar()/Area;
+            }
+            SU2_TYPE::SetDerivative(VarCoord[iDim], SU2_TYPE::GetValue(Sensitivity));
+          }
+          visited[iPoint] = true;
         }
       }
     }
   }
+  
+  delete [] visited;
   
   /*--- Compute derivatives and extract gradient ---*/
   

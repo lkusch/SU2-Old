@@ -2,20 +2,24 @@
  * \file SU2_DEF.cpp
  * \brief Main file of Mesh Deformation Code (SU2_DEF).
  * \author F. Palacios, T. Economon
- * \version 5.0.0 "Raven"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Original Developers: Dr. Francisco D. Palacios.
- *                          Dr. Thomas D. Economon.
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
- *                 Prof. Edwin van der Weide's group at the University of Twente.
- *                 Prof. Vincent Terrapon's group at the University of Liege.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright (C) 2012-2017 SU2, the open-source CFD code.
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,11 +62,11 @@ int main(int argc, char *argv[]) {
   /*--- Pointer to different structures that will be used throughout 
    the entire code ---*/
   
-  CConfig **config_container         = NULL;
-  CGeometry **geometry_container     = NULL;
+  CConfig **config_container          = NULL;
+  CGeometry **geometry_container      = NULL;
   CSurfaceMovement **surface_movement = NULL;
   CVolumetricMovement **grid_movement = NULL;
-  COutput *output                    = NULL;
+  COutput *output                     = NULL;
 
   /*--- Load in the number of zones and spatial dimensions in the mesh file 
    (if no config file is specified, default.cfg is used) ---*/
@@ -89,6 +93,8 @@ int main(int argc, char *argv[]) {
   for (iZone = 0; iZone < nZone; iZone++) {
     config_container[iZone]       = NULL;
     geometry_container[iZone]     = NULL;
+    surface_movement[iZone]       = NULL;
+    grid_movement[iZone]          = NULL;
   }
   
   /*--- Loop over all zones to initialize the various classes. In most
@@ -155,10 +161,12 @@ int main(int argc, char *argv[]) {
 
     /*--- Check the orientation before computing geometrical quantities ---*/
 
-    if (rank == MASTER_NODE) cout << "Checking the numerical grid orientation of the interior elements." <<endl;
     geometry_container[iZone]->SetBoundVolume();
-    geometry_container[iZone]->Check_IntElem_Orientation(config_container[iZone]);
-    geometry_container[iZone]->Check_BoundElem_Orientation(config_container[iZone]);
+    if (config_container[iZone]->GetReorientElements()) {
+      if (rank == MASTER_NODE) cout << "Checking the numerical grid orientation of the interior elements." <<endl;
+      geometry_container[iZone]->Check_IntElem_Orientation(config_container[iZone]);
+      geometry_container[iZone]->Check_BoundElem_Orientation(config_container[iZone]);
+    }
 
     /*--- Create the edge structure ---*/
 
@@ -292,6 +300,52 @@ int main(int argc, char *argv[]) {
     
   }
   
+  if (rank == MASTER_NODE)
+    cout << endl <<"------------------------- Solver Postprocessing -------------------------" << endl;
+  
+  if (geometry_container != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (geometry_container[iZone] != NULL) {
+        delete geometry_container[iZone];
+      }
+    }
+    delete [] geometry_container;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CGeometry container." << endl;
+  
+  if (surface_movement != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (surface_movement[iZone] != NULL) {
+        delete surface_movement[iZone];
+      }
+    }
+    delete [] surface_movement;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CSurfaceMovement class." << endl;
+  
+  if (grid_movement != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (grid_movement[iZone] != NULL) {
+        delete grid_movement[iZone];
+      }
+    }
+    delete [] grid_movement;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CVolumetricMovement class." << endl;
+  
+  if (config_container != NULL) {
+    for (iZone = 0; iZone < nZone; iZone++) {
+      if (config_container[iZone] != NULL) {
+        delete config_container[iZone];
+      }
+    }
+    delete [] config_container;
+  }
+  if (rank == MASTER_NODE) cout << "Deleted CConfig container." << endl;
+  
+  if (output != NULL) delete output;
+  if (rank == MASTER_NODE) cout << "Deleted COutput class." << endl;
+
   /*--- Synchronization point after a single solver iteration. Compute the
    wall clock time required. ---*/
   

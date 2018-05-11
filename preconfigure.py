@@ -3,20 +3,14 @@
 ## \file configure.py
 #  \brief An extended configuration script.
 #  \author T. Albring
-#  \version 5.0.0 "Raven"
+#  \version 6.0.1 "Falcon"
 #
-# SU2 Original Developers: Dr. Francisco D. Palacios.
-#                          Dr. Thomas D. Economon.
+# The current SU2 release has been coordinated by the
+# SU2 International Developers Society <www.su2devsociety.org>
+# with selected contributions from the open-source community.
 #
-# SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
-#                 Prof. Piero Colonna's group at Delft University of Technology.
-#                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
-#                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
-#                 Prof. Rafael Palacios' group at Imperial College London.
-#                 Prof. Edwin van der Weide's group at the University of Twente.
-#                 Prof. Vincent Terrapon's group at the University of Liege.
-#
-# Copyright (C) 2012-2017 SU2, the open-source CFD code.
+# Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+#                      Tim Albring, and the SU2 contributors.
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -293,16 +287,16 @@ def init_codi(argument_dict, modes, mpi_support = False, update = False):
     
     # This information of the modules is used if projects was not cloned using git
     # The sha tag must be maintained manually to point to the correct commit
-    sha_version_codi = '2ec7cccf3ccd4b052f9d4ef95d6dc69244484f13'
+    sha_version_codi = 'bd4a639c2fe625a80946c8365bd2976a2868cf46'
     github_repo_codi = 'https://github.com/scicompkl/CoDiPack'
-    sha_version_medi = '3344286560d92aa114b934cea2cba8f302d02d58'
+    sha_version_medi = '46a97e1d6e8fdd3cb42b06534cff6acad2a49693'
     github_repo_medi = 'https://github.com/SciCompKL/MeDiPack'
 
     medi_name = 'MeDiPack'
     codi_name = 'CoDiPack'
 
-    alt_name_medi = 'medi'
-    alt_name_codi = 'codi'
+    alt_name_medi = 'externals/medi'
+    alt_name_codi = 'externals/codi'
 
     # Some log and error files
     log = open( 'preconf.log', 'w' )
@@ -316,21 +310,17 @@ def init_codi(argument_dict, modes, mpi_support = False, update = False):
     print('=====================================================================')
     # Remove modules if update is requested
     if update:
-        if os.path.exists('externals/'+alt_name_codi):
-            print('Removing' + ' externals/' + alt_name_codi)
-            shutil.rmtree('externals/'+alt_name_codi)
-        if os.path.exists('externals/'+alt_name_medi):
-            print('Removing' + ' externals/' + alt_name_medi)
-            shutil.rmtree('externals/'+alt_name_medi)
-
-    os.chdir('externals')
+        if os.path.exists(alt_name_codi):
+            print('Removing ' + alt_name_codi)
+            shutil.rmtree(alt_name_codi)
+        if os.path.exists(alt_name_medi):
+            print('Removing ' + alt_name_medi)
+            shutil.rmtree(alt_name_medi)
 
     submodule_check(codi_name, alt_name_codi, github_repo_codi, sha_version_codi, log, err, update)
 
     if mpi_support:
         submodule_check(medi_name, alt_name_medi, github_repo_medi, sha_version_medi, log, err, update)
-
-    os.chdir(os.pardir)
 
     return pkg_environ, True
 
@@ -339,18 +329,18 @@ def submodule_check(name, alt_name, github_rep, sha_tag, log, err, update = Fals
     try:
         status = submodule_status(alt_name, update)
         if status:
-            print('Found correct version of ' + name + ' in externals/' + alt_name + '.')
+            print('Found correct version of ' + name + ' in ' + alt_name + '.')
 
     except RuntimeError:
         if all([os.path.exists(alt_name), not os.path.exists(alt_name + '/' + sha_tag)]):
-          print('Found an old or unspecified version of ' + name + ' in externals/' + alt_name + '.\nUse -u to reset module.')
+          print('Found an old or unspecified version of ' + name + ' in ' + alt_name + '.\nUse -u to reset module.')
           sys.exit()
         if not os.path.exists(alt_name):
           print('\ngit command failed (either git is not installed or this is not a git repository).')
           print('\nUsing fall-back method to initialize submodule ' + name)
           download_module(name, alt_name, github_rep, sha_tag, log, err)
         else:
-          print('Found correct version of ' + name + ' in externals/' + alt_name + '.')
+          print('Found correct version of ' + name + ' in ' + alt_name + '.')
 
 
 def submodule_status(path, update):
@@ -554,24 +544,27 @@ def header():
 
     print('-------------------------------------------------------------------------\n'\
           '|    ___ _   _ ___                                                      | \n'\
-          '|   / __| | | |_  )   Release 5.0.0 \'Raven\'                             | \n'\
+          '|   / __| | | |_  )   Release 6.0.1 \'Falcon\'                            | \n'\
           '|   \__ \ |_| |/ /                                                      | \n'\
           '|   |___/\___//___|   Pre-configuration Script                          | \n'\
           '|                                                                       | \n'\
           '------------------------------------------------------------------------- \n'\
-          '| SU2 Original Developers: Dr. Francisco D. Palacios.                   | \n'\
-          '|                          Dr. Thomas D. Economon.                      | \n'\
+          '| The current SU2 release has been coordinated by the                   | \n'\
+          '| SU2 International Developers Society <www.su2devsociety.org>          | \n'\
+          '| with selected contributions from the open-source community.           | \n'\
           '------------------------------------------------------------------------- \n'\
-          '| SU2 Developers:                                                       | \n'\
+          '| The main research teams contributing to the current release are:      | \n'\
           '| - Prof. Juan J. Alonso\'s group at Stanford University.                | \n'\
           '| - Prof. Piero Colonna\'s group at Delft University of Technology.      | \n'\
           '| - Prof. Nicolas R. Gauger\'s group at Kaiserslautern U. of Technology. | \n'\
           '| - Prof. Alberto Guardone\'s group at Polytechnic University of Milan.  | \n'\
           '| - Prof. Rafael Palacios\' group at Imperial College London.            | \n'\
-          '| - Prof. Edwin van der Weide\'s group at the University of Twente.      | \n'\
           '| - Prof. Vincent Terrapon\'s group at the University of Liege.          | \n'\
+          '| - Prof. Edwin van der Weide\'s group at the University of Twente.      | \n'\
+          '| - Lab. of New Concepts in Aeronautics at Tech. Inst. of Aeronautics.  | \n'\
           '------------------------------------------------------------------------- \n'\
-          '| Copyright (C) 2012-2017 SU2, the open-source CFD code.                | \n'\
+          '| Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,       | \n'\
+          '|                      Tim Albring, and the SU2 contributors.           | \n'\
           '|                                                                       | \n'\
           '| SU2 is free software; you can redistribute it and/or                  | \n'\
           '| modify it under the terms of the GNU Lesser General Public            | \n'\
