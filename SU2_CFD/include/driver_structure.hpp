@@ -1466,7 +1466,7 @@ protected:
   
   su2double lb, ub; /*!< \brief Lower and upper bounds of design variables.*/
   su2double epsilon; /*!< \brief Estimator for the active set.*/
-  su2duoble cwolfeone; /*!< \brief First Wolfe line search parameter.*/
+  su2double cwolfeone; /*!< \brief First Wolfe line search parameter.*/
   bool* activeset; /*!< \brief Flag for indices belonging to the active set (lower and upper design bounds are reached).*/
 
 public:
@@ -1571,7 +1571,7 @@ public:
    * \brief Check if the first Wolfe descent condition is fulfilled (line search condition).
    * \param[in] stepsize - factor for the line search.
    */
-  bool CheckFirstWolfe(su2double stepsize);
+  bool CheckFirstWolfe();
 
   //TODO
 

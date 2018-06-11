@@ -7436,7 +7436,7 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
   SearchDirection = new su2double[nDV_Total];
   activeset = new bool[nDV_Total];
 
-  Hessian = new su2double*[nDV_Total];
+  BFGS_Inv = new su2double*[nDV_Total];
 
   for (iDV = 0; iDV  < nDV_Total; iDV++){
     Gradient[iDV] = 0.0;
@@ -7449,10 +7449,10 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
     DesignVariable[iDV] = 0.0;
     SearchDirection[iDV] = 0.0;
     activeset[iDV]=false;
-    Hessian[iDV] = new su2double[nDV_Total];
+    BFGS_Inv[iDV] = new su2double[nDV_Total];
     for (jDV = 0; jDV < nDV_Total; jDV++){
-      Hessian[iDV][jDV] = 0.0;
-      if (iDV==jDV) Hessian[iDV][jDV] = 1.0;
+      BFGS_Inv[iDV][jDV] = 0.0;
+      if (iDV==jDV) BFGS_Inv[iDV][jDV] = 1.0;
     }
   }
 
@@ -7476,9 +7476,9 @@ COneShotFluidDriver::~COneShotFluidDriver(void){
   /*----- free allocated memory -------*/
   unsigned short iDV;
   for (iDV = 0; iDV  < nDV_Total; iDV++){
-    delete [] Hessian[iDV];
+    delete [] BFGS_Inv[iDV];
   }
-  delete [] Hessian;
+  delete [] BFGS_Inv;
   delete [] Gradient;
   delete [] Gradient_Old;
   delete [] Gradient_Save;
@@ -7547,12 +7547,12 @@ void COneShotFluidDriver::RunOneShot(){
       }
     }
     /*--- Do a primal and adjoint update ---*/
-    OneShotStep();
+    PrimalDualStep();
     CalculateLagrangian();
     whilecounter++;
     if(whilecounter==15) alpha=0.0;
   }
-  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe(alpha))&&whilecounter<16);
+  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe())&&whilecounter<16);
 
   if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
 
@@ -7621,7 +7621,7 @@ void COneShotFluidDriver::RunOneShot(){
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSolution();
         }
 
-        OneShotStep();
+        PrimalDualStep();
 
         CalculateLagrangian();
 
@@ -7726,7 +7726,7 @@ void COneShotFluidDriver::RunBFGS(){
       }
     }
     for(iterCount=0;iterCount<nConvIter;iterCount++){
-      OneShotStep();
+      PrimalDualStep();
       CalculateObjectiveLagrangian();
     }
     cout << "log10Adjoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
@@ -7734,7 +7734,7 @@ void COneShotFluidDriver::RunBFGS(){
     alpha=alpha*0.5;
     whilecounter++;
   }
-  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe(alpha*2)));
+  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe()));
 
   if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
       /*--- Store the old gradient ---*/
@@ -7769,7 +7769,7 @@ void COneShotFluidDriver::RunBFGS(){
   }
 }
 
-void COneShotFluidDriver::OneShotStep(){
+void COneShotFluidDriver::PrimalDualStep(){
 
   unsigned short iZone = 0;
 
@@ -8223,18 +8223,18 @@ void COneShotFluidDriver::BFGSUpdate(CConfig *config){
       }
       for (iDV=0;iDV<nDV_Total;iDV++){
         for (jDV=0;jDV<nDV_Total;jDV++){
-          MatA[iDV][jDV]=Hessian[iDV][jDV]+(1.0/vk)*sk[iDV]*sk[jDV];
+          MatA[iDV][jDV]=BFGS_Inv[iDV][jDV]+(1.0/vk)*sk[iDV]*sk[jDV];
           for (kDV=0; kDV<nDV_Total; kDV++){
-            MatA[iDV][jDV]+=-(1.0/vk)*sk[iDV]*ProjectionPAP(jDV,kDV,Hessian[jDV][kDV],false)*yk[kDV]-(1.0/vk)*sk[jDV]*ProjectionPAP(iDV,kDV,Hessian[iDV][kDV],false)*yk[kDV];
+            MatA[iDV][jDV]+=-(1.0/vk)*sk[iDV]*ProjectionPAP(jDV,kDV,BFGS_Inv[jDV][kDV],false)*yk[kDV]-(1.0/vk)*sk[jDV]*ProjectionPAP(iDV,kDV,BFGS_Inv[iDV][kDV],false)*yk[kDV];
             for (lDV=0; lDV<nDV_Total; lDV++){
-              MatA[iDV][jDV]+=(1.0/vk)*(1.0/vk)*sk[iDV]*sk[jDV]*yk[lDV]*ProjectionPAP(lDV,kDV,Hessian[lDV][kDV],false)*yk[kDV];
+              MatA[iDV][jDV]+=(1.0/vk)*(1.0/vk)*sk[iDV]*sk[jDV]*yk[lDV]*ProjectionPAP(lDV,kDV,BFGS_Inv[lDV][kDV],false)*yk[kDV];
             }
           }
         }
       }
       for (iDV=0;iDV<nDV_Total;iDV++){
         for (jDV=0;jDV<nDV_Total;jDV++){
-          Hessian[iDV][jDV]=MatA[iDV][jDV];
+          BFGS_Inv[iDV][jDV]=MatA[iDV][jDV];
         }
       }
       for (iDV=0;iDV<nDV_Total;iDV++){
@@ -8247,8 +8247,8 @@ void COneShotFluidDriver::BFGSUpdate(CConfig *config){
       if(config->GetOSHessianIdentity()){
         for (iDV = 0; iDV < nDV_Total; iDV++){
           for (jDV = 0; jDV < nDV_Total; jDV++){
-            Hessian[iDV][jDV]=0.0;
-            if(iDV==jDV){ Hessian[iDV][jDV]=ProjectionSet(iDV,1.0,false); }
+            BFGS_Inv[iDV][jDV]=0.0;
+            if(iDV==jDV){ BFGS_Inv[iDV][jDV]=ProjectionSet(iDV,1.0,false); }
           }
         }
       }
@@ -8257,7 +8257,7 @@ void COneShotFluidDriver::BFGSUpdate(CConfig *config){
     delete [] sk;
 }
 
-bool COneShotFluidDriver::CheckFirstWolfe(su2double alpha){
+bool COneShotFluidDriver::CheckFirstWolfe(){
   unsigned short iDV;
   su2double admissible_step = 0.0;
   for (iDV=0;iDV<nDV_Total;iDV++){
@@ -8270,10 +8270,10 @@ bool COneShotFluidDriver::CheckFirstWolfe(su2double alpha){
   return (Lagrangian<=Lagrangian_Old+admissible_step);
 }
 
-void COneShotFluidDriver::ComputeDesignVarUpdate(su2double alpha){
+void COneShotFluidDriver::ComputeDesignVarUpdate(su2double stepsize){
   unsigned short iDV;
   for (iDV=0;iDV<nDV_Total;iDV++){
-    DesignVarUpdate[iDV]=BoundProjection(DesignVariable[iDV]+alpha*SearchDirection[iDV])-DesignVariable[iDV];
+    DesignVarUpdate[iDV]=BoundProjection(DesignVariable[iDV]+stepsize*SearchDirection[iDV])-DesignVariable[iDV];
   }
 }
 
@@ -8282,7 +8282,7 @@ void COneShotFluidDriver::ComputeSearchDirection(){
   for (iDV=0;iDV<nDV_Total;iDV++){
     SearchDirection[iDV]=0.0;
     for (jDV=0;jDV<nDV_Total;jDV++){
-      SearchDirection[iDV]+=Hessian[iDV][jDV]*ProjectionSet(jDV,-Gradient_Save[jDV],false); //should give the same result as ProjectionPAP(iDV,jDV,Hessian[iDV][jDV],false)*(-Gradient_Save[jDV])
+      SearchDirection[iDV]+=BFGS_Inv[iDV][jDV]*ProjectionSet(jDV,-Gradient_Save[jDV],false); //should give the same result as ProjectionPAP(iDV,jDV,BFGS_Inv[iDV][jDV],false)*(-Gradient_Save[jDV])
     }
     SearchDirection[iDV]=-ProjectionSet(iDV, Gradient_Save[iDV],true)+ProjectionSet(iDV, SearchDirection[iDV], false);
   }
@@ -8293,7 +8293,7 @@ void COneShotFluidDriver::ComputeNegativeSearchDirection(){
   for (iDV=0;iDV<nDV_Total;iDV++){
     SearchDirection[iDV]=0.0;
     for (jDV=0;jDV<nDV_Total;jDV++){
-      SearchDirection[iDV]+=Hessian[iDV][jDV]*ProjectionSet(jDV,Gradient_Save[jDV],false);
+      SearchDirection[iDV]+=BFGS_Inv[iDV][jDV]*ProjectionSet(jDV,Gradient_Save[jDV],false);
     }
     SearchDirection[iDV]=ProjectionSet(iDV, Gradient_Save[iDV],true)+ProjectionSet(iDV, SearchDirection[iDV], false);
   }
@@ -8415,7 +8415,7 @@ void COneShotFluidDriver::ComputeAlphaTerm(){
     for (iZone = 0; iZone < nZone; iZone++) {
 
       config_container[iZone]->SetIntIter(0);
-      iteration_container[iZone]->InitializeAdjointUpdate(solver_container, geometry_container, config_container, iZone);
+      iteration_container[iZone]->InitializeAdjoint_Update(solver_container, geometry_container, config_container, iZone);
 
     }
 

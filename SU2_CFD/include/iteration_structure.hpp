@@ -1428,7 +1428,7 @@ public:
                        unsigned short iZone,
                        unsigned short kind_recording);
   //TODO
-  void InitializeAdjointUpdate(CSolver ****solver_container,
+  void InitializeAdjoint_Update(CSolver ****solver_container,
                          CGeometry*** geometry_container,
                          CConfig** config_container,
                          unsigned short iZone);

@@ -2083,6 +2083,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addDoubleOption("OBJ_SCALE", Obj_Func_Scale, 1E-3);
   addDoubleOption("SENS_SCALE", OS_Sens_Scale, 1E-0);
   addBoolOption("OS_HESSIAN_ID", OS_Hessian_ID, false);
+  addBoolOption("OS_CHECK_DESCENT", OS_Check_Descent, false);
   
   /* END_CONFIG_OPTIONS */
 
@@ -3557,7 +3558,7 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
           break;
       }
     } else {
-      /*--- For one-shot we do not make use of a restart solution (no reverse accumulation) *---/
+      /*--- For one-shot we do not make use of a restart solution (no reverse accumulation) ---*/
       Restart_Flow = false;
       switch(Kind_Solver) {
         case EULER:

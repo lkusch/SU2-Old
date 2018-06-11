@@ -2834,7 +2834,7 @@ void COneShotFluidIteration::RegisterInput(CSolver ****solver_container, CGeomet
   unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
   bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();
 
-  if (kind_recording == CONS_VARS || kind_recording == COMBINED){
+  if (kind_recording == FLOW_CONS_VARS || kind_recording == COMBINED){
 
     /*--- Register flow and turbulent variables as input ---*/
 
@@ -2888,7 +2888,7 @@ void COneShotFluidIteration::SetDependencies(CSolver ****solver_container, CGeom
 
 }
 
-void COneShotFluidIteration::InitializeAdjointUpdate(CSolver ****solver_container, CGeometry ***geometry_container, CConfig **config_container, unsigned short iZone){
+void COneShotFluidIteration::InitializeAdjoint_Update(CSolver ****solver_container, CGeometry ***geometry_container, CConfig **config_container, unsigned short iZone){
 
   unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
   bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();

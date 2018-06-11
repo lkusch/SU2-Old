@@ -975,17 +975,15 @@ private:
   bool Body_Force;            /*!< \brief Flag to know if a body force is included in the formulation. */
   su2double *Body_Force_Vector;  /*!< \brief Values of the prescribed body force vector. */
   su2double *FreeStreamTurboNormal; /*!< \brief Direction to initialize the flow in turbomachinery computation */
-  ofstream *ConvHistFile; /*!< \brief Store the pointer to each history file */
-  bool One_Shot; /*!< \brief option for one-shot optimization method */
-  bool OS_Hessian_ID; /*!< \brief flag for reset of the Hessian to Identity in one-shot method */
-  bool Piggy_Back; /*!< \brief option for piggy-back method */
-  unsigned short One_Shot_Start; /*!< \brief Start iteration for one-shot method */
-  su2double One_Shot_Alpha, One_Shot_Beta; /*!< \brief factors for augmented Lagrangian in one-shot method */ 
-  su2double One_Shot_FD; /*!< \brief Finite difference step-size for one-shot method */
-  su2double One_Shot_Scale; /*!< \brief TODO */
-  su2double Obj_Func_Scale; /*!< \brief TODO */
-  su2double OS_Sens_Scale; /*!< \brief TODO */
-  bool OS_Check_Descent;
+<<<<<<< HEAD
+  bool One_Shot, OS_Hessian_ID, Piggy_Back; /*!< \brief option for one-shot optimization method */
+  unsigned short One_Shot_Start;
+  su2double One_Shot_Alpha, One_Shot_Beta;
+  su2double One_Shot_FD, One_Shot_Scale, Obj_Func_Scale, OS_Sens_Scale;
+||||||| merged common ancestors
+=======
+  ofstream *ConvHistFile;       /*!< \brief Store the pointer to each history file */
+>>>>>>> master
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -7978,6 +7976,29 @@ public:
    * \brief Get the AD support.
    */
   bool GetAD_Mode(void);
+<<<<<<< HEAD
+
+  /*!
+   * \brief Verify if there is one-shot option specified from config file.
+   * \return boolean.
+   */
+  bool GetBoolOneShot(void);
+  bool GetBoolPiggyBack(void);
+
+  unsigned short GetOneShotStart(void);
+
+  su2double GetOneShotAlpha(void);
+  su2double GetOneShotBeta(void);
+  su2double GetFDStep(void);
+  su2double GetOSScale(void);
+  su2double GetSensScale(void);
+  su2double GetObjScale(void);
+  bool GetOSHessianIdentity(void);
+  void SetOneShotAlpha(su2double input);
+  void SetOneShotBeta(su2double input);
+
+||||||| merged common ancestors
+=======
 
   /*!
    * \brief Get the frequency for writing the surface solution file in Dual Time.
@@ -8034,43 +8055,7 @@ public:
    * \brief Set the ofstream of the history file for the current zone.
    */
   void SetHistFile(ofstream *HistFile);
-
-  /*!
-   * \brief Check if the one-shot option is specified in the config file.
-   * \return YES if one-shot is enabled.
-   */
-  bool GetBoolOneShot(void);
-
-  /*!
-   * \brief Check if the piggy-back option is specified in the config file.
-   * \return YES if piggy-back is enabled.
-   */
-  bool GetBoolPiggyBack(void);
-
-  /*!
-   * \brief Check if the Hessian reset is done using the identity matrix.
-   * \return YES if identity matrix shall be used.
-   */
-  bool GetOSHessianIdentity(void);
-
-  /*!
-   * \brief Get the iteration number for starting with the one-shot method.
-   * \return Value for iteration number
-   */
-  unsigned short GetOneShotStart(void);
-
-  /* TODO */
-  su2double GetOneShotAlpha(void);
-  su2double GetOneShotBeta(void);
-  su2double GetFDStep(void);
-  su2double GetOSScale(void);
-  su2double GetSensScale(void);
-  su2double GetObjScale(void);
-  
-  void SetOneShotAlpha(su2double input);
-  void SetOneShotBeta(su2double input);
-
-  bool GetCheckDescent(void);
+>>>>>>> master
 };
 
 #include "config_structure.inl"
