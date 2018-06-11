@@ -2,20 +2,24 @@
  * \file variable_direct_mean_inc.cpp
  * \brief Definition of the variable classes for incompressible flow.
  * \author F. Palacios, T. Economon
- * \version 5.0.0 "Raven"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Original Developers: Dr. Francisco D. Palacios.
- *                          Dr. Thomas D. Economon.
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
- *                 Prof. Edwin van der Weide's group at the University of Twente.
- *                 Prof. Vincent Terrapon's group at the University of Liege.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright (C) 2012-2017 SU2, the open-source CFD code.
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +57,8 @@ CIncEulerVariable::CIncEulerVariable(void) : CVariable() {
   nSecondaryVarGrad = 0;
  
   Undivided_Laplacian = NULL;
+
+  Solution_BGS_k = NULL;
  
 }
 
@@ -63,7 +69,8 @@ CIncEulerVariable::CIncEulerVariable(su2double val_pressure, su2double *val_velo
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
                     (config->GetUnsteady_Simulation() == DT_STEPPING_2ND));
   bool windgust = config->GetWind_Gust();
-  
+  bool fsi = config->GetFSI_Simulation();
+
   /*--- Array initialization ---*/
   
   Primitive = NULL;
@@ -171,6 +178,15 @@ CIncEulerVariable::CIncEulerVariable(su2double val_pressure, su2double *val_velo
     for (iDim = 0; iDim < nDim; iDim++)
       Gradient_Primitive[iVar][iDim] = 0.0;
   }
+
+  Solution_BGS_k = NULL;
+  if (fsi){
+    Solution_BGS_k  = new su2double [nVar];
+    Solution_BGS_k[0] = val_pressure;
+    for (iDim = 0; iDim < nDim; iDim++) {
+      Solution_BGS_k[iDim+1] = val_velocity[iDim]*config->GetDensity_FreeStreamND();
+    }
+  }
 }
 
 CIncEulerVariable::CIncEulerVariable(su2double *val_solution, unsigned short val_nDim, unsigned short val_nvar, CConfig *config) : CVariable(val_nDim, val_nvar, config) {
@@ -179,7 +195,8 @@ CIncEulerVariable::CIncEulerVariable(su2double *val_solution, unsigned short val
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
                     (config->GetUnsteady_Simulation() == DT_STEPPING_2ND));
   bool windgust = config->GetWind_Gust();
-  
+  bool fsi = config->GetFSI_Simulation();
+
   /*--- Array initialization ---*/
   
   Primitive = NULL;
@@ -282,6 +299,14 @@ CIncEulerVariable::CIncEulerVariable(su2double *val_solution, unsigned short val
       Gradient_Primitive[iVar][iDim] = 0.0;
   }
   
+  Solution_BGS_k = NULL;
+  if (fsi){
+      Solution_BGS_k  = new su2double [nVar];
+      for (iVar = 0; iVar < nVar; iVar++) {
+        Solution_BGS_k[iVar] = val_solution[iVar];
+      }
+  }
+
 }
 
 CIncEulerVariable::~CIncEulerVariable(void) {
@@ -300,6 +325,8 @@ CIncEulerVariable::~CIncEulerVariable(void) {
 
   if (Undivided_Laplacian != NULL) delete [] Undivided_Laplacian;
   
+  if (Solution_BGS_k  != NULL) delete [] Solution_BGS_k;
+
 }
 
 void CIncEulerVariable::SetGradient_PrimitiveZero(unsigned short val_primvar) {
@@ -359,6 +386,8 @@ CIncNSVariable::CIncNSVariable(su2double val_pressure, su2double *val_velocity,
   Prandtl_Lam     = config->GetPrandtl_Lam();
   Prandtl_Turb    = config->GetPrandtl_Turb();
   
+  DES_LengthScale = 0.0;
+  
 }
 
 CIncNSVariable::CIncNSVariable(su2double *val_solution, unsigned short val_nDim,
@@ -369,6 +398,9 @@ CIncNSVariable::CIncNSVariable(su2double *val_solution, unsigned short val_nDim,
   Viscosity_Inf   = config->GetViscosity_FreeStreamND();
   Prandtl_Lam     = config->GetPrandtl_Lam();
   Prandtl_Turb    = config->GetPrandtl_Turb();
+  
+  DES_LengthScale = 0.0;
+  
 }
 
 CIncNSVariable::~CIncNSVariable(void) { }
