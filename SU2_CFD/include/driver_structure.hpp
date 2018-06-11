@@ -914,6 +914,9 @@ class COneShotFluidDriver : public CDiscAdjFluidDriver {
 protected:
   unsigned short RecordingState; /*!< \brief The kind of recording the tape currently holds.*/
   CIteration** direct_iteration; /*!< \brief A pointer to the direct iteration.*/
+
+  unsigned short nDV_Total; /*!< \brief Total number of design variables used in optimization.*/
+
   su2double* Gradient;
   su2double* Gradient_Old;
   su2double* Gradient_Save;
@@ -924,8 +927,7 @@ protected:
   su2double* DesignVariable;
   su2double* LagrangeGradient;
   su2double* LagrangeGradient_Old;
-  unsigned short nDV;
-  unsigned short nDV_Total;
+
   su2double Lagrangian, Lagrangian_Old;
   su2double lb, ub, epsilon, cwolfeone;
   bool* activeset;
@@ -958,7 +960,9 @@ public:
 
   void OneShotStep();
 
-  void PiggyBack();
+  void RunPiggyBack();
+
+  void RunOneShot();
 
   /*!
    * \brief Record one iteration of a flow iteration in within multiple zones.
@@ -981,17 +985,22 @@ public:
 
   void SurfaceDeformation(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, CVolumetricMovement *grid_movement);
 
-  void BFGSUpdate();
+  void BFGSUpdate(CConfig *config);
 
   bool CheckFirstWolfe(su2double alpha);
 
   void ComputeSearchDirection();
+  void ComputeNegativeSearchDirection();
+  bool CheckDescent();
 
   void ComputeDesignVarUpdate(su2double alpha);
 
-  void StoreOldGradient();
+  void StoreSensitivity();
+  void StoreDesignVariable();
+  void StoreInformation();
 
-  su2double SetProjection(unsigned short iDV, su2double value, bool active);
+  su2double ProjectionSet(unsigned short iDV, su2double value, bool active);
+  su2double ProjectionPAP(unsigned short iDV, unsigned short jDV, su2double value, bool active);
 
   su2double BoundProjection(su2double value);
 

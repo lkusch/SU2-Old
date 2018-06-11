@@ -888,7 +888,7 @@ private:
   bool Body_Force;            /*!< \brief Flag to know if a body force is included in the formulation. */
   su2double *Body_Force_Vector;  /*!< \brief Values of the prescribed body force vector. */
   su2double *FreeStreamTurboNormal; /*!< \brief Direction to initialize the flow in turbomachinery computation */
-  bool One_Shot; /*!< \brief option for one-shot optimization method */
+  bool One_Shot, OS_Hessian_ID, Piggy_Back; /*!< \brief option for one-shot optimization method */
   unsigned short One_Shot_Start;
   su2double One_Shot_Alpha, One_Shot_Beta;
   su2double One_Shot_FD, One_Shot_Scale, Obj_Func_Scale, OS_Sens_Scale;
@@ -7437,6 +7437,7 @@ public:
    * \return boolean.
    */
   bool GetBoolOneShot(void);
+  bool GetBoolPiggyBack(void);
 
   unsigned short GetOneShotStart(void);
 
@@ -7446,6 +7447,7 @@ public:
   su2double GetOSScale(void);
   su2double GetSensScale(void);
   su2double GetObjScale(void);
+  bool GetOSHessianIdentity(void);
   void SetOneShotAlpha(su2double input);
   void SetOneShotBeta(su2double input);
 

@@ -58,6 +58,7 @@ protected:
   
   su2double *Solution,    /*!< \brief Solution of the problem. */
   *Solution_Store,
+  *Solution_Former,
   *Solution_Delta,
   *Solution_Save,
   *Solution_Old;      /*!< \brief Old solution of the problem R-K. */
@@ -2050,7 +2051,11 @@ public:
 
   void Set_StoreSolution(void);
 
+  void Set_FormerSolution(void);
+
   su2double *GetSolution_Store(void);
+
+  su2double *GetSolution_Former(void);
 
   su2double *GetSolution_Delta(void);
 
@@ -2065,6 +2070,8 @@ public:
   su2double *GetSolution_Save(void);
 
   su2double GetSolution_Save(unsigned short iVar);
+
+  void SetSolution_Store(su2double *val_solution_old);
 };
 
 /*!
@@ -4362,13 +4369,10 @@ public:
  */
 class COneShotVariable : public CDiscAdjVariable{
 private:
-//  su2double* Solution_Store;
 public:
   COneShotVariable(void);
   ~COneShotVariable(void);
   COneShotVariable(su2double *val_solution, unsigned short val_ndim, unsigned short val_nvar, CConfig *config);
-//  void Set_StoreSolution();
-//  su2double* GetSolution_Store();
 };
 
 #include "variable_structure.inl"

@@ -1956,6 +1956,10 @@ inline void CSolver::StoreSolution(){}
 
 inline void CSolver::LoadSolution(){}
 
+inline void CSolver::LoadFormerSolution(){}
+
+inline void CSolver::StoreFormerSolution(){}
+
 inline void CSolver::LoadAdjointSolution(){}
 
 inline void CSolver::StoreSaveSolution(){}

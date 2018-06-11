@@ -1202,7 +1202,6 @@ inline void CDiscAdjVariable::SetSolution_Direct(su2double *val_solution_direct)
   }
 }
 
-//inline void CVariable::Set_StoreSolution() {}
 
 inline su2double* CVariable::GetSolution_Store() { return Solution_Store; }
 inline su2double CVariable::GetSolution_Store(unsigned short iVar) { return Solution_Store[iVar]; }
@@ -1214,4 +1213,4 @@ inline su2double* CVariable::GetSolution_Delta() { return Solution_Delta; }
 inline void CVariable::SetSolution_Delta(unsigned short val_var, su2double val_solution_delta) { Solution_Delta[val_var] = val_solution_delta; }
 inline su2double CVariable::GetSolution_Delta(unsigned short iVar) { return Solution_Delta[iVar]; }
 
-//inline su2double* COneShotVariable::GetSolution_Store() { return Solution_Store; }
+inline su2double* CVariable::GetSolution_Former() { return Solution_Former; }

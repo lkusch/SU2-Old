@@ -858,11 +858,27 @@ void COneShotSolver::StoreSolution(){
   }
 }
 
+void COneShotSolver::StoreFormerSolution(){
+  unsigned long iPoint;
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->Set_FormerSolution();
+    node[iPoint]->Set_FormerSolution();
+  }
+}
+
 void COneShotSolver::LoadSolution(){
   unsigned long iPoint;
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->SetSolution(direct_solver->node[iPoint]->GetSolution_Store());
     node[iPoint]->SetSolution(node[iPoint]->GetSolution_Store());
+  }
+}
+
+void COneShotSolver::LoadFormerSolution(){
+  unsigned long iPoint;
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->SetSolution_Store(direct_solver->node[iPoint]->GetSolution_Former());
+    node[iPoint]->SetSolution_Store(node[iPoint]->GetSolution_Former());
   }
 }
 
@@ -942,7 +958,6 @@ su2double COneShotSolver::CalculateLagrangian(CConfig *config){
     }
   }
   Lagrangian+=helper*(config->GetOneShotAlpha()/2);
-  std::cout<<helper*(config->GetOneShotAlpha()/2)<<" ";
   helper=0.0;
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
@@ -950,7 +965,6 @@ su2double COneShotSolver::CalculateLagrangian(CConfig *config){
     }
   }
   Lagrangian+=helper*(config->GetOneShotBeta()/2);
-  std::cout<<helper*(config->GetOneShotBeta()/2)<<" ";
   helper=0.0;
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
@@ -958,24 +972,14 @@ su2double COneShotSolver::CalculateLagrangian(CConfig *config){
     }
   }
   Lagrangian+=helper;
-  std::cout<<helper<<" ";
   return Lagrangian;
 }
 
 void COneShotSolver::SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config) {
 
-//  bool dual_time = (config->GetUnsteady_Simulation() == DT_STEPPING_1ST ||
-//      config->GetUnsteady_Simulation() == DT_STEPPING_2ND);
-
-//  unsigned short iVar;
   unsigned long iPoint;
 
   for (iPoint = 0; iPoint < nPoint; iPoint++) {
-/*    if (dual_time) {
-      for (iVar = 0; iVar < nVar; iVar++) {
-        Solution[iVar] += node[iPoint]->GetDual_Time_Derivative(iVar);
-      }
-    }*/
     direct_solver->node[iPoint]->SetAdjointSolution(direct_solver->node[iPoint]->GetSolution_Delta());
   }
 }

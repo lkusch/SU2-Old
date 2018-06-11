@@ -3581,6 +3581,8 @@ public:
 
   virtual void LoadSolution();
 
+  virtual void LoadFormerSolution();
+
   virtual void LoadAdjointSolution();
 
   virtual void StoreSaveSolution();
@@ -3588,6 +3590,8 @@ public:
   virtual void LoadSaveSolution();
 
   virtual void LoadAdjointSaveSolution();
+
+  virtual void StoreFormerSolution();
 
   virtual su2double CalculateLagrangian(CConfig *config);
 
@@ -11706,6 +11710,8 @@ public:
 
   void LoadSolution();
 
+  void LoadFormerSolution();
+
   void LoadAdjointSolution();
 
   void StoreSaveSolution();
@@ -11713,6 +11719,8 @@ public:
   void LoadSaveSolution();
 
   void LoadAdjointSaveSolution();
+
+  void StoreFormerSolution();
 
   su2double CalculateLagrangian(CConfig* config);
 

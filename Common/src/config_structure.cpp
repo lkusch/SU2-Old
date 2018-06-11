@@ -1899,6 +1899,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /*!\brief ONE_SHOT \n DESCRIPTION: Use one-shot method for optimization \ingroup Config*/
   addBoolOption("ONE_SHOT", One_Shot, false);
+  addBoolOption("PIGGY_BACK", Piggy_Back, false);
   addUnsignedShortOption("ONE_SHOT_START", One_Shot_Start, 0);
   addDoubleOption("ONE_SHOT_ALPHA", One_Shot_Alpha, 200.0);
   addDoubleOption("ONE_SHOT_BETA", One_Shot_Beta, 2.0);
@@ -1906,6 +1907,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addDoubleOption("ONE_SHOT_SCALE", One_Shot_Scale, 1E-3);
   addDoubleOption("OBJ_SCALE", Obj_Func_Scale, 1E-3);
   addDoubleOption("SENS_SCALE", OS_Sens_Scale, 1E-0);
+  addBoolOption("OS_HESSIAN_ID", OS_Hessian_ID, false);
   
   /* END_CONFIG_OPTIONS */
 

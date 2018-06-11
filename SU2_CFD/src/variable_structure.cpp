@@ -446,3 +446,17 @@ void CVariable::Set_SaveSolution() {
     Solution_Save[iVar] = Solution[iVar];
 
 }
+
+void CVariable::Set_FormerSolution() {
+
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    Solution_Former[iVar] = Solution[iVar];
+
+}
+
+void CVariable::SetSolution_Store(su2double *val_solution_old) {
+
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    Solution_Store[iVar] = val_solution_old[iVar];
+
+}

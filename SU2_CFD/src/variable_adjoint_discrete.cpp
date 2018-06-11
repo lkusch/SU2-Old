@@ -55,6 +55,8 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
 
   Solution_Direct = NULL;
   Sensitivity    = NULL;
+  Sensitivity_Old = NULL;
+  Sensitivity_Lagrangian = NULL;
 
   DualTime_Derivative   = NULL;
   DualTime_Derivative_n = NULL;
@@ -67,11 +69,15 @@ CDiscAdjVariable::CDiscAdjVariable(su2double* val_solution, unsigned short val_n
   Solution_Direct = new su2double[nVar];
 
   Sensitivity = new su2double[nDim];
+  Sensitivity_Old = new su2double[nDim];
+  Sensitivity_Lagrangian = new su2double[nDim];
 
   unsigned short iVar,iDim;
 
   for (iDim = 0; iDim < nDim; iDim++) {
     Sensitivity[iDim] = 0.0;
+    Sensitivity_Old[iDim] = 0.0;
+    Sensitivity_Lagrangian[iDim] = 0.0;
   }
 
   for (iVar = 0; iVar < nVar; iVar++) {
@@ -93,6 +99,9 @@ CDiscAdjVariable::~CDiscAdjVariable() {
 
   if (Solution_Direct != NULL) delete [] Solution_Direct;
   if (Sensitivity     != NULL) delete [] Sensitivity;
+  if (Sensitivity_Old     != NULL) delete [] Sensitivity_Old;
+  if (Sensitivity_Lagrangian     != NULL) delete [] Sensitivity_Lagrangian;
+
 
   if (DualTime_Derivative   != NULL) delete [] DualTime_Derivative;
   if (DualTime_Derivative_n != NULL) delete [] DualTime_Derivative_n;

@@ -1637,9 +1637,10 @@ inline unsigned short CConfig::GetFFD_Blending(void){return FFD_Blending;}
 inline su2double* CConfig::GetFFD_BSplineOrder(){return FFD_BSpline_Order;}
 
 inline bool CConfig::GetBoolOneShot(void) { return One_Shot;}
+inline bool CConfig::GetBoolPiggyBack(void) { return Piggy_Back;}
 
 inline unsigned short CConfig::GetOneShotStart(void) { return One_Shot_Start; }
-
+inline bool CConfig::GetOSHessianIdentity(void) { return OS_Hessian_ID; }
 inline su2double CConfig::GetOneShotAlpha(void) { return One_Shot_Alpha; }
 inline su2double CConfig::GetOneShotBeta(void) { return One_Shot_Beta; }
 inline su2double CConfig::GetFDStep(void) { return One_Shot_FD; }
