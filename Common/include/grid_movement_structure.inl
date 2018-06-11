@@ -2,18 +2,24 @@
  * \file grid_movement_structure.inl
  * \brief In-Line subroutines of the <i>grid_movement_structure.hpp</i> file.
  * \author F. Palacios, T. Economon, S. Padron
- * \version 4.2.0 "Cardinal"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
- *                      Dr. Thomas D. Economon (economon@stanford.edu).
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright (C) 2012-2016 SU2, the open-source CFD code.
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -216,9 +222,27 @@ inline void CVolumetricMovement::Set_nIterMesh(unsigned long val_nIterMesh) { nI
 
 inline unsigned long CVolumetricMovement::Get_nIterMesh() { return nIterMesh; }
 
-inline bool CSurfaceMovement::CheckFFDBoxDefinition(CConfig *config, unsigned short iDV){
-  for (unsigned short iFFDBox = 0; iFFDBox < GetnFFDBox(); iFFDBox++){
-    if (FFDBox[iFFDBox]->GetTag() == config->GetFFDTag(iDV)){ return true;}
+inline void CVolumetricMovement::SetVolume_Deformation_Elas(CGeometry *geometry, CConfig *config, bool UpdateGeo, bool Derivative) {  }
+
+inline void CVolumetricMovement::Boundary_Dependencies(CGeometry **geometry, CConfig *config) {  }
+
+inline void CElasticityMovement::Set_nIterMesh(unsigned long val_nIterMesh) { nIterMesh = val_nIterMesh; }
+
+inline unsigned long CElasticityMovement::Get_nIterMesh() { return nIterMesh; }
+
+inline bool CSurfaceMovement::CheckFFDBoxDefinition(CConfig *config, unsigned short iDV) {
+  for (unsigned short iFFDBox = 0; iFFDBox < GetnFFDBox(); iFFDBox++) {
+    if (FFDBox[iFFDBox]->GetTag() == config->GetFFDTag(iDV)) { return true;}
   }
   return false;
 }
+
+inline su2double CFreeFormBlending::GetBasis(short val_i, su2double val_t){return 0.0;}
+
+inline su2double CFreeFormBlending::GetDerivative(short val_i, su2double val_t, short val_order){return 0.0;}
+
+inline void CFreeFormBlending::SetOrder(short Order, short n_controlpoints){}
+
+inline su2double CFreeFormBlending::GetOrder(){return Order;}
+
+inline su2double CFreeFormBlending::GetDegree(){return Degree;}

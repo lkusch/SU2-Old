@@ -2,18 +2,24 @@
  * \file codi_reverse_structure.inl
  * \brief Inline subroutines for <i>datatype_structure.hpp<i>.
  * \author T. Albring
- * \version 4.2.0 "Cardinal"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
- *                      Dr. Thomas D. Economon (economon@stanford.edu).
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright (C) 2012-2016 SU2, the open-source CFD code.
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,17 +37,17 @@
 #pragma once
 
 namespace SU2_TYPE{
-  inline void SetValue(su2double& data, const double &val){data.setValue(val);}
+  inline void SetValue(su2double& data, const double &val) {data.setValue(val);}
 
-  inline double GetValue(const su2double& data){return data.getValue();}
+  inline double GetValue(const su2double& data) { return data.getValue();}
 
-  inline void SetSecondary(su2double& data, const double &val){data.setGradient(val);}
+  inline void SetSecondary(su2double& data, const double &val) {data.setGradient(val);}
 
-  inline double GetSecondary(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
+  inline double GetSecondary(const su2double& data) { return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
 
-  inline double GetDerivative(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
+  inline double GetDerivative(const su2double& data) { return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
 
-  inline void SetDerivative(su2double& data, const double &val){data.setGradient(val);}
+  inline void SetDerivative(su2double& data, const double &val) {data.setGradient(val);}
 }
 
 /*--- Object for the definition of getValue used in the printfOver definition.
@@ -54,3 +60,4 @@ template<class A> struct Impl_getValue<codi::Expression<double, A> > {
     return value.getValue();
   }
 };
+

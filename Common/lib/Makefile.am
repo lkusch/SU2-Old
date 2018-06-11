@@ -3,18 +3,14 @@
 # \file Makefile.am
 # \brief Makefile for the SU2 common library
 # \author M. Colonno, T. Economon, F. Palacios
-# \version 4.2.0 "Cardinal"
+# \version 6.0.1 "Falcon"
 #
-# SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
-#                      Dr. Thomas D. Economon (economon@stanford.edu).
+# The current SU2 release has been coordinated by the
+# SU2 International Developers Society <www.su2devsociety.org>
+# with selected contributions from the open-source community.
 #
-# SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
-#                 Prof. Piero Colonna's group at Delft University of Technology.
-#                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
-#                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
-#                 Prof. Rafael Palacios' group at Imperial College London.
-#
-# Copyright (C) 2012-2016 SU2, the open-source CFD code.
+# Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+#                      Tim Albring, and the SU2 contributors.
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -105,17 +101,12 @@ lib_sources = \
   ../src/interpolation_structure.cpp \
   ../src/adt_structure.cpp
 
-lib_cxxflags =
+lib_cxxflags = -fPIC
 lib_ldadd =
 
 # always link to built dependencies from ./externals
 lib_cxxflags += @su2_externals_INCLUDES@
 lib_ldadd += @su2_externals_LIBS@
-
-# if BUILD_CGNS
-lib_cxxflags += @CGNS_CXX@
-lib_ldadd += @CGNS_LD@
-# endif
 
 # if BUILD_HDF5
 lib_cxxflags += @HDF5_CXX@

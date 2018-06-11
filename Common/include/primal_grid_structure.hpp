@@ -3,18 +3,24 @@
  * \brief Headers of the main subroutines for storing the primal grid structure.
  *        The subroutines and functions are in the <i>primal_grid_structure.cpp</i> file.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
- *                      Dr. Thomas D. Economon (economon@stanford.edu).
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright (C) 2012-2016 SU2, the open-source CFD code.
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,12 +52,12 @@ using namespace std;
 /*!
  * \class CPrimalGrid
  * \brief Class to define the numerical primal grid.
- * \author F. Palacios
- * \version 4.2.0 "Cardinal"
+ * \author F. Palacios, T. Economon
  */
 class CPrimalGrid {
 protected:
 	unsigned long *Nodes;         /*!< \brief Vector to store the global nodes of an element. */
+  unsigned long GlobalIndex;    /*!< \brief The global index of an element. */
 	long *Neighbor_Elements;      /*!< \brief Vector to store the elements surronding an element. */
 	su2double *Coord_CG;             /*!< \brief Coordinates of the center-of-gravity of the element. */
 	su2double **Coord_FaceElems_CG;	/*!< \brief Coordinates of the center-of-gravity of the face of the
@@ -149,6 +155,18 @@ public:
 	 * \return <code>TRUE</code> if the element must be divided; otherwise <code>FALSE</code>.
 	 */
 	bool GetDivide(void);
+  
+  /*!
+   * \brief Get the element global index in a parallel computation.
+   * \return Global index of the element in a parallel computation.
+   */
+  unsigned long GetGlobalIndex(void);
+  
+  /*!
+   * \brief Set the global index for an element in a parallel computation.
+   * \return Global index of an element in a parallel computation.
+   */
+  void SetGlobalIndex(unsigned long val_globalindex);
 	
 	/*!
 	 * \brief A virtual member.
@@ -230,7 +248,6 @@ public:
 	 */
 	virtual unsigned long GetNode(unsigned short val_node) = 0;
   
-  
   /*!
 	 * \brief A pure virtual member.
 	 * \param[in] val_node - Local index of a node.
@@ -261,7 +278,6 @@ public:
  * \brief Class for vertex element definition. This kind
  *        of element is used in the parallelization stuff.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CVertexMPI : public CPrimalGrid {
 private:
@@ -378,7 +394,6 @@ public:
  * \class CLine
  * \brief Class for line element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CLine : public CPrimalGrid {
 private:
@@ -504,7 +519,6 @@ public:
  * \class CTriangle
  * \brief Class for triangle element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CTriangle : public CPrimalGrid {
 private:
@@ -632,7 +646,6 @@ public:
  * \class CQuadrilateral
  * \brief Class for quadrilateral element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CQuadrilateral : public CPrimalGrid {
 private:
@@ -760,7 +773,6 @@ public:
  * \class CTetrahedron
  * \brief Class for tetrahedron element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CTetrahedron : public CPrimalGrid {
 private:
@@ -875,7 +887,6 @@ public:
  * \class CHexahedron
  * \brief Class for hexahedron element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CHexahedron : public CPrimalGrid {
 private:
@@ -997,7 +1008,6 @@ public:
  * \class CPrism
  * \brief Class for prism element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CPrism : public CPrimalGrid {
 private:
@@ -1115,7 +1125,6 @@ public:
  * \class CPyramid
  * \brief Class for pyramid element definition.
  * \author F. Palacios
- * \version 4.2.0 "Cardinal"
  */
 class CPyramid : public CPrimalGrid {
 private:

@@ -22,6 +22,11 @@ autom4te.cache
 # Python files
 *.pyc
 
+# SWIG compilation
+SU2_PY/pySU2/*.cxx
+SU2_PY/pySU2/*.h
+SU2_PY/pySU2/*.py
+
 # Mac files
 *.DS_Store
 *.xcuserdatad
@@ -36,6 +41,7 @@ Makefile
 externals/autotools/bin
 externals/autotools/include
 externals/autotools/share
+externals/autotools/lib
 
 #logs and errors
 *.log
@@ -49,3 +55,11 @@ SU2_DIRECTDIFF/
 # ignore the bin/ directory
 bin/
 
+# ignore project settings from eclipse
+.project
+
+# ignore swap files
+*.swp
+
+TestData
+*.stl

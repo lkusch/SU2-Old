@@ -2,18 +2,24 @@
  * transport_model.cpp
  * \brief Source of the main transport properties subroutines of the SU2 solvers.
  * \author S. Vitale, M. Pini, G. Gori, A. Guardone, P. Colonna
- * \version 4.2.0 "Cardinal"
+ * \version 6.0.1 "Falcon"
  *
- * SU2 Lead Developers: Dr. Francisco Palacios (Francisco.D.Palacios@boeing.com).
- *                      Dr. Thomas D. Economon (economon@stanford.edu).
+ * The current SU2 release has been coordinated by the
+ * SU2 International Developers Society <www.su2devsociety.org>
+ * with selected contributions from the open-source community.
  *
- * SU2 Developers: Prof. Juan J. Alonso's group at Stanford University.
- *                 Prof. Piero Colonna's group at Delft University of Technology.
- *                 Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *                 Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *                 Prof. Rafael Palacios' group at Imperial College London.
+ * The main research teams contributing to the current release are:
+ *  - Prof. Juan J. Alonso's group at Stanford University.
+ *  - Prof. Piero Colonna's group at Delft University of Technology.
+ *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
+ *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
+ *  - Prof. Rafael Palacios' group at Imperial College London.
+ *  - Prof. Vincent Terrapon's group at the University of Liege.
+ *  - Prof. Edwin van der Weide's group at the University of Twente.
+ *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
  *
- * Copyright (C) 2012-2016 SU2, the open-source CFD code.
+ * Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
+ *                      Tim Albring, and the SU2 contributors.
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,18 +37,13 @@
 
 #include "../include/transport_model.hpp"
 
-
-/*-------------------------------------------------*/
-/*----------- Dynamic Viscosity Models ------------*/
-/*-------------------------------------------------*/
-
 CViscosityModel::CViscosityModel(void) {
 
   /*--- Attributes initialization ---*/
 
-	Mu = 0.0;
-	dmudrho_T = 0.0;
-	dmudT_rho = 0.0;
+  Mu = 0.0;
+  dmudrho_T = 0.0;
+  dmudT_rho = 0.0;
 
 }
 
@@ -55,9 +56,9 @@ CConstantViscosity::CConstantViscosity(su2double mu_const) : CViscosityModel() {
 
   /*--- Attributes initialization ---*/
 
-	Mu = mu_const;
-	dmudrho_T = 0.0;
-	dmudT_rho = 0.0;
+  Mu = mu_const;
+  dmudrho_T = 0.0;
+  dmudT_rho = 0.0;
 
 }
 
@@ -67,17 +68,17 @@ CConstantViscosity::~CConstantViscosity(void) { }
 
 
 CSutherland::CSutherland(void) : CViscosityModel() {
-	Mu_ref = 0.0;
-	T_ref = 0.0;
-	S = 0.0;
+  Mu_ref = 0.0;
+  T_ref = 0.0;
+  S = 0.0;
 
 }
 
 CSutherland::CSutherland(su2double mu_ref, su2double t_ref, su2double s) : CViscosityModel() {
 
-	Mu_ref = mu_ref;
-	T_ref = t_ref;
-	S = s;
+  Mu_ref = mu_ref;
+  T_ref = t_ref;
+  S = s;
 }
 
 CSutherland::~CSutherland(void) { }
@@ -85,15 +86,15 @@ CSutherland::~CSutherland(void) { }
 
 void CSutherland::SetViscosity(su2double T, su2double rho) {
 
-	Mu = Mu_ref*pow((T/T_ref),(3.0/2.0))*((T_ref + S)/(T + S));
+  Mu = Mu_ref*pow((T/T_ref),(3.0/2.0))*((T_ref + S)/(T + S));
 
 }
 
 void CSutherland::SetDerViscosity(su2double T, su2double rho) {
 
-	dmudrho_T = 0.0;
-	dmudT_rho = Mu_ref*( (3.0/2.0)*pow( (T/T_ref),(1.0/2.0) )*( (T_ref + S)/(T + S) )
-			    -pow( (T/T_ref),(3.0/2.0) )*(T_ref + S)/(T + S)/(T + S) );
+  dmudrho_T = 0.0;
+  dmudT_rho = Mu_ref*( (3.0/2.0)*pow( (T/T_ref),(1.0/2.0) )*( (T_ref + S)/(T + S) )
+          -pow( (T/T_ref),(3.0/2.0) )*(T_ref + S)/(T + S)/(T + S) );
 
 }
 
@@ -105,9 +106,9 @@ CConductivityModel::CConductivityModel(void) {
 
   /*--- Attributes initialization ---*/
 
-	Kt = 0.0;
-	dktdrho_T = 0.0;
-	dktdT_rho = 0.0;
+  Kt = 0.0;
+  dktdrho_T = 0.0;
+  dktdT_rho = 0.0;
 
 }
 
@@ -120,9 +121,9 @@ CConstantConductivity::CConstantConductivity(su2double kt_const) : CConductivity
 
   /*--- Attributes initialization ---*/
 
-	Kt = kt_const;
-	dktdrho_T = 0.0;
-	dktdT_rho = 0.0;
+  Kt = kt_const;
+  dktdrho_T = 0.0;
+  dktdT_rho = 0.0;
 
 }
 
@@ -135,20 +136,20 @@ CConstantPrandtl::CConstantPrandtl(su2double pr_const) : CConductivityModel() {
 
   /*--- Attributes initialization ---*/
 
-	Pr_const = pr_const;
+  Pr_const = pr_const;
 
 }
 
 void CConstantPrandtl::SetConductivity(su2double T, su2double rho, su2double mu, su2double cp) {
 
-	Kt = mu*cp/Pr_const;
+  Kt = mu*cp/Pr_const;
 
 }
 
 void CConstantPrandtl::SetDerConductivity(su2double T, su2double rho, su2double dmudrho_T, su2double dmudT_rho, su2double cp) {
 
-	dktdrho_T = dmudrho_T*cp/Pr_const;
-	dktdT_rho = dmudT_rho*cp/Pr_const;
+  dktdrho_T = dmudrho_T*cp/Pr_const;
+  dktdT_rho = dmudT_rho*cp/Pr_const;
 
 }
 
