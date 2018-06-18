@@ -4134,47 +4134,108 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   virtual void SetDES_LengthScale(CSolver** solver, CGeometry *geometry, CConfig *config);
-  virtual void StoreSolution_Direct();
 
-  virtual void LoadSolution_Direct();
-
-  virtual void SetGeometrySensitivityGradient(CGeometry *geometry);
-  virtual void SetGeometrySensitivityLagrangian(CGeometry *geometry);
-
-  virtual void StoreMeshPoints(CConfig *config, CGeometry *geometry);
-
-  virtual void LoadMeshPoints(CConfig *config, CGeometry *geometry);
-
-  virtual void SaveSensitivity(CGeometry *geometry);
-
+  /*!
+   * \brief A virtual member.
+   */
   virtual void StoreSolution();
 
+  /*!
+   * \brief A virtual member.
+   */
   virtual void LoadSolution();
 
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void StoreSolution_Direct();
+
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void LoadSolution_Direct();
+
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void StoreSaveSolution();
+
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void LoadSaveSolution();
+
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void StoreFormerSolution();
+
+  /*!
+   * \brief A virtual member.
+   */
   virtual void LoadFormerSolution();
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] config - config class object
+   * \param[in] geometry - geometry class object
+   */
+  virtual void StoreMeshPoints(CConfig *config, CGeometry *geometry);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] config - config class object
+   * \param[in] geometry - geometry class object
+   */
+  virtual void LoadMeshPoints(CConfig *config, CGeometry *geometry);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
+  virtual void SaveSensitivity(CGeometry *geometry);
+
+  //TODO
+  virtual void SetGeometrySensitivityGradient(CGeometry *geometry);
+
+  virtual void SetGeometrySensitivityLagrangian(CGeometry *geometry);
 
   virtual void LoadAdjointSolution();
 
-  virtual void StoreSaveSolution();
-
-  virtual void LoadSaveSolution();
-
   virtual void LoadAdjointSaveSolution();
 
-  virtual void StoreFormerSolution();
-
-  virtual su2double CalculateLagrangian(CConfig *config);
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
+  virtual su2double CalculateLagrangianPart(CConfig *config, bool augmented);
 
   virtual void CalculateAlphaBeta(CConfig *config);
 
   virtual void SetAlphaBeta(CConfig *config);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
   virtual void ResetSensitivityLagrangian(CGeometry *geometry);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
   virtual void UpdateSensitivityLagrangian(CGeometry *geometry, su2double factor);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
   virtual void UpdateStateVariable(CConfig *config);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
   virtual void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);
 
 };
@@ -13253,10 +13314,63 @@ public:
   ~COneShotSolver(void);
 
   /*!
-   * \brief Prepare the solver for a new recording.
-   * \param[in] kind_recording - Kind of AD recording.
+   * \brief Prepare the solver for a new recording (without setting solution to initial solution).
+   * \param[in] geometry - geometry class object
+   * \param[in] config - config class object
    */
   void SetRecording(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief Store the current solution in Solution_Store.
+   * (This is done to store the solution of the current iterate before line search)
+   */
+  void StoreSolution();
+
+  /*!
+   * \brief Load the current solution from Solution_Store.
+   */
+  void LoadSolution();
+
+  /*!
+   * \brief Store current mesh coordinates and normals.
+   * (This is e.g. done before line search)
+   * \param[in] config - config class object
+   * \param[in] geometry - geometry class object
+   */
+  void StoreMeshPoints(CConfig *config, CGeometry *geometry);
+
+  /*!
+   * \brief Load mesh coordinates and normals.
+   * \param[in] config - config class object
+   * \param[in] geometry - geometry class object
+   */
+  void LoadMeshPoints(CConfig *config, CGeometry *geometry);
+
+  /*!
+   * \brief Store the geometry sensitivities (Sensitivity) in Sensitivity_ShiftedLagrangian
+   * \param[in] geometry - geometry class object
+   */
+  void SaveSensitivity(CGeometry* geometry);
+
+  /*!
+   * \brief Calculate either the solver part of the augmented or the shifted Lagrangian
+   * (without objective and constraint functions)
+   * \param[in] config - config class object
+   * \param[in] augmented - true if the augmented Lagrangian is considered
+   * \result value of the Lagrangian part
+   */
+  su2double CalculateLagrangianPart(CConfig* config, bool augmented);
+
+  /*!
+   * \brief Store the current solution in Solution_Save.
+   * (This is done to store the solution before calculating the alpha and beta terms)
+   */
+  void StoreSaveSolution();
+
+  /*!
+   * \brief Load the current solution from Solution_Save.
+   */
+  void LoadSaveSolution();
 
   //TODO
   void StoreSolution_Direct();
@@ -13264,31 +13378,16 @@ public:
   void LoadSolution_Direct();
 
   void SetGeometrySensitivityGradient(CGeometry *geometry);
+
   void SetGeometrySensitivityLagrangian(CGeometry *geometry);
-
-  void StoreMeshPoints(CConfig *config, CGeometry *geometry);
-
-  void LoadMeshPoints(CConfig *config, CGeometry *geometry);
-
-  void SaveSensitivity(CGeometry* geometry);
-
-  void StoreSolution();
-
-  void LoadSolution();
 
   void LoadFormerSolution();
 
   void LoadAdjointSolution();
 
-  void StoreSaveSolution();
-
-  void LoadSaveSolution();
-
   void LoadAdjointSaveSolution();
 
   void StoreFormerSolution();
-
-  su2double CalculateLagrangian(CConfig* config);
 
   void CalculateAlphaBeta(CConfig *config);
 
@@ -13296,12 +13395,32 @@ public:
 
   void ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config);
 
+  /*!
+   * \brief Set the adjoint output to the difference in the solution.
+   * (Is done to evaluate the adjoint solution for the alpha term)
+   * \param[in] geometry - geometry class element
+   * \param[in] config - config class element
+   */
   void SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config);
 
+  /*!
+   * \brief Set the sensitivity of the doubly augmented Lagrangian to zero.
+   * \param[in] geometry - geometry class element
+   */
   void ResetSensitivityLagrangian(CGeometry *geometry);
 
+  /*!
+   * \brief Update the sensitivity of the doubly augmented Lagrangian with a factor.
+   * \param[in] geometry - geometry class element
+   * \param[in] factor - multiplier for the update
+   */
   void UpdateSensitivityLagrangian(CGeometry *geometry, su2double factor);
 
+  /*!
+   * \brief Adds the difference in the adjoint solution to the solution (with a finite difference step size).
+   * (This is done to calculate the finite difference update for the beta term)
+   * \param[in] config - config class element
+   */
   void UpdateStateVariable(CConfig *config);
 
   void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);

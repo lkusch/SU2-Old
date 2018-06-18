@@ -1401,11 +1401,12 @@ public:
 
   /*!
    * \brief Registers all output variables of the fluid iteration.
+   * (Both, flow and geometry variables have to be registered in each iteration)
    * \param[in] solver_container - Container vector with all the solutions.
    * \param[in] geometry_container - Geometrical definition of the problem.
    * \param[in] config_container - Definition of the particular problem.
    * \param[in] iZone - Index of the zone.
-   * \param[in] kind_recording - Kind of recording, either FLOW_VARIABLES or GEOMETRY_VARIABLES
+   * \param[in] kind_recording - Kind of recording, either FLOW_VARIABLES, COMBINED or GEOMETRY_VARIABLES
    */
   void RegisterInput(CSolver ****solver_container,
                      CGeometry*** geometry_container,
@@ -1414,8 +1415,8 @@ public:
                      unsigned short kind_recording);
 
   /*!
-   * \brief Compute necessary variables that depend on the conservative variables or the mesh node positions
-   * (e.g. turbulent variables, normals, volumes).
+   * \brief Compute necessary variables that depend on the conservative variables AND the mesh node positions
+   * (e.g. turbulent variables, normals, volumes). AND - difference to usual method
    * \param[in] solver_container - Container vector with all the solutions.
    * \param[in] geometry_container - Geometrical definition of the problem.
    * \param[in] config_container - Definition of the particular problem.
@@ -1427,7 +1428,14 @@ public:
                        CConfig **config_container,
                        unsigned short iZone,
                        unsigned short kind_recording);
-  //TODO
+  /*!
+   * \brief Registers all input variables of the fluid iteration. - The objective function is not set and
+   * instead of an adjoint variable the difference in direct variables is set (needed for doubly augmented Lagrangian)
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] iZone - Index of the zone.
+   */
   void InitializeAdjoint_Update(CSolver ****solver_container,
                          CGeometry*** geometry_container,
                          CConfig** config_container,

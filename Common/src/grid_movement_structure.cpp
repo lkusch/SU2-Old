@@ -333,12 +333,12 @@ void CVolumetricMovement::SetVolume_Deformation(CGeometry *geometry, CConfig *co
 
     Set_nIterMesh(Tot_Iter);
 
-    if (rank == MASTER_NODE) {
+ /*   if (rank == MASTER_NODE) {
       cout << "Non-linear iter.: " << iNonlinear_Iter+1 << "/" << Nonlinear_Iter  << ". Linear iter.: " << Tot_Iter << ". ";
       if (nDim == 2) cout << "Min. area: " << MinVolume << ". Error: " << Residual << "." << endl;
       else cout << "Min. volume: " << MinVolume << ". Error: " << Residual << "." << endl;
     }
-    
+   */
   }
   
 
@@ -351,8 +351,8 @@ void CVolumetricMovement::ComputeDeforming_Element_Volume(CGeometry *geometry, s
   unsigned short nNodes = 0, iNodes, iDim;
   bool RightVol = true;
   
-  if (rank == MASTER_NODE)
-    cout << "Computing volumes of the grid elements." << endl;
+//  if (rank == MASTER_NODE)
+//    cout << "Computing volumes of the grid elements." << endl;
   
   MaxVolume = -1E22; MinVolume = 1E22;
   
@@ -538,7 +538,7 @@ su2double CVolumetricMovement::SetFEAMethodContributions_Elem(CGeometry *geometr
   /*--- Compute min volume in the entire mesh. ---*/
   
   ComputeDeforming_Element_Volume(geometry, MinVolume, MaxVolume);
-  if (rank == MASTER_NODE) cout <<"Min. volume: "<< MinVolume <<", max. volume: "<< MaxVolume <<"." << endl;
+//  if (rank == MASTER_NODE) cout <<"Min. volume: "<< MinVolume <<", max. volume: "<< MaxVolume <<"." << endl;
   
   /*--- Compute the distance to the nearest surface if needed
    as part of the stiffness calculation.. ---*/
@@ -9195,7 +9195,7 @@ void CElasticityMovement::SetVolume_Deformation_Elas(CGeometry *geometry, CConfi
     SetMinMaxVolume(geometry, config);
     if ((rank == MASTER_NODE) && (!discrete_adjoint)) {
       if (nDim == 2) cout << scientific << "Min. area: "<< MinVolume <<", max. area: " << MaxVolume <<"." << endl;
-      else           cout << scientific << "Min. volume: "<< MinVolume <<", max. volume: " << MaxVolume <<"." << endl;
+      //else           cout << scientific << "Min. volume: "<< MinVolume <<", max. volume: " << MaxVolume <<"." << endl;
     }
 
     /*--- Compute the stiffness matrix. ---*/
@@ -9221,7 +9221,7 @@ void CElasticityMovement::SetVolume_Deformation_Elas(CGeometry *geometry, CConfi
     if ((rank == MASTER_NODE) && (!discrete_adjoint)) {
       cout << scientific << "Non-linear iter.: " << iNonlinear_Iter+1 << "/" << Nonlinear_Iter  << ". Linear iter.: " << nIterMesh << ". ";
       if (nDim == 2) cout << "Min. area: " << MinVolume << ". Error: " << valResidual << "." << endl;
-      else cout << "Min. volume: " << MinVolume << ". Error: " << valResidual << "." << endl;
+     // else cout << "Min. volume: " << MinVolume << ". Error: " << valResidual << "." << endl;
     }
 
   }

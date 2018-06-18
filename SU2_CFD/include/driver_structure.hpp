@@ -1452,16 +1452,16 @@ protected:
 
   unsigned short nDV_Total; /*!< \brief Total number of design variables used in optimization.*/
 
-  su2double* Gradient; /*!< \brief Gradient N_u of the shifted Lagrangian .*/
-  su2double* Gradient_Old; /*!< \brief Gradient N_u of the shifted Lagrangian (old value) .*/
-  su2double* Gradient_Save; /*!< \brief Saved gradient N_u of the shifted Lagrangian .*/
-  su2double* Gradient_Save_Old; /*!< \brief Saved gradient N_u of the shifted Lagrangian (old value) .*/
+  su2double* Gradient; /*!< \brief Vector to store gradient obtained from projection .*/
+  su2double* Gradient_Old; /*!< \brief Vector to store gradient obtained from projection (old value) .*/
+  su2double* ShiftedLagrangianGradient; /*!< \brief Saved gradient N_u of the shifted Lagrangian .*/
+  su2double* ShiftedLagrangianGradient_Old; /*!< \brief Saved gradient N_u of the shifted Lagrangian (old value) .*/
   su2double* DesignVarUpdate; /*!< \brief Update of the design variable Delta u = u_{k+1} - u_k .*/
   su2double* SearchDirection; /*!< \brief Search direction for optimization.*/
   su2double** BFGS_Inv; /*!< \brief Inverse matrix for BFGS update.*/
   su2double* DesignVariable; /*!< \brief Current design variable value.*/
-  su2double* LagrangeGradient; /*!< \brief Gradient of doubly augmented Lagrangian.*/
-  su2double* LagrangeGradient_Old; /*!< \brief Gradient of doubly augmented Lagrangian (old value).*/
+  su2double* AugmentedLagrangianGradient; /*!< \brief Gradient of doubly augmented Lagrangian.*/
+  su2double* AugmentedLagrangianGradient_Old; /*!< \brief Gradient of doubly augmented Lagrangian (old value).*/
   su2double Lagrangian, Lagrangian_Old; /*!< \brief Value of doubly augmented Lagrangian.*/
   
   su2double lb, ub; /*!< \brief Lower and upper bounds of design variables.*/
@@ -1538,10 +1538,22 @@ public:
    */
   void SetAdj_ConstrFunction();
 
-  //TODO
-
+  /*!
+   * \brief Projection of the surface sensitivity using algorithmic differentiation (AD) (see also SU2_DOT).
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement class of the problem.
+   * \param[in] Gradient - Output to store the gradient data.
+   */
   void SetProjection_AD(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, su2double* Gradient);
 
+  /*!
+   * \brief Performs a surface deformation and volumetric deformation (see also SU2_DEF).
+   * \param[in] geometry - geometry class.
+   * \param[in] config - config class.
+   * \param[in] surface_movement - surface movement class
+   * \param[in] grid_movement - volumetric movement class
+   */
   void SurfaceDeformation(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, CVolumetricMovement *grid_movement);
 
   /*!
@@ -1569,30 +1581,71 @@ public:
 
   /*!
    * \brief Check if the first Wolfe descent condition is fulfilled (line search condition).
-   * \param[in] stepsize - factor for the line search.
    */
   bool CheckFirstWolfe();
 
-  //TODO
-
+  /*!
+   * \brief Store mesh node Sensitivity to be used for the gradient projection.
+   */
   void StoreSensitivity();
+
+  /*!
+   * \brief Store values for the updated design variables.
+   */
   void StoreDesignVariable();
-  void StoreInformation();
 
-  su2double ProjectionSet(unsigned short iDV, su2double value, bool active);
-  su2double ProjectionPAP(unsigned short iDV, unsigned short jDV, su2double value, bool active);
+  /*!
+   * \brief Store the values for the Lagrangian and its gradient.
+   */
+  void StoreLagrangianInformation();
 
-  su2double BoundProjection(su2double value);
+  /*!
+   * \brief Calculate value for normal or doubly augmented Lagrangian.
+   * \param[in] augmented - YES if the doubly augmented Lagrangian shall be calculated
+   */
+  void CalculateLagrangian(bool augmented);
 
-  void CalculateLagrangian();
+  /*!
+   * \brief Store the gradient of the shifted Lagrangian.
+   */
+  void SetShiftedLagrangianGradient();
 
-  void CalculateObjectiveLagrangian();
+  /*!
+   * \brief Store the gradient of the augmented Lagrangian.
+   */
+  void SetAugmentedLagrangianGradient();
 
+//TODO
+  void SetAdj_ObjFunction_Zero();
+
+  /*!
+   * \brief Find the indices for the epsilon-active set (overestimated).
+   */
   void ComputeActiveSet();
 
-  void SetLagrangeGradient();
+  /*!
+   * \brief Project input value into feasible bounds of design space.
+   * \param[in] value - value that is projected
+   * \return projected value
+   */
+  su2double BoundProjection(su2double value);
 
-  void SaveGradient();
+  /*!
+   * \brief Project a given vector value into the epsilon-active set (or inactive set).
+   * \param[in] iDV - index of the respective value
+   * \param[in] value - corresponding value
+   * \param[in] active - is true if the projection is into the active set
+   * \return projected value
+   */
+  su2double ProjectionSet(unsigned short iDV, su2double value, bool active);
 
-  void SetAdj_ObjFunction_Zero();
+  /*!
+   * \brief Project a given matrix value into the epsilon-active set (or inactive set).
+   * \param[in] iDV - row index of the respective value
+   * \param[in] jDV - column index of the respective value
+   * \param[in] value - corresponding value
+   * \param[in] active - is true if the projection is into the active set
+   * \return projected value
+   */
+  su2double ProjectionPAP(unsigned short iDV, unsigned short jDV, su2double value, bool active);
 };

@@ -1115,7 +1115,7 @@ void COneShotSolver::SetGeometrySensitivityLagrangian(CGeometry *geometry){
 
     for (iPoint = 0; iPoint < nPoint; iPoint++) {
       for (iDim = 0; iDim < nDim; iDim++) {
-        geometry->SetSensitivity(iPoint, iDim, node[iPoint]->GetSensitivity_Lagrangian(iDim));
+        geometry->SetSensitivity(iPoint, iDim, node[iPoint]->GetSensitivity_AugmentedLagrangian(iDim));
       }
     }
 }
@@ -1132,7 +1132,7 @@ void COneShotSolver::SetGeometrySensitivityGradient(CGeometry *geometry){
 
     for (iPoint = 0; iPoint < nPoint; iPoint++) {
       for (iDim = 0; iDim < nDim; iDim++) {
-        geometry->SetSensitivity(iPoint, iDim, node[iPoint]->GetSensitivity_Old(iDim));
+        geometry->SetSensitivity(iPoint, iDim, node[iPoint]->GetSensitivity_ShiftedLagrangian(iDim));
       }
     }
 }
@@ -1146,7 +1146,7 @@ void COneShotSolver::SaveSensitivity(CGeometry *geometry){
 
     for (iPoint = 0; iPoint < nPoint; iPoint++) {
       for (iDim = 0; iDim < nDim; iDim++) {
-        node[iPoint]->SetSensitivity_Old(iDim, node[iPoint]->GetSensitivity(iDim));
+        node[iPoint]->SetSensitivity_ShiftedLagrangian(iDim, node[iPoint]->GetSensitivity(iDim));
       }
     }
 }
@@ -1160,7 +1160,7 @@ void COneShotSolver::ResetSensitivityLagrangian(CGeometry *geometry){
 
     for (iPoint = 0; iPoint < nPoint; iPoint++) {
       for (iDim = 0; iDim < nDim; iDim++) {
-        node[iPoint]->SetSensitivity_Lagrangian(iDim, 0.0);
+        node[iPoint]->SetSensitivity_AugmentedLagrangian(iDim, 0.0);
       }
     }
 }
@@ -1174,7 +1174,7 @@ void COneShotSolver::UpdateSensitivityLagrangian(CGeometry *geometry, su2double 
 //    std::cout<<"Update Factor "<<factor<<": ";
     for (iPoint = 0; iPoint < nPoint; iPoint++) {
       for (iDim = 0; iDim < nDim; iDim++) {
-        node[iPoint]->SetSensitivity_Lagrangian(iDim, node[iPoint]->GetSensitivity_Lagrangian(iDim)+factor*node[iPoint]->GetSensitivity(iDim));
+        node[iPoint]->SetSensitivity_AugmentedLagrangian(iDim, node[iPoint]->GetSensitivity_AugmentedLagrangian(iDim)+factor*node[iPoint]->GetSensitivity(iDim));
 //        std::cout<<factor*node[iPoint]->GetSensitivity(iDim)<<" ";
       }
     }
@@ -1297,12 +1297,12 @@ void COneShotSolver::SetAlphaBeta(CConfig *config){
   config->SetOneShotBeta(2./theta);
 }
 
-su2double COneShotSolver::CalculateLagrangian(CConfig *config){
+su2double COneShotSolver::CalculateLagrangianPart(CConfig *config, bool augmented){
   unsigned short iVar;
   unsigned long iPoint;
   su2double Lagrangian=0.0;
   su2double helper=0.0;
-  /* --- Calculate augmented Lagrangian --- */
+
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
       direct_solver->node[iPoint]->SetSolution_Delta(iVar, direct_solver->node[iPoint]->GetSolution(iVar)-direct_solver->node[iPoint]->GetSolution_Store(iVar));
@@ -1311,19 +1311,24 @@ su2double COneShotSolver::CalculateLagrangian(CConfig *config){
       node[iPoint]->SetSolution_Delta(iVar,node[iPoint]->GetSolution(iVar)-node[iPoint]->GetSolution_Store(iVar));
     }
   }
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    for (iVar = 0; iVar < nVar; iVar++){
-      helper+=direct_solver->node[iPoint]->GetSolution_Delta(iVar)*direct_solver->node[iPoint]->GetSolution_Delta(iVar);
+
+  /* --- Calculate augmented Lagrangian terms (alpha and beta) --- */
+  if(augmented){
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        helper+=direct_solver->node[iPoint]->GetSolution_Delta(iVar)*direct_solver->node[iPoint]->GetSolution_Delta(iVar);
+      }
     }
-  }
-  Lagrangian+=helper*(config->GetOneShotAlpha()/2);
-  helper=0.0;
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    for (iVar = 0; iVar < nVar; iVar++){
-      helper+=node[iPoint]->GetSolution_Delta(iVar)*node[iPoint]->GetSolution_Delta(iVar);
+    Lagrangian+=helper*(config->GetOneShotAlpha()/2);
+    helper=0.0;
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        helper+=node[iPoint]->GetSolution_Delta(iVar)*node[iPoint]->GetSolution_Delta(iVar);
+      }
     }
+    Lagrangian+=helper*(config->GetOneShotBeta()/2);
   }
-  Lagrangian+=helper*(config->GetOneShotBeta()/2);
+
   helper=0.0;
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     for (iVar = 0; iVar < nVar; iVar++){
@@ -1359,16 +1364,15 @@ void COneShotSolver::ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig 
     node[iPoint]->SetSolution(Solution);
   }
 
-  //TODO Time
 }
 
 void COneShotSolver::UpdateStateVariable(CConfig *config){
     unsigned long iPoint;
     unsigned short iVar;
-    su2double stepsize=config->GetFDStep();
+    su2double fd_step=config->GetFDStep();
     for (iPoint = 0; iPoint < nPoint; iPoint++){
       for (iVar = 0; iVar < nVar; iVar++){
-        Solution[iVar] = direct_solver->node[iPoint]->GetSolution_Store(iVar)+stepsize*node[iPoint]->GetSolution_Delta(iVar);
+        Solution[iVar] = direct_solver->node[iPoint]->GetSolution_Store(iVar)+fd_step*node[iPoint]->GetSolution_Delta(iVar);
       }
       direct_solver->node[iPoint]->SetSolution(Solution);
     }
@@ -1383,7 +1387,7 @@ void COneShotSolver::SetFiniteDifferenceSens(CGeometry *geometry, CConfig* confi
 
     for (iPoint = 0; iPoint < nPoint; iPoint++) {
       for (iDim = 0; iDim < nDim; iDim++) {
-        node[iPoint]->SetSensitivity(iDim, (node[iPoint]->GetSensitivity(iDim)-node[iPoint]->GetSensitivity_Old(iDim))*(1./config->GetFDStep()));
+        node[iPoint]->SetSensitivity(iDim, (node[iPoint]->GetSensitivity(iDim)-node[iPoint]->GetSensitivity_ShiftedLagrangian(iDim))*(1./config->GetFDStep()));
       }
     }
 }

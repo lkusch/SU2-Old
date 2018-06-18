@@ -60,10 +60,10 @@ class CVariable {
 protected:
   
   su2double *Solution,    /*!< \brief Solution of the problem. */
-  *Solution_Store,        /*!< \brief Pointer to store solution of the problem. */
-  *Solution_Former,       /*!< \brief Former solution of the problem (last step). */
-  *Solution_Delta,        /*!< \brief Difference of new solution and former solution. */
-  *Solution_Save,         //TODO
+  *Solution_Store,        /*!< \brief Pointer to store solution of the problem (step k). */
+  *Solution_Former,       /*!< \brief Former solution of the problem (step k-1). */
+  *Solution_Delta,        /*!< \brief Difference of new solution and solution (step k+1 - step k). */
+  *Solution_Save,         /*!< \brief Pointer to store new solution of the problem (step k+1). */
   *Solution_Old;      /*!< \brief Old solution of the problem R-K. */
   bool Non_Physical;      /*!< \brief Non-physical points in the solution (force first order). */
   su2double *Solution_time_n,  /*!< \brief Solution of the problem at time n for dual-time stepping technique. */
@@ -2313,8 +2313,20 @@ public:
    * \param[in] val - value of the Sensitivity
    */
   virtual void SetSensitivity(unsigned short iDim, su2double val);
-  virtual void SetSensitivity_Old(unsigned short iDim, su2double val);
-  virtual void SetSensitivity_Lagrangian(unsigned short iDim, su2double val);
+
+  /*!
+   * \brief A Virtual member.
+   * \param[in] iDim - spacial component
+   * \param[in] val - value of the Sensitivity
+   */
+  virtual void SetSensitivity_ShiftedLagrangian(unsigned short iDim, su2double val);
+
+  /*!
+   * \brief A Virtual member.
+   * \param[in] iDim - spacial component
+   * \param[in] val - value of the Sensitivity
+   */
+  virtual void SetSensitivity_AugmentedLagrangian(unsigned short iDim, su2double val);
   
   /*!
    * \brief Get the Sensitivity at the node
@@ -2322,8 +2334,20 @@ public:
    * \return value of the Sensitivity
    */
   virtual su2double GetSensitivity(unsigned short iDim);
-  virtual su2double GetSensitivity_Old(unsigned short iDim);
-  virtual su2double GetSensitivity_Lagrangian(unsigned short iDim);
+
+  /*!
+   * \brief A Virtual member.
+   * \param[in] iDim - spacial component
+   * \return value of the Sensitivity
+   */
+  virtual su2double GetSensitivity_ShiftedLagrangian(unsigned short iDim);
+
+  /*!
+   * \brief A Virtual member.
+   * \param[in] iDim - spacial component
+   * \return value of the Sensitivity
+   */
+  virtual su2double GetSensitivity_AugmentedLagrangian(unsigned short iDim);
   
   virtual void SetDual_Time_Derivative(unsigned short iVar, su2double der);
   
@@ -2371,29 +2395,60 @@ public:
 
   virtual su2double GetSolution_Old_Accel(unsigned short iVar);
 
+  /*!
+   * \brief Store Solution in Solution_Store
+   */
   void Set_StoreSolution(void);
+
+  /*!
+   * \brief Set Solution_Store to a specific solution
+   * \param[in] val_solution_old - value vector to which Solution_Store is set
+   */
+  void SetSolution_Store(su2double *val_solution_old);
+
+  /*!
+   * \brief Get Solution_Store
+   * \return Solution_Store as array
+   */
+  su2double *GetSolution_Store(void);
+
+  /*!
+   * \brief Get Solution_Store
+   * \param[in] iVar - index of Solution_Store that is fetched
+   * \return value of Solution_Store at iVar
+   */
+  su2double GetSolution_Store(unsigned short iVar);
+
+  /*!
+   * \brief Set Solution_Save to a specific solution
+   * \param[in] val_solution_old - value vector to which Solution_Save is set
+   */
+  void Set_SaveSolution(void);
+
+  /*!
+   * \brief Get Solution_Save
+   * \return Solution_Save as array
+   */
+  su2double *GetSolution_Save(void);
+
+  /*!
+   * \brief Get Solution_Save
+   * \param[in] iVar - index of Solution_Save that is fetched
+   * \return value of Solution_Save at iVar
+   */
+  su2double GetSolution_Save(unsigned short iVar);
 
   void Set_FormerSolution(void);
 
-  su2double *GetSolution_Store(void);
-
   su2double *GetSolution_Former(void);
-
-  su2double *GetSolution_Delta(void);
-
-  su2double GetSolution_Store(unsigned short iVar);
-
-  su2double GetSolution_Delta(unsigned short iVar);
 
   void SetSolution_Delta(unsigned short val_var, su2double val_solution_delta);
 
-  void Set_SaveSolution(void);
+  su2double *GetSolution_Delta(void);
 
-  su2double *GetSolution_Save(void);
+  su2double GetSolution_Delta(unsigned short iVar);
 
-  su2double GetSolution_Save(unsigned short iVar);
 
-  void SetSolution_Store(su2double *val_solution_old);
 };
 
 /*!
@@ -4869,8 +4924,8 @@ private:
   su2double* Solution_Direct;
   su2double* DualTime_Derivative;
   su2double* DualTime_Derivative_n;
-  su2double* Sensitivity_Old;
-  su2double* Sensitivity_Lagrangian;
+  su2double* Sensitivity_ShiftedLagrangian; /* Vector holding the sensitivity of the shifted Lagrangian to the coordinates at this node*/
+  su2double* Sensitivity_AugmentedLagrangian; /* Vector holding the sensitivity of the augmented Lagrangian to the coordinates at this node*/
   
   su2double* Cross_Term_Derivative;
   su2double* Geometry_CrossTerm_Derivative;
@@ -4910,8 +4965,20 @@ public:
    * \param[in] val - value of the Sensitivity
    */
   void SetSensitivity(unsigned short iDim, su2double val);
-  void SetSensitivity_Old(unsigned short iDim, su2double val);
-  void SetSensitivity_Lagrangian(unsigned short iDim, su2double val);
+
+  /*!
+   * \brief Set the sensitivity at the node (Store for shifted Lagrangian)
+   * \param[in] iDim - spacial component
+   * \param[in] val - value of the Sensitivity
+   */
+  void SetSensitivity_ShiftedLagrangian(unsigned short iDim, su2double val);
+
+  /*!
+   * \brief Set the sensitivity at the node (Store for augmented Lagrangian)
+   * \param[in] iDim - spacial component
+   * \param[in] val - value of the Sensitivity
+   */
+  void SetSensitivity_AugmentedLagrangian(unsigned short iDim, su2double val);
   
   /*!
    * \brief Get the Sensitivity at the node
@@ -4919,8 +4986,20 @@ public:
    * \return value of the Sensitivity
    */
   su2double GetSensitivity(unsigned short iDim);
-  su2double GetSensitivity_Old(unsigned short iDim);
-  su2double GetSensitivity_Lagrangian(unsigned short iDim);
+
+  /*!
+   * \brief Get the Sensitivity at the node (from stored shifted Lagrangian sensitivity)
+   * \param[in] iDim - spacial component
+   * \return value of the Sensitivity
+   */
+  su2double GetSensitivity_ShiftedLagrangian(unsigned short iDim);
+
+  /*!
+   * \brief Get the Sensitivity at the node (from stored augmented Lagrangian sensitivity)
+   * \param[in] iDim - spacial component
+   * \return value of the Sensitivity
+   */
+  su2double GetSensitivity_AugmentedLagrangian(unsigned short iDim);
   
   void SetDual_Time_Derivative(unsigned short iVar, su2double der);
   

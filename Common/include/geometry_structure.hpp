@@ -1113,6 +1113,9 @@ public:
    */
   virtual void SetSensitivity(CConfig *config);
 
+  /*!
+   * \brief A virtual member.
+   */
   virtual void InitializeSensitivity();
 
   /*!
@@ -1963,6 +1966,9 @@ void UpdateTurboVertex(CConfig *config,unsigned short val_iZone, unsigned short 
    */
   void SetSensitivity(CConfig *config);
 
+  /*!
+   * \brief Set Senitivity to Zero.
+   */
   void InitializeSensitivity();
 
   /*!

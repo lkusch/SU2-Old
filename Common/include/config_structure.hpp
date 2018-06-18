@@ -982,10 +982,10 @@ private:
   unsigned short One_Shot_Start; /*!< \brief Start iteration for one-shot method */
   su2double One_Shot_Alpha, One_Shot_Beta; /*!< \brief factors for augmented Lagrangian in one-shot method */ 
   su2double One_Shot_FD; /*!< \brief Finite difference step-size for one-shot method */
-  su2double One_Shot_Scale; /*!< \brief TODO */
-  su2double Obj_Func_Scale; /*!< \brief TODO */
-  su2double OS_Sens_Scale; /*!< \brief TODO */
-  bool OS_Check_Descent;
+  su2double OS_Design_Scale; /*!< \brief Value for scaling the design space */
+  su2double Obj_Func_Scale; /*!< \brief Value for scaling the objective function */
+  su2double OS_Sens_Scale; /*!< \brief Value for scaling the geometry sensitivities */
+  bool OS_Check_Descent; /*!< \brief option for a descent check in the line search */
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8059,17 +8059,58 @@ public:
    */
   unsigned short GetOneShotStart(void);
 
-  /* TODO */
+  /*!
+   * \brief Get the multiplier for the "alpha"-term in the doubly augmented Lagrangian.
+   * \return Value for alpha multiplier in one-shot method
+   */
   su2double GetOneShotAlpha(void);
+
+  /*!
+   * \brief Get the multiplier for the "beta"-term in the doubly augmented Lagrangian.
+   * \return Value for beta multiplier in one-shot method
+   */
   su2double GetOneShotBeta(void);
-  su2double GetFDStep(void);
-  su2double GetOSScale(void);
-  su2double GetSensScale(void);
-  su2double GetObjScale(void);
-  
+
+  /*!
+   * \brief Set the multiplier for the "alpha"-term in the doubly augmented Lagrangian.
+   * \return Value for alpha multiplier in one-shot method
+   */
   void SetOneShotAlpha(su2double input);
+
+  /*!
+   * \brief Set the multiplier for the "beta"-term in the doubly augmented Lagrangian.
+   * \return Value for beta multiplier in one-shot method
+   */
   void SetOneShotBeta(su2double input);
 
+  /*!
+   * \brief Get the finite difference step size for the "beta"-term in the doubly augmented Lagrangian.
+   * \return Value for the finite difference step size in one-shot method
+   */
+  su2double GetFDStep(void);
+
+  /*!
+   * \brief Get the value for scaling the design space (not the design update itself).
+   * \return Value for design space scaling
+   */
+  su2double GetDesignScale(void);
+
+  /*!
+   * \brief Get the value for scaling the geometry sensitivity (and as a result the design update).
+   * \return Value for sensitivity scaling
+   */
+  su2double GetSensScale(void);
+
+  /*!
+   * \brief Get the value for scaling the objective function.
+   * \return Value for objective function scaling
+   */
+  su2double GetObjScale(void);
+  
+  /*!
+   * \brief Check if during line search a checking for descent direction is used.
+   * \return YES if the algorithm checks for a descent direction.
+   */
   bool GetCheckDescent(void);
 };
 

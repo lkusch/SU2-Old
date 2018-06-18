@@ -1373,20 +1373,28 @@ inline su2double CVariable::GetDual_Time_Derivative_n(unsigned short iVar) { ret
 inline su2double CDiscAdjVariable::GetDual_Time_Derivative_n(unsigned short iVar) { return DualTime_Derivative_n[iVar];}
 
 inline void CVariable::SetSensitivity(unsigned short iDim, su2double val) {}
-inline void CVariable::SetSensitivity_Old(unsigned short iDim, su2double val) {}
-inline void CVariable::SetSensitivity_Lagrangian(unsigned short iDim, su2double val) {}
+
+inline void CVariable::SetSensitivity_ShiftedLagrangian(unsigned short iDim, su2double val) {}
+
+inline void CVariable::SetSensitivity_AugmentedLagrangian(unsigned short iDim, su2double val) {}
 
 inline su2double CVariable::GetSensitivity(unsigned short iDim) { return 0.0; }
-inline su2double CVariable::GetSensitivity_Old(unsigned short iDim) { return 0.0; }
-inline su2double CVariable::GetSensitivity_Lagrangian(unsigned short iDim) { return 0.0; }
+
+inline su2double CVariable::GetSensitivity_ShiftedLagrangian(unsigned short iDim) { return 0.0; }
+
+inline su2double CVariable::GetSensitivity_AugmentedLagrangian(unsigned short iDim) { return 0.0; }
 
 inline void CDiscAdjVariable::SetSensitivity(unsigned short iDim, su2double val) {Sensitivity[iDim] = val;}
-inline void CDiscAdjVariable::SetSensitivity_Old(unsigned short iDim, su2double val) {Sensitivity_Old[iDim] = val;}
-inline void CDiscAdjVariable::SetSensitivity_Lagrangian(unsigned short iDim, su2double val) {Sensitivity_Lagrangian[iDim] = val;}
+
+inline void CDiscAdjVariable::SetSensitivity_ShiftedLagrangian(unsigned short iDim, su2double val) {Sensitivity_ShiftedLagrangian[iDim] = val;}
+
+inline void CDiscAdjVariable::SetSensitivity_AugmentedLagrangian(unsigned short iDim, su2double val) {Sensitivity_AugmentedLagrangian[iDim] = val;}
 
 inline su2double CDiscAdjVariable::GetSensitivity(unsigned short iDim) { return Sensitivity[iDim];}
-inline su2double CDiscAdjVariable::GetSensitivity_Old(unsigned short iDim) { return Sensitivity_Old[iDim];}
-inline su2double CDiscAdjVariable::GetSensitivity_Lagrangian(unsigned short iDim) { return Sensitivity_Lagrangian[iDim];}
+
+inline su2double CDiscAdjVariable::GetSensitivity_ShiftedLagrangian(unsigned short iDim) { return Sensitivity_ShiftedLagrangian[iDim];}
+
+inline su2double CDiscAdjVariable::GetSensitivity_AugmentedLagrangian(unsigned short iDim) { return Sensitivity_AugmentedLagrangian[iDim];}
 
 inline su2double* CDiscAdjVariable::GetSolution_Direct() { return Solution_Direct; }
 

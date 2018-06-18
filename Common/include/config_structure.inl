@@ -1802,7 +1802,7 @@ inline su2double CConfig::GetOneShotBeta(void) { return One_Shot_Beta; }
 
 inline su2double CConfig::GetFDStep(void) { return One_Shot_FD; }
 
-inline su2double CConfig::GetOSScale(void) { return One_Shot_Scale; }
+inline su2double CConfig::GetDesignScale(void) { return OS_Design_Scale; }
 
 inline su2double CConfig::GetSensScale(void) { return OS_Sens_Scale; }
 

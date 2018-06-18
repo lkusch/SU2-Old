@@ -313,19 +313,14 @@ inline void CVertex::GetNormal(su2double *val_normal) {
 		val_normal[iDim] = Normal[iDim]; 
 }
 
-inline void CVertex::GetNormal_Old(su2double *val_normal) {
-    for (unsigned short iDim = 0; iDim < nDim; iDim++)
-        val_normal[iDim] = Normal_Old[iDim];
-}
-
 inline void CVertex::SetNormal(su2double *val_face_normal) { 
 	for (unsigned short iDim = 0; iDim < nDim; iDim++) 
 		Normal[iDim]=val_face_normal[iDim];
 }
 
 inline void CVertex::SetNormal_Old(su2double *val_face_normal) {
-    for (unsigned short iDim = 0; iDim < nDim; iDim++)
-        Normal_Old[iDim]=val_face_normal[iDim];
+  for (unsigned short iDim = 0; iDim < nDim; iDim++)
+    Normal_Old[iDim]=val_face_normal[iDim];
 }
 
 inline void CVertex::SetVarCoord(su2double *val_varcoord) { 

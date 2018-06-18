@@ -2079,7 +2079,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addDoubleOption("ONE_SHOT_ALPHA", One_Shot_Alpha, 200.0);
   addDoubleOption("ONE_SHOT_BETA", One_Shot_Beta, 2.0);
   addDoubleOption("ONE_SHOT_FD", One_Shot_FD, 1E-5);
-  addDoubleOption("ONE_SHOT_SCALE", One_Shot_Scale, 1E-3);
+  addDoubleOption("DESIGN_SCALE", OS_Design_Scale, 1E-3);
   addDoubleOption("OBJ_SCALE", Obj_Func_Scale, 1E-3);
   addDoubleOption("SENS_SCALE", OS_Sens_Scale, 1E-0);
   addBoolOption("OS_HESSIAN_ID", OS_Hessian_ID, false);
@@ -3571,7 +3571,7 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
           Kind_Solver = ONE_SHOT_NAVIER_STOKES;
           break;
         case FEM_ELASTICITY:
-          Kind_Solver = DISC_ADJ_FEM; //TODO
+          Kind_Solver = DISC_ADJ_FEM; //TODO Implement One-Shot strategy for FEM solver
           break;
         default:
           break;
