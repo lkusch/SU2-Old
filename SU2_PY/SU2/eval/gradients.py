@@ -125,9 +125,8 @@ def gradient( func_name, method, config, state=None ):
         # Finite Difference Gradients
         elif method == 'FINDIFF':
             grads = findiff( config, state )
-
         elif method == 'DIRECTDIFF':
-            grad = directdiff (config , state )
+            grads = directdiff (config , state )
 
         else:
             raise Exception('unrecognized gradient method')

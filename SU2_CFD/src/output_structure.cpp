@@ -16864,13 +16864,8 @@ void COutput::SpecialOutput_AnalyzeSurface(CSolver *solver, CGeometry *geometry,
   
   unsigned short iDim, iMarker, iMarker_Analyze;
   unsigned long iVertex, iPoint;
-<<<<<<< HEAD
-  su2double Mach, Pressure, Temperature, TotalPressure, TotalTemperature, Enthalpy,
-  Velocity[3], Velocity2, MassFlow, Density, Energy, Area, AxiFactor = 1.0, SoundSpeed, Vn, VnDiff, Weight = 1.0;
-=======
   su2double Mach = 0.0, Pressure, Temperature = 0.0, TotalPressure = 0.0, TotalTemperature = 0.0,
-  Enthalpy, Velocity[3], Velocity2, MassFlow, Density, Area, AxiFactor = 1.0, SoundSpeed, Vn, Weight = 1.0;
->>>>>>> 7c5196dd4a89db56ee9262f3a4abe4cd948745c1
+  Enthalpy, Velocity[3], Velocity2, MassFlow, Density, Area, AxiFactor = 1.0, SoundSpeed, Vn, VnDiff, Weight = 1.0;
   
   su2double Gas_Constant      = config->GetGas_ConstantND();
   su2double Gamma             = config->GetGamma();
@@ -17204,7 +17199,7 @@ void COutput::SpecialOutput_AnalyzeSurface(CSolver *solver, CGeometry *geometry,
   
   if ((rank == MASTER_NODE) && !config->GetDiscrete_Adjoint() && output) {
     
-    cout.precision(3);
+    cout.precision(16);
     cout << endl << "Computing surface mean values." << endl;
     
     for (iMarker_Analyze = 0; iMarker_Analyze < nMarker_Analyze; iMarker_Analyze++) {
