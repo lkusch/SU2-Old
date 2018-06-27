@@ -990,9 +990,11 @@ inline void CSolver::RegisterSolution(CGeometry *geometry_container, CConfig *co
 inline void CSolver::RegisterOutput(CGeometry *geometry_container, CConfig *config){}
 
 inline void CSolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){}
+
 inline void CSolver::SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config){}
+
 inline void CSolver::ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::RegisterObj_Func(CConfig *config){}
@@ -2232,10 +2234,6 @@ inline su2double CDiscAdjFEASolver::GetVal_EField(unsigned short iVal) { return 
 
 inline su2double CDiscAdjFEASolver::GetVal_DVFEA(unsigned short iVal) { return DV_Val[iVal]; }
 
-inline void CSolver::StoreSolution_Direct(){}
-
-inline void CSolver::LoadSolution_Direct(){}
-
 inline void CSolver::SetGeometrySensitivityGradient(CGeometry *geometry){}
 
 inline void CSolver::SetGeometrySensitivityLagrangian(CGeometry *geometry){}
@@ -2252,7 +2250,7 @@ inline void CSolver::UpdateSensitivityLagrangian(CGeometry *geometry, su2double 
 
 inline su2double CSolver::CalculateLagrangianPart(CConfig *config, bool augmented){return 0.0;}
 
-inline void CSolver::CalculateAlphaBeta(CConfig *config){}
+inline void CSolver::CalculateAlphaBeta(){}
 
 inline void CSolver::SetAlphaBeta(CConfig *config){}
 
@@ -2264,13 +2262,9 @@ inline void CSolver::LoadFormerSolution(){}
 
 inline void CSolver::StoreFormerSolution(){}
 
-inline void CSolver::LoadAdjointSolution(){}
-
 inline void CSolver::StoreSaveSolution(){}
 
 inline void CSolver::LoadSaveSolution(){}
-
-inline void CSolver::LoadAdjointSaveSolution(){}
 
 inline void CSolver::UpdateStateVariable(CConfig *config){}
 

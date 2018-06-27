@@ -1051,20 +1051,6 @@ COneShotSolver::COneShotSolver(CGeometry *geometry, CConfig *config, CSolver *di
 COneShotSolver::~COneShotSolver(void) {
 }
 
-void COneShotSolver::StoreSolution_Direct(){
-  unsigned long iPoint;
-  for (iPoint = 0; iPoint < nPoint; iPoint++) {
-    node[iPoint]->SetSolution_Direct(direct_solver->node[iPoint]->GetSolution());
-  }
-}
-
-void COneShotSolver::LoadSolution_Direct(){
-  unsigned long iPoint;
-  for (iPoint = 0; iPoint < nPoint; iPoint++) {
-    direct_solver->node[iPoint]->SetSolution(node[iPoint]->GetSolution_Direct());
-  }
-}
-
 void COneShotSolver::SetRecording(CGeometry* geometry, CConfig *config){
 
 
@@ -1257,21 +1243,7 @@ void COneShotSolver::LoadSaveSolution(){
   }
 }
 
-void COneShotSolver::LoadAdjointSolution(){
-  unsigned long iPoint;
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    node[iPoint]->SetSolution(node[iPoint]->GetSolution_Store());
-  }
-}
-
-void COneShotSolver::LoadAdjointSaveSolution(){
-  unsigned long iPoint;
-  for (iPoint = 0; iPoint < nPoint; iPoint++){
-    node[iPoint]->SetSolution(node[iPoint]->GetSolution_Save());
-  }
-}
-
-void COneShotSolver::CalculateAlphaBeta(CConfig *config){
+void COneShotSolver::CalculateAlphaBeta(){
   unsigned short iVar;
   unsigned long iPoint;
   su2double helper=0.0;
@@ -1350,7 +1322,6 @@ void COneShotSolver::SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *confi
 
 void COneShotSolver::ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config){
 
-  unsigned short iVar;
   unsigned long iPoint;
 
   for (iPoint = 0; iPoint < nPoint; iPoint++) {

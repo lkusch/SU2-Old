@@ -3514,6 +3514,12 @@ public:
    * \param[in] config - The particular config.
    */
   virtual void SetAdjoint_Output(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
   virtual void SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config);
   
   /*!
@@ -3530,6 +3536,13 @@ public:
    * \param[in] config - The particular config.
    */
   virtual void ExtractAdjoint_Solution(CGeometry *geometry,  CConfig *config);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] solver_container - The solver container holding all solutions.
+   * \param[in] config - The particular config.
+   */
   virtual void ExtractAdjoint_Solution_Clean(CGeometry *geometry,  CConfig *config);
   
   /*!
@@ -4148,16 +4161,6 @@ public:
   /*!
    * \brief A virtual member.
    */
-  virtual void StoreSolution_Direct();
-
-  /*!
-   * \brief A virtual member.
-   */
-  virtual void LoadSolution_Direct();
-
-  /*!
-   * \brief A virtual member.
-   */
   virtual void StoreSaveSolution();
 
   /*!
@@ -4195,23 +4198,34 @@ public:
    */
   virtual void SaveSensitivity(CGeometry *geometry);
 
-  //TODO
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - geometry class object
+   */
   virtual void SetGeometrySensitivityGradient(CGeometry *geometry);
-
-  virtual void SetGeometrySensitivityLagrangian(CGeometry *geometry);
-
-  virtual void LoadAdjointSolution();
-
-  virtual void LoadAdjointSaveSolution();
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - geometry class object
    */
+  virtual void SetGeometrySensitivityLagrangian(CGeometry *geometry);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] config - config class object
+   * \param[in] augmented - boolean for augmented part
+   */
   virtual su2double CalculateLagrangianPart(CConfig *config, bool augmented);
 
-  virtual void CalculateAlphaBeta(CConfig *config);
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void CalculateAlphaBeta();
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] config - config class object
+   */
   virtual void SetAlphaBeta(CConfig *config);
 
   /*!
@@ -13372,27 +13386,42 @@ public:
    */
   void LoadSaveSolution();
 
-  //TODO
-  void StoreSolution_Direct();
-
-  void LoadSolution_Direct();
-
+  /*!
+   * \brief Set the geometry sensitivity to the sensitivity of the shifted Lagrangian
+   * (This happens for the sensitivity projection)
+   * \param[in] geometry - geometry class object
+   */
   void SetGeometrySensitivityGradient(CGeometry *geometry);
 
+  /*!
+   * \brief Set the geometry sensitivity to the sensitivity of the augmented Lagrangian
+   * (This happens for the sensitivity projection)
+   * \param[in] geometry - geometry class object
+   */
   void SetGeometrySensitivityLagrangian(CGeometry *geometry);
 
+  //TODO
   void LoadFormerSolution();
-
-  void LoadAdjointSolution();
-
-  void LoadAdjointSaveSolution();
 
   void StoreFormerSolution();
 
-  void CalculateAlphaBeta(CConfig *config);
+  /*!
+   * \brief Calculate estimates for alpha and beta of the doubly augmented Lagrangian
+   */
+  void CalculateAlphaBeta();
 
+  /*!
+   * \brief Set alpha and beta to the calculated estimates.
+   * \param[in] config - The particular config.
+   */
   void SetAlphaBeta(CConfig *config);
 
+  /*!
+   * \brief Sets the adjoint values of the input variables of the flow (+turb.) iteration
+   *        after tape has been evaluated without computing the adjoint residual.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
   void ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config);
 
   /*!
@@ -13423,6 +13452,11 @@ public:
    */
   void UpdateStateVariable(CConfig *config);
 
+  /*!
+   * \brief Set the sensitivity to the finite difference to approximate N_yx for the beta term.
+   * \param[in] geometry - geometry class element
+   * \param[in] config - config class element
+   */
   void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);
 
 };

@@ -132,6 +132,18 @@ public:
                        CFreeFormDefBox*** FFDBox,
                        unsigned short val_iZone);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
   virtual void Iterate_No_Residual(COutput *output,
                        CIntegration ***integration_container,
                        CGeometry ***geometry_container,
@@ -1440,7 +1452,18 @@ public:
                          CGeometry*** geometry_container,
                          CConfig** config_container,
                          unsigned short iZone);
-  //TODO
+  /*!
+   * \brief Perform a single iteration of the adjoint fluid system without calculating residuals.
+   * \param[in] output - Pointer to the COutput class.
+   * \param[in] integration_container - Container vector with all the integration methods.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] numerics_container - Description of the numerical method (the way in which the equations are solved).
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] surface_movement - Surface movement classes of the problem.
+   * \param[in] grid_movement - Volume grid movement classes of the problem.
+   * \param[in] FFDBox - FFD FFDBoxes of the problem.
+   */
   void Iterate_No_Residual(COutput *output,
                CIntegration ***integration_container,
                CGeometry ***geometry_container,
@@ -1451,8 +1474,6 @@ public:
                CVolumetricMovement **grid_movement,
                CFreeFormDefBox*** FFDBox,
                unsigned short val_iZone);
-
-
 };
 
 

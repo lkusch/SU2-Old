@@ -1585,14 +1585,9 @@ public:
   bool CheckFirstWolfe();
 
   /*!
-   * \brief Store mesh node Sensitivity to be used for the gradient projection.
-   */
-  void StoreSensitivity();
-
-  /*!
    * \brief Store values for the updated design variables.
    */
-  void StoreDesignVariable();
+  void UpdateDesignVariable();
 
   /*!
    * \brief Store the values for the Lagrangian and its gradient.
@@ -1615,13 +1610,20 @@ public:
    */
   void SetAugmentedLagrangianGradient();
 
-//TODO
+  /*!
+   * \brief Initialize the adjoint value of the objective function with 0.0.
+   */
   void SetAdj_ObjFunction_Zero();
 
   /*!
    * \brief Find the indices for the epsilon-active set (overestimated).
    */
   void ComputeActiveSet();
+
+  /*!
+   * \brief Project mesh sensitivities to surface and design variables using AD.
+   */
+  void ProjectMeshSensitivities();
 
   /*!
    * \brief Project input value into feasible bounds of design space.
