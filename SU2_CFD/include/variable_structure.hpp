@@ -2420,8 +2420,7 @@ public:
   su2double GetSolution_Store(unsigned short iVar);
 
   /*!
-   * \brief Set Solution_Save to a specific solution
-   * \param[in] val_solution_old - value vector to which Solution_Save is set
+   * \brief Set Solution_Save to solution
    */
   void Set_SaveSolution(void);
 
@@ -2438,16 +2437,36 @@ public:
    */
   su2double GetSolution_Save(unsigned short iVar);
 
+  /*!
+   * \brief Store Solution in Solution_Former
+   */
   void Set_FormerSolution(void);
 
+  /*!
+   * \brief Get Solution_Former
+   * \return pointer to Solution_Former
+   */
   su2double *GetSolution_Former(void);
 
-  void SetSolution_Delta(unsigned short val_var, su2double val_solution_delta);
+  /*!
+   * \brief Set Solution_Delta to specific value
+   * \param[in] iVar - index of Solution_Delta that is set
+   * \param[in] val_solution_delta - value that is set
+   */
+  void SetSolution_Delta(unsigned short iVar, su2double val_solution_delta);
 
+  /*!
+   * \brief Get Solution_Delta
+   * \return pointer to Solution_Delta
+   */
   su2double *GetSolution_Delta(void);
 
+  /*!
+   * \brief Get Solution_Delta
+   * \param[in] iVar - index of Solution_Delta that is fetched
+   * \return value of Solution_Delta at iVar
+   */
   su2double GetSolution_Delta(unsigned short iVar);
-
 
 };
 

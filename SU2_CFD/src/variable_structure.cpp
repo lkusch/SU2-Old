@@ -58,6 +58,7 @@ CVariable::CVariable(void) {
   Solution_Store = NULL;
   Solution_Delta = NULL;
   Solution_Save = NULL;
+  Solution_Former = NULL;
   Solution_Adj_Old = NULL;
   
 }
@@ -81,6 +82,7 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   Solution_Store = NULL;
   Solution_Delta = NULL;
   Solution_Save = NULL;
+  Solution_Former = NULL;
   Solution_Adj_Old = NULL;
 
   /*--- Initialize the number of solution variables. This version
@@ -118,6 +120,7 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   Solution_Store = NULL;
   Solution_Delta = NULL;
   Solution_Save = NULL;
+  Solution_Former = NULL;
   Solution_Adj_Old = NULL;
   
   /*--- Initializate the number of dimension and number of variables ---*/
@@ -137,6 +140,7 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   Solution_Store = new su2double [nVar];
   Solution_Delta = new su2double [nVar];
   Solution_Save = new su2double [nVar];
+  Solution_Former = new su2double [nVar];
   
   Gradient = new su2double* [nVar];
   for (iVar = 0; iVar < nVar; iVar++) {
@@ -171,9 +175,10 @@ CVariable::~CVariable(void) {
   if (Res_TruncError      != NULL) delete [] Res_TruncError;
   if (Residual_Old        != NULL) delete [] Residual_Old;
   if (Residual_Sum        != NULL) delete [] Residual_Sum;
-  if (Solution_Store        != NULL) delete [] Solution_Store;
-  if (Solution_Save        != NULL) delete [] Solution_Save;
+  if (Solution_Store      != NULL) delete [] Solution_Store;
+  if (Solution_Save       != NULL) delete [] Solution_Save;
   if (Solution_Delta      != NULL) delete [] Solution_Delta;
+  if (Solution_Former     != NULL) delete [] Solution_Former;
   if (Solution_Adj_Old    != NULL) delete [] Solution_Adj_Old;
   
   if (Gradient != NULL) {

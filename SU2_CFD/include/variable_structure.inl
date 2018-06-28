@@ -1660,7 +1660,7 @@ inline su2double CVariable::GetSolution_Save(unsigned short iVar) { return Solut
 
 inline su2double* CVariable::GetSolution_Delta() { return Solution_Delta; }
 
-inline void CVariable::SetSolution_Delta(unsigned short val_var, su2double val_solution_delta) { Solution_Delta[val_var] = val_solution_delta; }
+inline void CVariable::SetSolution_Delta(unsigned short iVar, su2double val_solution_delta) { Solution_Delta[iVar] = val_solution_delta; }
 
 inline su2double CVariable::GetSolution_Delta(unsigned short iVar) { return Solution_Delta[iVar]; }
 

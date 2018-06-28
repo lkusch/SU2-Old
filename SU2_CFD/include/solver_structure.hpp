@@ -4176,7 +4176,7 @@ public:
   /*!
    * \brief A virtual member.
    */
-  virtual void LoadFormerSolution();
+  virtual void ShiftFormerSolution();
 
   /*!
    * \brief A virtual member.
@@ -13400,9 +13400,16 @@ public:
    */
   void SetGeometrySensitivityLagrangian(CGeometry *geometry);
 
-  //TODO
-  void LoadFormerSolution();
+  /*!
+   * \brief Shift Solution_Former to Solution_Store.
+   * (This is needed if the solution at two former states is stored)
+   */
+  void ShiftFormerSolution();
 
+  /*!
+   * \brief Store the current solution in Solution_Former.
+   * (This additional storage is needed if the solution at two former states is stored)
+   */
   void StoreFormerSolution();
 
   /*!

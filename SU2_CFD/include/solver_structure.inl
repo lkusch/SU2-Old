@@ -2258,7 +2258,7 @@ inline void CSolver::StoreSolution(){}
 
 inline void CSolver::LoadSolution(){}
 
-inline void CSolver::LoadFormerSolution(){}
+inline void CSolver::ShiftFormerSolution(){}
 
 inline void CSolver::StoreFormerSolution(){}
 

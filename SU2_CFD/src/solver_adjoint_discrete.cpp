@@ -1219,7 +1219,7 @@ void COneShotSolver::LoadSolution(){
   }
 }
 
-void COneShotSolver::LoadFormerSolution(){
+void COneShotSolver::ShiftFormerSolution(){
   unsigned long iPoint;
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->SetSolution_Store(direct_solver->node[iPoint]->GetSolution_Former());
