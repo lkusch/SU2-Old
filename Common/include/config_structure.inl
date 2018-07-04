@@ -1792,6 +1792,8 @@ inline bool CConfig::GetBoolOneShot(void) { return One_Shot;}
 
 inline bool CConfig::GetBoolPiggyBack(void) { return Piggy_Back;}
 
+inline bool CConfig::GetBoolQuasiNewton(void) { return Quasi_Newton;}
+
 inline unsigned short CConfig::GetOneShotStart(void) { return One_Shot_Start; }
 
 inline bool CConfig::GetOSHessianIdentity(void) { return OS_Hessian_ID; }
@@ -1813,3 +1815,5 @@ inline void CConfig::SetOneShotAlpha(su2double input) { One_Shot_Alpha = input; 
 inline void CConfig::SetOneShotBeta(su2double input) { One_Shot_Beta = input; }
 
 inline bool CConfig::GetCheckDescent(void) { return OS_Check_Descent; }
+
+inline bool CConfig::GetOneShotLagrange(void) { return OS_Lagrange; }

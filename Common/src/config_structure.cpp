@@ -2074,16 +2074,42 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /*!\brief ONE_SHOT \n DESCRIPTION: Use one-shot method for optimization \ingroup Config*/
   addBoolOption("ONE_SHOT", One_Shot, false);
+
+  /*!\brief PIGGY_BACK \n DESCRIPTION: Make a piggy back iteration \ingroup Config*/
   addBoolOption("PIGGY_BACK", Piggy_Back, false);
+
+  /*!\brief QUASI_NEWTON \n DESCRIPTION: Make a quasi-Newton optimization \ingroup Config*/
+  addBoolOption("QUASI_NEWTON", Quasi_Newton, false);
+
+  /*!\brief ONE_SHOT_START \n DESCRIPTION: Starting iteration of one-shot method \ingroup Config*/
   addUnsignedShortOption("ONE_SHOT_START", One_Shot_Start, 0);
+
+  /*!\brief ONE_SHOT_ALPHA \n DESCRIPTION: Factor for first additional term in augmented Lagrangian \ingroup Config*/
   addDoubleOption("ONE_SHOT_ALPHA", One_Shot_Alpha, 200.0);
+
+  /*!\brief ONE_SHOT_BETA \n DESCRIPTION: Factor for second additional term in augmented Lagrangian \ingroup Config*/
   addDoubleOption("ONE_SHOT_BETA", One_Shot_Beta, 2.0);
+
+  /*!\brief ONE_SHOT_FD \n DESCRIPTION: Finite difference step size for second additional term in augmented Lagrangian \ingroup Config*/
   addDoubleOption("ONE_SHOT_FD", One_Shot_FD, 1E-5);
-  addDoubleOption("DESIGN_SCALE", OS_Design_Scale, 1E-3);
+
+  /*!\brief DESIGN_SCALE \n DESCRIPTION: Scaling of design variables for optimization \ingroup Config*/
+  addDoubleOption("DESIGN_SCALE", OS_Design_Scale, 1E-0);
+
+  /*!\brief OBJ_SCALE \n DESCRIPTION: Scaling of objective function for optimization \ingroup Config*/
   addDoubleOption("OBJ_SCALE", Obj_Func_Scale, 1E-3);
+
+  /*!\brief SENS_SCALE \n DESCRIPTION: Scaling of sensitivities for optimization \ingroup Config*/
   addDoubleOption("SENS_SCALE", OS_Sens_Scale, 1E-0);
+
+  /*!\brief OS_HESSIAN_ID \n DESCRIPTION: Indicates if the Hessian is reset by its identity \ingroup Config*/
   addBoolOption("OS_HESSIAN_ID", OS_Hessian_ID, false);
+
+  /*!\brief OS_CHECK_DESCENT \n DESCRIPTION: Indicates if the descent direction condition is checked in line search \ingroup Config*/
   addBoolOption("OS_CHECK_DESCENT", OS_Check_Descent, false);
+
+  /*!\brief OS_LAGRANGE \n DESCRIPTION: Indicates if Lagrange function in line search only considers design update \ingroup Config*/
+  addBoolOption("OS_LAGRANGE", OS_Lagrange, false);
   
   /* END_CONFIG_OPTIONS */
 

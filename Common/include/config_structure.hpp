@@ -979,6 +979,7 @@ private:
   bool One_Shot; /*!< \brief option for one-shot optimization method */
   bool OS_Hessian_ID; /*!< \brief flag for reset of the Hessian to Identity in one-shot method */
   bool Piggy_Back; /*!< \brief option for piggy-back method */
+  bool Quasi_Newton; /*!< \brief option for quasi-Newton method */
   unsigned short One_Shot_Start; /*!< \brief Start iteration for one-shot method */
   su2double One_Shot_Alpha, One_Shot_Beta; /*!< \brief factors for augmented Lagrangian in one-shot method */ 
   su2double One_Shot_FD; /*!< \brief Finite difference step-size for one-shot method */
@@ -986,6 +987,7 @@ private:
   su2double Obj_Func_Scale; /*!< \brief Value for scaling the objective function */
   su2double OS_Sens_Scale; /*!< \brief Value for scaling the geometry sensitivities */
   bool OS_Check_Descent; /*!< \brief option for a descent check in the line search */
+  bool OS_Lagrange; /*!< \brief option for a line search based on the design updated Lagrangian */
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8048,6 +8050,12 @@ public:
   bool GetBoolPiggyBack(void);
 
   /*!
+   * \brief Check if the quasi-Newton option is specified in the config file.
+   * \return YES if quasi-Newton method is enabled.
+   */
+  bool GetBoolQuasiNewton(void);
+
+  /*!
    * \brief Check if the Hessian reset is done using the identity matrix.
    * \return YES if identity matrix shall be used.
    */
@@ -8112,6 +8120,12 @@ public:
    * \return YES if the algorithm checks for a descent direction.
    */
   bool GetCheckDescent(void);
+
+  /*!
+   * \brief Check if the line search in one-shot is based on the design updated Lagrangian.
+   * \return YES if the update only in the design is considered in the line search.
+   */
+  bool GetOneShotLagrange(void);
 };
 
 #include "config_structure.inl"

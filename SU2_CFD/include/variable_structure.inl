@@ -1326,7 +1326,6 @@ inline void CVariable::SetAdjointSolution(su2double *adj_sol) {
         SU2_TYPE::SetDerivative(Solution[iVar], SU2_TYPE::GetValue(adj_sol[iVar]));
 }
 
-
 inline void CVariable::GetAdjointSolution(su2double *adj_sol) {
     for (unsigned short iVar = 0; iVar < nVar; iVar++) {
         adj_sol[iVar] = SU2_TYPE::GetDerivative(Solution[iVar]);

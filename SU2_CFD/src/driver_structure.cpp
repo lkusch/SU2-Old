@@ -7463,7 +7463,7 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
   epsilon=(ub-lb)/2.0;
 
   /*---- calculate line search parameter ----*/
-  cwolfeone= 1E-4;//*config_container[ZONE_0]->GetDesignScale(); //Achtung: vorher nicht auskommentiert
+  cwolfeone= 1E-4*config_container[ZONE_0]->GetDesignScale(); //Achtung: vorher nicht auskommentiert
 
   for (unsigned short iZone = 0; iZone < nZone; iZone++){
     grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
@@ -7504,8 +7504,8 @@ void COneShotFluidDriver::RunOneShot(){
 
   su2double stepsize = 1.0;
   unsigned short whilecounter = 0;
-  bool testLagrange = false, descent = true; //Lagrange function includes all updates and not only design update if testLagrange is set to false
-
+  bool testLagrange = config_container[ZONE_0]->GetOneShotLagrange(); //Lagrange function includes all updates and not only design update if testLagrange is set to false
+  bool descent = true;
   cout << "log10Adjoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
   cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))<<std::endl;
 
@@ -7653,7 +7653,8 @@ void COneShotFluidDriver::RunOneShot(){
 }
 
 void COneShotFluidDriver::Run(){
- if (config_container[ZONE_0]->GetBoolPiggyBack()) RunPiggyBack();//RunBFGS(); //RunPiggyBack();
+ if (config_container[ZONE_0]->GetBoolPiggyBack()) RunPiggyBack();
+ if (config_container[ZONE_0]->GetBoolQuasiNewton()) RunBFGS();
  else RunOneShot();
 }
 
