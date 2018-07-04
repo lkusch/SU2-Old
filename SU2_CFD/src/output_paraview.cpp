@@ -2,7 +2,7 @@
  * \file output_paraview.cpp
  * \brief Main subroutines for output solver information
  * \author F. Palacios, T. Economon
- * \version 6.0.1 "Falcon"
+ * \version 6.1.0 "Falcon"
  *
  * The current SU2 release has been coordinated by the
  * SU2 International Developers Society <www.su2devsociety.org>
@@ -197,8 +197,8 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
   }
   
   /*--- Write the header ---*/
-  if (surf_sol) Paraview_File << "POINTS "<< nSurf_Poin <<" float\n";
-  else Paraview_File << "POINTS "<< nGlobal_Poin <<" float\n";
+  if (surf_sol) Paraview_File << "POINTS "<< nSurf_Poin <<" double\n";
+  else Paraview_File << "POINTS "<< nGlobal_Poin <<" double\n";
   
   /*--- Write surface and volumetric solution data. ---*/
   for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -358,20 +358,80 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       
       fieldname = config->fields[iField];
 
-      bool output_variable = true;
-      size_t found = config->fields[iField].find("\"x\"");
-      if (found!=string::npos) output_variable = false;
-      found = config->fields[iField].find("\"y\"");
-      if (found!=string::npos) output_variable = false;
-      found = config->fields[iField].find("\"z\"");
-      if (found!=string::npos) output_variable = false;
-      
-      if (output_variable) {
-        fieldname.erase(remove(fieldname.begin(), fieldname.end(), '"'), fieldname.end());
+      fieldname.erase(remove(fieldname.begin(), fieldname.end(), '"'), fieldname.end());
 
-        Paraview_File << "\nSCALARS " << fieldname << " float 1\n";
+      bool output_variable = true;
+      if (fieldname == "x") {
+        output_variable = false;
+        //skip
+        VarCounter++;
+      }
+      if (fieldname == "y")  {
+        output_variable = false;
+        //skip
+        VarCounter++;
+      }
+      if (fieldname == "z")  {
+        output_variable = false;
+        //skip
+        VarCounter++;
+      }
+
+      bool isVector = false;
+      size_t found = config->fields[iField].find("X-");
+      if (found!=string::npos) {
+        output_variable = true;
+        isVector = true;
+      }
+      found = config->fields[iField].find("Y-");
+      if (found!=string::npos) {
+        output_variable = false;
+        //skip
+        VarCounter++;
+      }
+      found = config->fields[iField].find("Z-");
+      if (found!=string::npos) {
+        output_variable = false;
+        //skip
+        VarCounter++;
+      }
+
+      if (output_variable && isVector) {
+
+        /*--- Several output variables should be written as vectors. ---*/
+
+        fieldname.erase(fieldname.begin(),fieldname.begin()+2);
+
+        if (rank == MASTER_NODE) {
+          Paraview_File << "\nVECTORS " << fieldname << " double\n";
+        }
+
+        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
+          if (surf_sol) {
+            if (LocalIndex[iPoint+1] != 0) {
+              /*--- Loop over the vars/residuals and write the values to file ---*/
+              Paraview_File << scientific << Data[VarCounter+0][iPoint] << "\t" << Data[VarCounter+1][iPoint] << "\t";
+              if (nDim == 3) Paraview_File << scientific << Data[VarCounter+2][iPoint] << "\t";
+              if (nDim == 2) Paraview_File << scientific << "0.0" << "\t";
+
+            }
+          } else {
+            /*--- Loop over the vars/residuals and write the values to file ---*/
+            Paraview_File << scientific << Data[VarCounter+0][iPoint] << "\t" << Data[VarCounter+1][iPoint] << "\t";
+            if (nDim == 3) Paraview_File << scientific << Data[VarCounter+2][iPoint] << "\t";
+            if (nDim == 2) Paraview_File << scientific << "0.0" << "\t";
+          }
+        }
+
+        VarCounter++;
+
+      }
+
+      else if (output_variable) {
+
+        Paraview_File << "\nSCALARS " << fieldname << " double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
-        
+
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
           if (surf_sol) {
             if (LocalIndex[iPoint+1] != 0) {
@@ -383,23 +443,21 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
             Paraview_File << scientific << Data[VarCounter][iPoint] << "\t";
           }
         }
-      }
-      
-      VarCounter++;
 
+        VarCounter++;
+        
+      }
       
     }
     
-  }  
-  
-  else {
+  } else {
     
     for (iVar = 0; iVar < nVar_Consv; iVar++) {
 
       if ((Kind_Solver == FEM_ELASTICITY) || (Kind_Solver == DISC_ADJ_FEM))
-        Paraview_File << "\nSCALARS Displacement_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Displacement_" << iVar+1 << " double 1\n";
       else
-        Paraview_File << "\nSCALARS Conservative_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Conservative_" << iVar+1 << " double 1\n";
       
       Paraview_File << "LOOKUP_TABLE default\n";
       
@@ -420,7 +478,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     if (config->GetWrt_Limiters()) {
       for (iVar = 0; iVar < nVar_Consv; iVar++) {
         
-        Paraview_File << "\nSCALARS Limiter_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Limiter_" << iVar+1 << " double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -441,7 +499,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     if (config->GetWrt_Residuals()) {
       for (iVar = 0; iVar < nVar_Consv; iVar++) {
         
-        Paraview_File << "\nSCALARS Residual_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Residual_" << iVar+1 << " double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -462,7 +520,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     /*--- Add names for any extra variables (this will need to be adjusted). ---*/
     if (grid_movement && !fem) {
       
-      Paraview_File << "\nSCALARS Grid_Velx float 1\n";
+      Paraview_File << "\nSCALARS Grid_Velx double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -478,7 +536,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Grid_Vely float 1\n";
+      Paraview_File << "\nSCALARS Grid_Vely double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -496,7 +554,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       
       if (nDim == 3) {
         
-        Paraview_File << "\nSCALARS Grid_Velz float 1\n";
+        Paraview_File << "\nSCALARS Grid_Velz double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -517,7 +575,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     
     if ((Kind_Solver == EULER) || (Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS)) {
       
-      Paraview_File << "\nSCALARS Pressure float 1\n";
+      Paraview_File << "\nSCALARS Pressure double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -533,7 +591,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Temperature float 1\n";
+      Paraview_File << "\nSCALARS Temperature double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -549,7 +607,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
 
-      Paraview_File << "\nSCALARS Pressure_Coefficient float 1\n";
+      Paraview_File << "\nSCALARS Pressure_Coefficient double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -565,7 +623,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Mach float 1\n";
+      Paraview_File << "\nSCALARS Mach double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -585,7 +643,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     
     if ((Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS)) {
 
-      Paraview_File << "\nSCALARS Laminar_Viscosity float 1\n";
+      Paraview_File << "\nSCALARS Laminar_Viscosity double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -601,7 +659,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Skin_Friction_Coefficient_X float 1\n";
+      Paraview_File << "\nSCALARS Skin_Friction_Coefficient_X double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -617,7 +675,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Skin_Friction_Coefficient_Y float 1\n";
+      Paraview_File << "\nSCALARS Skin_Friction_Coefficient_Y double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -635,7 +693,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       
       if (nDim == 3) {
         
-        Paraview_File << "\nSCALARS Skin_Friction_Coefficient_Z float 1\n";
+        Paraview_File << "\nSCALARS Skin_Friction_Coefficient_Z double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -653,7 +711,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
         
       }
       
-      Paraview_File << "\nSCALARS Heat_Flux float 1\n";
+      Paraview_File << "\nSCALARS Heat_Flux double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -669,7 +727,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Y_Plus float 1\n";
+      Paraview_File << "\nSCALARS Y_Plus double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -689,7 +747,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     
     if (Kind_Solver == RANS) {
       
-      Paraview_File << "\nSCALARS Eddy_Viscosity float 1\n";
+      Paraview_File << "\nSCALARS Eddy_Viscosity double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -717,7 +775,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
         ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
         ( Kind_Solver == ONE_SHOT_RANS               ) ) {
       
-      Paraview_File << "\nSCALARS Surface_Sensitivity float 1\n";
+      Paraview_File << "\nSCALARS Surface_Sensitivity double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -741,7 +799,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
         ( Kind_Solver == ONE_SHOT_NAVIER_STOKES      ) ||
         ( Kind_Solver == ONE_SHOT_RANS               ) ) {
 
-      Paraview_File << "\nSCALARS Sensitivity_x float 1\n";
+      Paraview_File << "\nSCALARS Sensitivity_x double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -751,7 +809,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
 
-      Paraview_File << "\nSCALARS Sensitivity_y float 1\n";
+      Paraview_File << "\nSCALARS Sensitivity_y double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -762,7 +820,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       VarCounter++;
 
       if (nDim == 3) {
-        Paraview_File << "\nSCALARS Sensitivity_z float 1\n";
+        Paraview_File << "\nSCALARS Sensitivity_z double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
 
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -778,7 +836,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
        if (config->GetDynamic_Analysis() == DYNAMIC) {
 
-           Paraview_File << "\nSCALARS Velocity_1 float 1\n";
+           Paraview_File << "\nSCALARS Velocity_1 double 1\n";
            Paraview_File << "LOOKUP_TABLE default\n";
 
            for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -788,7 +846,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
             }
           VarCounter++;
 
-          Paraview_File << "\nSCALARS Velocity_2 float 1\n";
+          Paraview_File << "\nSCALARS Velocity_2 double 1\n";
           Paraview_File << "LOOKUP_TABLE default\n";
 
           for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -800,7 +858,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
          if (nDim == 3) {
 
-           Paraview_File << "\nSCALARS Velocity_3 float 1\n";
+           Paraview_File << "\nSCALARS Velocity_3 double 1\n";
            Paraview_File << "LOOKUP_TABLE default\n";
 
            for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -811,7 +869,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
             VarCounter++;
          }
 
-         Paraview_File << "\nSCALARS Acceleration_1 float 1\n";
+         Paraview_File << "\nSCALARS Acceleration_1 double 1\n";
          Paraview_File << "LOOKUP_TABLE default\n";
 
          for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -821,7 +879,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
           }
           VarCounter++;
 
-          Paraview_File << "\nSCALARS Acceleration_2 float 1\n";
+          Paraview_File << "\nSCALARS Acceleration_2 double 1\n";
           Paraview_File << "LOOKUP_TABLE default\n";
 
           for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -833,7 +891,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
          if (nDim == 3) {
 
-         Paraview_File << "\nSCALARS Acceleration_3 float 1\n";
+         Paraview_File << "\nSCALARS Acceleration_3 double 1\n";
          Paraview_File << "LOOKUP_TABLE default\n";
 
          for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -846,7 +904,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
        }
 
-       Paraview_File << "\nSCALARS Sxx float 1\n";
+       Paraview_File << "\nSCALARS Sxx double 1\n";
        Paraview_File << "LOOKUP_TABLE default\n";
 
        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -856,7 +914,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
         }
       VarCounter++;
 
-      Paraview_File << "\nSCALARS Syy float 1\n";
+      Paraview_File << "\nSCALARS Syy double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -866,7 +924,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
        }
      VarCounter++;
 
-     Paraview_File << "\nSCALARS Sxy float 1\n";
+     Paraview_File << "\nSCALARS Sxy double 1\n";
      Paraview_File << "LOOKUP_TABLE default\n";
 
      for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -878,7 +936,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
     if (nDim == 3) {
 
-      Paraview_File << "\nSCALARS Szz float 1\n";
+      Paraview_File << "\nSCALARS Szz double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -888,7 +946,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
        }
        VarCounter++;
 
-       Paraview_File << "\nSCALARS Sxz float 1\n";
+       Paraview_File << "\nSCALARS Sxz double 1\n";
        Paraview_File << "LOOKUP_TABLE default\n";
 
        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -898,7 +956,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
 
-      Paraview_File << "\nSCALARS Syz float 1\n";
+      Paraview_File << "\nSCALARS Syz double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -910,7 +968,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
     }
 
-      Paraview_File << "\nSCALARS Von_Mises_Stress float 1\n";
+      Paraview_File << "\nSCALARS Von_Mises_Stress double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -930,7 +988,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
     
     if ((Kind_Solver == DISC_ADJ_FEM) && (config->GetFSI_Simulation())) {
 
-      Paraview_File << "\nSCALARS CrossTerm_1 float 1\n";
+      Paraview_File << "\nSCALARS CrossTerm_1 double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -940,7 +998,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
       }
       VarCounter++;
 
-      Paraview_File << "\nSCALARS CrossTerm_2 float 1\n";
+      Paraview_File << "\nSCALARS CrossTerm_2 double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -952,7 +1010,7 @@ void COutput::SetParaview_ASCII(CConfig *config, CGeometry *geometry, unsigned s
 
       if (nDim == 3){
 
-        Paraview_File << "\nSCALARS CrossTerm_3 float 1\n";
+        Paraview_File << "\nSCALARS CrossTerm_3 double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
 
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1127,8 +1185,8 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
   }
   
   /*--- Write the header ---*/
-  if (surf_sol) Paraview_File << "POINTS "<< nSurf_Poin <<" float\n";
-  else Paraview_File << "POINTS "<< nGlobal_Poin <<" float\n";
+  if (surf_sol) Paraview_File << "POINTS "<< nSurf_Poin <<" double\n";
+  else Paraview_File << "POINTS "<< nGlobal_Poin <<" double\n";
   
   /*--- Write surface and volumetric solution data. ---*/
   for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1301,7 +1359,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       if (output_variable) {
         fieldname.erase(remove(fieldname.begin(), fieldname.end(), '"'), fieldname.end());
 
-        Paraview_File << "\nSCALARS " << fieldname << " float 1\n";
+        Paraview_File << "\nSCALARS " << fieldname << " double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1329,9 +1387,9 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     for (iVar = 0; iVar < nVar_Consv; iVar++) {
 
       if (Kind_Solver == FEM_ELASTICITY)
-        Paraview_File << "\nSCALARS Displacement_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Displacement_" << iVar+1 << " double 1\n";
       else
-        Paraview_File << "\nSCALARS Conservative_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Conservative_" << iVar+1 << " double 1\n";
       
       Paraview_File << "LOOKUP_TABLE default\n";
       
@@ -1352,7 +1410,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     if (config->GetWrt_Limiters()) {
       for (iVar = 0; iVar < nVar_Consv; iVar++) {
         
-        Paraview_File << "\nSCALARS Limiter_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Limiter_" << iVar+1 << " double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1373,7 +1431,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     if (config->GetWrt_Residuals()) {
       for (iVar = 0; iVar < nVar_Consv; iVar++) {
         
-        Paraview_File << "\nSCALARS Residual_" << iVar+1 << " float 1\n";
+        Paraview_File << "\nSCALARS Residual_" << iVar+1 << " double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1394,7 +1452,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     /*--- Add names for any extra variables (this will need to be adjusted). ---*/
     if (grid_movement && !fem) {
       
-      Paraview_File << "\nSCALARS Grid_Velx float 1\n";
+      Paraview_File << "\nSCALARS Grid_Velx double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1410,7 +1468,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Grid_Vely float 1\n";
+      Paraview_File << "\nSCALARS Grid_Vely double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1428,7 +1486,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       
       if (nDim == 3) {
         
-        Paraview_File << "\nSCALARS Grid_Velz float 1\n";
+        Paraview_File << "\nSCALARS Grid_Velz double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
         
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1449,7 +1507,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     
     if ((Kind_Solver == EULER) || (Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS)) {
       
-      Paraview_File << "\nSCALARS Pressure float 1\n";
+      Paraview_File << "\nSCALARS Pressure double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1465,7 +1523,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Temperature float 1\n";
+      Paraview_File << "\nSCALARS Temperature double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1481,7 +1539,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Pressure_Coefficient float 1\n";
+      Paraview_File << "\nSCALARS Pressure_Coefficient double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1497,7 +1555,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Mach float 1\n";
+      Paraview_File << "\nSCALARS Mach double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1517,7 +1575,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     
     if ((Kind_Solver == NAVIER_STOKES) || (Kind_Solver == RANS)) {
       
-      Paraview_File << "\nSCALARS Laminar_Viscosity float 1\n";
+      Paraview_File << "\nSCALARS Laminar_Viscosity double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1533,7 +1591,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Skin_Friction_Coefficient float 1\n";
+      Paraview_File << "\nSCALARS Skin_Friction_Coefficient double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1549,7 +1607,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Heat_Flux float 1\n";
+      Paraview_File << "\nSCALARS Heat_Flux double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1565,7 +1623,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
       }
       VarCounter++;
       
-      Paraview_File << "\nSCALARS Y_Plus float 1\n";
+      Paraview_File << "\nSCALARS Y_Plus double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1585,7 +1643,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
     
     if (Kind_Solver == RANS) {
       
-      Paraview_File << "\nSCALARS Eddy_Viscosity float 1\n";
+      Paraview_File << "\nSCALARS Eddy_Viscosity double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1607,7 +1665,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
         ( Kind_Solver == ADJ_NAVIER_STOKES ) ||
         ( Kind_Solver == ADJ_RANS          )   ) {
       
-      Paraview_File << "\nSCALARS Surface_Sensitivity float 1\n";
+      Paraview_File << "\nSCALARS Surface_Sensitivity double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
       
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1629,7 +1687,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 
         if (config->GetDynamic_Analysis() == DYNAMIC) {
 
-            Paraview_File << "\nSCALARS Velocity_1 float 1\n";
+            Paraview_File << "\nSCALARS Velocity_1 double 1\n";
             Paraview_File << "LOOKUP_TABLE default\n";
 
             for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1639,7 +1697,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
              }
            VarCounter++;
 
-           Paraview_File << "\nSCALARS Velocity_2 float 1\n";
+           Paraview_File << "\nSCALARS Velocity_2 double 1\n";
            Paraview_File << "LOOKUP_TABLE default\n";
 
            for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1651,7 +1709,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 
           if (nDim == 3) {
 
-            Paraview_File << "\nSCALARS Velocity_3 float 1\n";
+            Paraview_File << "\nSCALARS Velocity_3 double 1\n";
             Paraview_File << "LOOKUP_TABLE default\n";
 
             for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1662,7 +1720,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
              VarCounter++;
           }
 
-          Paraview_File << "\nSCALARS Acceleration_1 float 1\n";
+          Paraview_File << "\nSCALARS Acceleration_1 double 1\n";
           Paraview_File << "LOOKUP_TABLE default\n";
 
           for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1672,7 +1730,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
            }
            VarCounter++;
 
-           Paraview_File << "\nSCALARS Acceleration_2 float 1\n";
+           Paraview_File << "\nSCALARS Acceleration_2 double 1\n";
            Paraview_File << "LOOKUP_TABLE default\n";
 
            for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1684,7 +1742,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 
           if (nDim == 3) {
 
-          Paraview_File << "\nSCALARS Acceleration_3 float 1\n";
+          Paraview_File << "\nSCALARS Acceleration_3 double 1\n";
           Paraview_File << "LOOKUP_TABLE default\n";
 
           for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1697,7 +1755,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 
         }
 
-        Paraview_File << "\nSCALARS Sxx float 1\n";
+        Paraview_File << "\nSCALARS Sxx double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
 
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1707,7 +1765,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
          }
        VarCounter++;
 
-       Paraview_File << "\nSCALARS Syy float 1\n";
+       Paraview_File << "\nSCALARS Syy double 1\n";
        Paraview_File << "LOOKUP_TABLE default\n";
 
        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1717,7 +1775,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
         }
       VarCounter++;
 
-      Paraview_File << "\nSCALARS Sxy float 1\n";
+      Paraview_File << "\nSCALARS Sxy double 1\n";
       Paraview_File << "LOOKUP_TABLE default\n";
 
       for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1729,7 +1787,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 
      if (nDim == 3) {
 
-       Paraview_File << "\nSCALARS Szz float 1\n";
+       Paraview_File << "\nSCALARS Szz double 1\n";
        Paraview_File << "LOOKUP_TABLE default\n";
 
        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1739,7 +1797,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
         }
         VarCounter++;
 
-        Paraview_File << "\nSCALARS Sxz float 1\n";
+        Paraview_File << "\nSCALARS Sxz double 1\n";
         Paraview_File << "LOOKUP_TABLE default\n";
 
         for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1749,7 +1807,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
        }
        VarCounter++;
 
-       Paraview_File << "\nSCALARS Syz float 1\n";
+       Paraview_File << "\nSCALARS Syz double 1\n";
        Paraview_File << "LOOKUP_TABLE default\n";
 
        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1761,7 +1819,7 @@ void COutput::SetParaview_MeshASCII(CConfig *config, CGeometry *geometry, unsign
 
      }
 
-       Paraview_File << "\nSCALARS Von_Mises_Stress float 1\n";
+       Paraview_File << "\nSCALARS Von_Mises_Stress double 1\n";
        Paraview_File << "LOOKUP_TABLE default\n";
 
        for (iPoint = 0; iPoint < nGlobal_Poin; iPoint++) {
@@ -1903,8 +1961,8 @@ void COutput::WriteParaViewASCII_Parallel(CConfig *config, CGeometry *geometry, 
   Paraview_File << "DATASET UNSTRUCTURED_GRID\n";
 
   /*--- Write the header ---*/
-  if (surf_sol) Paraview_File << "POINTS "<< nGlobal_Surf_Poin <<" float\n";
-  else Paraview_File << "POINTS "<< nGlobal_Poin_Par <<" float\n";
+  if (surf_sol) Paraview_File << "POINTS "<< nGlobal_Surf_Poin <<" double\n";
+  else Paraview_File << "POINTS "<< nGlobal_Poin_Par <<" double\n";
 
     }
 
@@ -2135,42 +2193,115 @@ void COutput::WriteParaViewASCII_Parallel(CConfig *config, CGeometry *geometry, 
 
     fieldname.erase(remove(fieldname.begin(), fieldname.end(), '"'), fieldname.end());
 
-    if (rank == MASTER_NODE) {
-
-      Paraview_File << "\nSCALARS " << fieldname << " float 1\n";
-      Paraview_File << "LOOKUP_TABLE default\n";
+    bool output_variable = true, isVector = false;
+    size_t found = Variable_Names[iField].find("X-");
+    if (found!=string::npos) {
+      output_variable = true;
+      isVector = true;
     }
-
-    Paraview_File.flush();
-#ifdef HAVE_MPI
-    SU2_MPI::Barrier(MPI_COMM_WORLD);
-#endif
-
-    /*--- Write surface and volumetric point coordinates. ---*/
-
-    for (iProcessor = 0; iProcessor < size; iProcessor++) {
-      if (rank == iProcessor) {
-
-        /*--- Write the node data from this proc ---*/
-
-        if (surf_sol) {
-          for (iPoint = 0; iPoint < nSurf_Poin_Par; iPoint++) {
-            Paraview_File << scientific << Parallel_Surf_Data[VarCounter][iPoint] << "\t";
-          }
-        } else {
-          for (iPoint = 0; iPoint < nParallel_Poin; iPoint++) {
-            Paraview_File << scientific << Parallel_Data[VarCounter][iPoint] << "\t";
-          }
-        }
-      }
+    found = Variable_Names[iField].find("Y-");
+    if (found!=string::npos) {
+      output_variable = false;
+      //skip
       Paraview_File.flush();
 #ifdef HAVE_MPI
       SU2_MPI::Barrier(MPI_COMM_WORLD);
 #endif
+      VarCounter++;
     }
-    
-    VarCounter++;
-    
+found = Variable_Names[iField].find("Z-");
+    if (found!=string::npos) {
+      output_variable = false;
+      //skip
+      Paraview_File.flush();
+#ifdef HAVE_MPI
+      SU2_MPI::Barrier(MPI_COMM_WORLD);
+#endif
+      VarCounter++;
+    }
+
+    if (output_variable && isVector) {
+
+      fieldname.erase(fieldname.begin(),fieldname.begin()+2);
+
+      if (rank == MASTER_NODE) {
+        Paraview_File << "\nVECTORS " << fieldname << " double\n";
+      }
+
+      Paraview_File.flush();
+#ifdef HAVE_MPI
+      SU2_MPI::Barrier(MPI_COMM_WORLD);
+#endif
+
+      /*--- Write surface and volumetric point coordinates. ---*/
+
+      for (iProcessor = 0; iProcessor < size; iProcessor++) {
+        if (rank == iProcessor) {
+
+          /*--- Write the node data from this proc ---*/
+
+          if (surf_sol) {
+            for (iPoint = 0; iPoint < nSurf_Poin_Par; iPoint++) {
+              /*--- Loop over the vars/residuals and write the values to file ---*/
+              Paraview_File << scientific << Parallel_Surf_Data[VarCounter+0][iPoint] << "\t" << Parallel_Surf_Data[VarCounter+1][iPoint] << "\t";
+              if (nDim == 3) Paraview_File << scientific << Parallel_Surf_Data[VarCounter+2][iPoint] << "\t";
+              if (nDim == 2) Paraview_File << scientific << "0.0" << "\t";
+            }
+          } else {
+            for (iPoint = 0; iPoint < nParallel_Poin; iPoint++) {
+              Paraview_File << scientific << Parallel_Data[VarCounter+0][iPoint] << "\t" << Parallel_Data[VarCounter+1][iPoint] << "\t";
+              if (nDim == 3) Paraview_File << scientific << Parallel_Data[VarCounter+2][iPoint] << "\t";
+              if (nDim == 2) Paraview_File << scientific << "0.0" << "\t";
+            }
+          }
+        }
+        Paraview_File.flush();
+#ifdef HAVE_MPI
+        SU2_MPI::Barrier(MPI_COMM_WORLD);
+#endif
+      }
+
+      VarCounter++;
+
+    } else if (output_variable) {
+
+      if (rank == MASTER_NODE) {
+
+        Paraview_File << "\nSCALARS " << fieldname << " double 1\n";
+        Paraview_File << "LOOKUP_TABLE default\n";
+      }
+
+      Paraview_File.flush();
+#ifdef HAVE_MPI
+      SU2_MPI::Barrier(MPI_COMM_WORLD);
+#endif
+
+      /*--- Write surface and volumetric point coordinates. ---*/
+
+      for (iProcessor = 0; iProcessor < size; iProcessor++) {
+        if (rank == iProcessor) {
+
+          /*--- Write the node data from this proc ---*/
+
+          if (surf_sol) {
+            for (iPoint = 0; iPoint < nSurf_Poin_Par; iPoint++) {
+              Paraview_File << scientific << Parallel_Surf_Data[VarCounter][iPoint] << "\t";
+            }
+          } else {
+            for (iPoint = 0; iPoint < nParallel_Poin; iPoint++) {
+              Paraview_File << scientific << Parallel_Data[VarCounter][iPoint] << "\t";
+            }
+          }
+        }
+        Paraview_File.flush();
+#ifdef HAVE_MPI
+        SU2_MPI::Barrier(MPI_COMM_WORLD);
+#endif
+      }
+      
+      VarCounter++;
+    }
+
   }
 
   Paraview_File.close();
