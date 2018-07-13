@@ -2182,6 +2182,12 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /*!\brief OS_LAGRANGE \n DESCRIPTION: Indicates if Lagrange function in line search only considers design update \ingroup Config*/
   addBoolOption("OS_LAGRANGE", OS_Lagrange, false);
+
+  /*!\brief OS_LS_UPDATE \n DESCRIPTION: Indicates if the primal and dual updates are integrated in the line search \ingroup Config*/
+  addBoolOption("OS_LS_UPDATE", OS_LS_PrimalDual, false);
+
+  /*!\brief ONE_LS_COUNTER \n DESCRIPTION: Maximum line search counter in one-shot method \ingroup Config*/
+  addUnsignedShortOption("OS_LS_COUNTER", OS_LS_MaxCounter, 15);
   
   /* END_CONFIG_OPTIONS */
 

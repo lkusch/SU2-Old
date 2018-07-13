@@ -1272,11 +1272,29 @@ void COneShotSolver::LoadSolution(){
   }
 }
 
+void COneShotSolver::LoadSolutionStep(su2double stepsize){
+  unsigned long iPoint, iVar;
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    for (iVar = 0; iVar < nVar; iVar++){
+      direct_solver->node[iPoint]->SetSolution(iVar, direct_solver->node[iPoint]->GetSolution_Former(iVar)+stepsize*direct_solver->node[iPoint]->GetSolution_Delta_Store(iVar));
+      node[iPoint]->SetSolution(iVar, node[iPoint]->GetSolution_Former(iVar)+stepsize*node[iPoint]->GetSolution_Delta_Store(iVar));
+    }
+  }
+}
+
 void COneShotSolver::ShiftFormerSolution(){
   unsigned long iPoint;
   for (iPoint = 0; iPoint < nPoint; iPoint++){
     direct_solver->node[iPoint]->SetSolution_Store(direct_solver->node[iPoint]->GetSolution_Former());
     node[iPoint]->SetSolution_Store(node[iPoint]->GetSolution_Former());
+  }
+}
+
+void COneShotSolver::ShiftStoreSolution(){
+  unsigned long iPoint;
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    direct_solver->node[iPoint]->SetSolution_Former(direct_solver->node[iPoint]->GetSolution_Store());
+    node[iPoint]->SetSolution_Former(node[iPoint]->GetSolution_Store());
   }
 }
 
@@ -1414,4 +1432,18 @@ void COneShotSolver::SetFiniteDifferenceSens(CGeometry *geometry, CConfig* confi
         node[iPoint]->SetSensitivity(iDim, (node[iPoint]->GetSensitivity(iDim)-node[iPoint]->GetSensitivity_ShiftedLagrangian(iDim))*(1./config->GetFDStep()));
       }
     }
+}
+
+void COneShotSolver::StoreSolutionDelta(){
+  unsigned short iVar;
+  unsigned long iPoint;
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    for (iVar = 0; iVar < nVar; iVar++){
+      direct_solver->node[iPoint]->SetSolution_Delta_Store(iVar, direct_solver->node[iPoint]->GetSolution_Delta(iVar));
+    }
+    for (iVar = 0; iVar < nVar; iVar++){
+      node[iPoint]->SetSolution_Delta_Store(iVar,node[iPoint]->GetSolution_Delta(iVar));
+    }
+  }
 }

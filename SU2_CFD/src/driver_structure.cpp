@@ -7752,9 +7752,11 @@ COneShotFluidDriver::~COneShotFluidDriver(void){
 void COneShotFluidDriver::RunOneShot(){
 
   su2double stepsize = 1.0;
+  unsigned short maxcounter = config_container[ZONE_0]->GetOneShotMaxCounter();
   unsigned short whilecounter = 0;
   bool testLagrange = config_container[ZONE_0]->GetOneShotLagrange(); //Lagrange function includes all updates and not only design update if testLagrange is set to false
   bool descent = true;
+  bool partstep = config_container[ZONE_0]->GetOneShotPartStep();
   cout << "log10Adjoint[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][ADJFLOW_SOL]->GetRes_RMS(0))<<std::endl;
   cout << "log10Primal[RMS Density]: " << log10(solver_container[ZONE_0][MESH_0][FLOW_SOL]->GetRes_RMS(0))<<std::endl;
 
@@ -7768,7 +7770,7 @@ void COneShotFluidDriver::RunOneShot(){
   do{
     if(ExtIter>config_container[ZONE_0]->GetOneShotStart()){
       if(!CheckDescent()&&whilecounter==0&&config_container[ZONE_0]->GetCheckDescent()){
-          //whilecounter=14;
+          //whilecounter=maxcounter-1;
           ComputeNegativeSearchDirection();
           std::cout<<"No Descent Direction!..."<<CheckDescent()<<std::endl;
           descent = false;
@@ -7776,14 +7778,25 @@ void COneShotFluidDriver::RunOneShot(){
       if(whilecounter>0){
         //Armijo line search (halfen step)
         stepsize=stepsize*0.5;
-        /*---Load the old solution and the old design for line search---*/
+        /*---Load the old design for line search---*/
         for (iZone = 0; iZone < nZone; iZone++){
-          solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSolution();
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[iZone], geometry_container[iZone][MESH_0]);
         }
       }
+      if(!partstep||(whilecounter==0)){
+        //Load the old solution for line search (either y_k or y_k-1)
+        for (iZone = 0; iZone < nZone; iZone++){
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSolution();
+        }
+      }else{
+        //Update the old solution with stepsize and load it
+        for (iZone = 0; iZone < nZone; iZone++){
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSolutionStep(stepsize);
+          solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreSolution();
+        }
+      }
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
-      ComputeDesignVarUpdate(stepsize);
+      if (whilecounter!=maxcounter) ComputeDesignVarUpdate(stepsize);
       for (iZone = 0; iZone < nZone; iZone++){
         config_container[iZone]->SetKind_SU2(2); // set SU2_DEF as the solver
         SurfaceDeformation(geometry_container[iZone][MESH_0], config_container[iZone], surface_movement[iZone], grid_movement[iZone]);
@@ -7796,9 +7809,12 @@ void COneShotFluidDriver::RunOneShot(){
       CalculateLagrangian(true);
     }
     whilecounter++;
-    if(whilecounter==15) stepsize=0.0;
+    if(whilecounter==maxcounter){
+      if(!partstep) stepsize=0.0;
+      else stepsize=2.0;
+    }
   }
-  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe())&&whilecounter<16);
+  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe())&&whilecounter<maxcounter+1);
   std::cout<<"Line search information: "<<Lagrangian<<" "<<ObjFunc<<" "<<stepsize<<std::endl;
   if(testLagrange){
 
@@ -7842,6 +7858,12 @@ void COneShotFluidDriver::RunOneShot(){
     PrimalDualStep();
     CalculateLagrangian(true);
   }
+  if(partstep){
+    for (iZone = 0; iZone < nZone; iZone++){
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->ShiftStoreSolution();
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreSolutionDelta();
+    }
+  }
   if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
 
     /*--- Update design variable ---*/
@@ -7870,7 +7892,7 @@ void COneShotFluidDriver::RunOneShot(){
     for (iZone = 0; iZone < nZone; iZone++){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetFiniteDifferenceSens(geometry_container[iZone][MESH_0], config_container[iZone]);
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateSensitivityLagrangian(geometry_container[iZone][MESH_0],config_container[iZone]->GetOneShotBeta());
-      solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
+      if(!partstep) solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSaveSolution();
     }
 
     /*--- Projection of the gradient N_u---*/

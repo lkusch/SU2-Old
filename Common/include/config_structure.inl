@@ -1925,3 +1925,7 @@ inline void CConfig::SetOneShotBeta(su2double input) { One_Shot_Beta = input; }
 inline bool CConfig::GetCheckDescent(void) { return OS_Check_Descent; }
 
 inline bool CConfig::GetOneShotLagrange(void) { return OS_Lagrange; }
+
+inline bool CConfig::GetOneShotPartStep(void) { return OS_LS_PrimalDual; }
+
+inline unsigned short CConfig::GetOneShotMaxCounter(void) { return OS_LS_MaxCounter; }

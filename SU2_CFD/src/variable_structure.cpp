@@ -57,6 +57,7 @@ CVariable::CVariable(void) {
   Residual_Sum = NULL;
   Solution_Store = NULL;
   Solution_Delta = NULL;
+  Solution_Delta_Store = NULL;
   Solution_Save = NULL;
   Solution_Former = NULL;
   Solution_Adj_Old = NULL;
@@ -81,6 +82,7 @@ CVariable::CVariable(unsigned short val_nvar, CConfig *config) {
   Residual_Sum = NULL;
   Solution_Store = NULL;
   Solution_Delta = NULL;
+  Solution_Delta_Store = NULL;
   Solution_Save = NULL;
   Solution_Former = NULL;
   Solution_Adj_Old = NULL;
@@ -119,6 +121,7 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   Residual_Sum = NULL;
   Solution_Store = NULL;
   Solution_Delta = NULL;
+  Solution_Delta_Store = NULL;
   Solution_Save = NULL;
   Solution_Former = NULL;
   Solution_Adj_Old = NULL;
@@ -139,6 +142,7 @@ CVariable::CVariable(unsigned short val_nDim, unsigned short val_nvar, CConfig *
   Solution_Old = new su2double [nVar];
   Solution_Store = new su2double [nVar];
   Solution_Delta = new su2double [nVar];
+  Solution_Delta_Store = new su2double [nVar];
   Solution_Save = new su2double [nVar];
   Solution_Former = new su2double [nVar];
   
@@ -178,6 +182,7 @@ CVariable::~CVariable(void) {
   if (Solution_Store      != NULL) delete [] Solution_Store;
   if (Solution_Save       != NULL) delete [] Solution_Save;
   if (Solution_Delta      != NULL) delete [] Solution_Delta;
+  if (Solution_Delta_Store!= NULL) delete [] Solution_Delta_Store;
   if (Solution_Former     != NULL) delete [] Solution_Former;
   if (Solution_Adj_Old    != NULL) delete [] Solution_Adj_Old;
   
@@ -476,6 +481,13 @@ void CVariable::Set_FormerSolution() {
 
   for (unsigned short iVar = 0; iVar < nVar; iVar++)
     Solution_Former[iVar] = Solution[iVar];
+
+}
+
+void CVariable::SetSolution_Former(su2double *val_solution_old) {
+
+  for (unsigned short iVar = 0; iVar < nVar; iVar++)
+    Solution_Former[iVar] = val_solution_old[iVar];
 
 }
 

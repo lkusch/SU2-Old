@@ -63,6 +63,7 @@ protected:
   *Solution_Store,        /*!< \brief Pointer to store solution of the problem (step k). */
   *Solution_Former,       /*!< \brief Former solution of the problem (step k-1). */
   *Solution_Delta,        /*!< \brief Difference of new solution and solution (step k+1 - step k). */
+  *Solution_Delta_Store,  /*!< \brief Difference of solution and old solution (step k - step k-1). */
   *Solution_Save,         /*!< \brief Pointer to store new solution of the problem (step k+1). */
   *Solution_Old;      /*!< \brief Old solution of the problem R-K. */
   bool Non_Physical;      /*!< \brief Non-physical points in the solution (force first order). */
@@ -2464,10 +2465,23 @@ public:
   void Set_FormerSolution(void);
 
   /*!
+   * \brief Set Solution_Former to a specific solution
+   * \param[in] val_solution_old - value vector to which Solution_Former is set
+   */
+  void SetSolution_Former(su2double *val_solution_old);
+
+  /*!
    * \brief Get Solution_Former
    * \return pointer to Solution_Former
    */
   su2double *GetSolution_Former(void);
+
+  /*!
+   * \brief Get Solution_Former
+   * \param[in] iVar - index of Solution_Former that is fetched
+   * \return value of Solution_Former at iVar
+   */
+  su2double GetSolution_Former(unsigned short iVar);
 
   /*!
    * \brief Set Solution_Delta to specific value
@@ -2475,6 +2489,13 @@ public:
    * \param[in] val_solution_delta - value that is set
    */
   void SetSolution_Delta(unsigned short iVar, su2double val_solution_delta);
+
+  /*!
+   * \brief Set Solution_Delta_Store to specific value
+   * \param[in] iVar - index of Solution_Delta_Store that is set
+   * \param[in] val_solution_delta - value that is set
+   */
+  void SetSolution_Delta_Store(unsigned short iVar, su2double val_solution_delta);
 
   /*!
    * \brief Get Solution_Delta
@@ -2488,6 +2509,13 @@ public:
    * \return value of Solution_Delta at iVar
    */
   su2double GetSolution_Delta(unsigned short iVar);
+
+  /*!
+   * \brief Get Solution_Delta_Store
+   * \param[in] iVar - index of Solution_Delta_Store that is fetched
+   * \return value of Solution_Delta_Store at iVar
+   */
+  su2double GetSolution_Delta_Store(unsigned short iVar);
 
 };
 

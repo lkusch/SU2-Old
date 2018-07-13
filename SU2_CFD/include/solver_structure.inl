@@ -2310,6 +2310,8 @@ inline void CSolver::StoreSolution(){}
 
 inline void CSolver::LoadSolution(){}
 
+inline void CSolver::LoadSolutionStep(su2double stepsize){}
+
 inline void CSolver::ShiftFormerSolution(){}
 
 inline void CSolver::StoreFormerSolution(){}
@@ -2321,4 +2323,8 @@ inline void CSolver::LoadSaveSolution(){}
 inline void CSolver::UpdateStateVariable(CConfig *config){}
 
 inline void CSolver::SetFiniteDifferenceSens(CGeometry *geometry, CConfig* config){}
+
+inline void CSolver::ShiftStoreSolution(){}
+
+inline void CSolver::StoreSolutionDelta(){}
 

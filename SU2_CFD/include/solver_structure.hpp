@@ -4271,6 +4271,11 @@ public:
   /*!
    * \brief A virtual member.
    */
+  virtual void LoadSolutionStep(su2double stepsize);
+
+  /*!
+   * \brief A virtual member.
+   */
   virtual void StoreSaveSolution();
 
   /*!
@@ -4287,6 +4292,16 @@ public:
    * \brief A virtual member.
    */
   virtual void ShiftFormerSolution();
+
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void ShiftStoreSolution();
+
+  /*!
+   * \brief A virtual member.
+   */
+  virtual void StoreSolutionDelta();
 
   /*!
    * \brief A virtual member.
@@ -13254,6 +13269,11 @@ public:
   void LoadSolution();
 
   /*!
+   * \brief Load the current solution from Solution_Store + stepsize*Update.
+   */
+  void LoadSolutionStep(su2double stepsize);
+
+  /*!
    * \brief Store current mesh coordinates and normals.
    * (This is e.g. done before line search)
    * \param[in] config - config class object
@@ -13313,6 +13333,18 @@ public:
    * (This is needed if the solution at two former states is stored)
    */
   void ShiftFormerSolution();
+
+  /*!
+   * \brief Shift Solution_Store to Solution_Former.
+   * (This is needed if Solution is only updated by a factor*Delta)
+   */
+  void ShiftStoreSolution();
+
+  /*!
+   * \brief Store Solution_Delta in Solution_Delta_Store.
+   * (This is needed if Solution is only updated by a factor*Delta)
+   */
+  void StoreSolutionDelta();
 
   /*!
    * \brief Store the current solution in Solution_Former.

@@ -1023,6 +1023,8 @@ private:
   su2double OS_Sens_Scale; /*!< \brief Value for scaling the geometry sensitivities */
   bool OS_Check_Descent; /*!< \brief option for a descent check in the line search */
   bool OS_Lagrange; /*!< \brief option for a line search based on the design updated Lagrangian */
+  bool OS_LS_PrimalDual; /*!< \brief option for a line search including the primal and dual update */
+  unsigned short OS_LS_MaxCounter; /*!< \brief Maximum line search counter */
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8561,6 +8563,18 @@ public:
    * \return YES if the update only in the design is considered in the line search.
    */
   bool GetOneShotLagrange(void);
+
+  /*!
+   * \brief Check if the line search in one-shot is also for primal and dual.
+   * \return YES if the update in the primal and dual is considered.
+   */
+  bool GetOneShotPartStep(void);
+
+  /*!
+   * \brief Maximum line search counter for one-shot.
+   * \return Value for the maximum number of line searches.
+   */
+  unsigned short GetOneShotMaxCounter(void);
 };
 
 #include "config_structure.inl"
