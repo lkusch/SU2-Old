@@ -7797,6 +7797,7 @@ void COneShotFluidDriver::RunOneShot(){
       }
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
       if (whilecounter!=maxcounter) ComputeDesignVarUpdate(stepsize);
+      else ComputeDesignVarUpdate(0.0);
       for (iZone = 0; iZone < nZone; iZone++){
         config_container[iZone]->SetKind_SU2(2); // set SU2_DEF as the solver
         SurfaceDeformation(geometry_container[iZone][MESH_0], config_container[iZone], surface_movement[iZone], grid_movement[iZone]);
