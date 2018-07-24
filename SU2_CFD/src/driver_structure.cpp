@@ -7688,6 +7688,11 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
 
   BFGS_Inv = new su2double*[nDV_Total];
 
+  ConstrFunc = new su2double[config_container[ZONE_0]->GetnConstr()];
+  multiplier = new su2double[config_container[ZONE_0]->GetnConstr()];
+  ConstrFunc_Store = new su2double[config_container[ZONE_0]->GetnConstr()];
+  BCheck_Inv = new su2double*[config_container[ZONE_0]->GetnConstr()];
+
   for (iDV = 0; iDV  < nDV_Total; iDV++){
     Gradient[iDV] = 0.0;
     Gradient_Old[iDV] = 0.0;
@@ -7704,6 +7709,17 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
       BFGS_Inv[iDV][jDV] = 0.0;
       if (iDV==jDV) BFGS_Inv[iDV][jDV] = 1.0;
     }
+  }
+
+  for (unsigned short iConstr = 0; iConstr  < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    ConstrFunc[iConstr] = 0.0;
+    ConstrFunc_Store[iConstr] = 0.0;
+    multiplier[iConstr] = config_container[ZONE_0]->GetMultiplierStart(iConstr);
+    BCheck_Inv[iConstr] = new su2double[config_container[ZONE_0]->GetnConstr()];
+    for (unsigned short jConstr = 0; jConstr  < config_container[ZONE_0]->GetnConstr(); jConstr++){
+      BCheck_Inv[iConstr][jConstr] = 0.0;
+    }
+    BCheck_Inv[iConstr][iConstr] = config_container[ZONE_0]->GetMultiplierFactor(iConstr);
   }
 
   /*----- calculate values for bound projection algorithm -------*/
@@ -7741,6 +7757,10 @@ COneShotFluidDriver::~COneShotFluidDriver(void){
   delete [] DesignVariable;
   delete [] SearchDirection;
   delete [] activeset;
+
+  delete [] ConstrFunc;
+  delete [] multiplier;
+  delete [] ConstrFunc_Store;
 
   for (unsigned short iZone = 0; iZone < nZone; iZone++){
     delete [] grid_movement[iZone];
@@ -7782,7 +7802,10 @@ void COneShotFluidDriver::RunOneShot(){
         for (iZone = 0; iZone < nZone; iZone++){
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[iZone], geometry_container[iZone][MESH_0]);
         }
+      }else{
+        if(!testLagrange && !partstep) UpdateMultiplier(1.0);
       }
+      if(partstep) UpdateMultiplier(stepsize);
       if(!partstep||(whilecounter==0)){
         //Load the old solution for line search (either y_k or y_k-1)
         for (iZone = 0; iZone < nZone; iZone++){
@@ -7856,6 +7879,7 @@ void COneShotFluidDriver::RunOneShot(){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->ShiftFormerSolution();
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadSolution();
     }
+    UpdateMultiplier(1.0);
     PrimalDualStep();
     CalculateLagrangian(true);
   }
@@ -7869,6 +7893,7 @@ void COneShotFluidDriver::RunOneShot(){
 
     /*--- Update design variable ---*/
     UpdateDesignVariable();
+    StoreConstrFunction();
 
     /*--- N_u ---*/
     for (iZone = 0; iZone < nZone; iZone++){
@@ -7876,7 +7901,7 @@ void COneShotFluidDriver::RunOneShot(){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreSaveSolution();
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->ResetSensitivityLagrangian(geometry_container[iZone][MESH_0]);
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateSensitivityLagrangian(geometry_container[iZone][MESH_0],1.0);
-    }
+    }   
 
     /*--- Alpha*Deltay^T*G_u ---*/
     ComputeAlphaTerm();
@@ -8023,6 +8048,7 @@ void COneShotFluidDriver::PrimalDualStep(){
   /*--- Initialize the adjoint of the objective function with 1.0. ---*/
 
   SetAdj_ObjFunction();
+  SetAdj_ConstrFunction(multiplier);
 
   /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
 
@@ -8115,90 +8141,10 @@ void COneShotFluidDriver::SetRecording(unsigned short kind_recording){
   /*--- Extract the objective function and store it --- */
 
   SetObjFunction();
+  SetConstrFunction();
 
   AD::StopRecording();
 
-}
-
-void COneShotFluidDriver::SetAdj_ConstrFunction(){
-
-/*  int rank = MASTER_NODE;
-
-  bool time_stepping = config_container[ZONE_0]->GetUnsteady_Simulation() != STEADY;
-  unsigned long IterAvg_Obj = config_container[ZONE_0]->GetIter_Avg_Objective();
-  unsigned long ExtIter = config_container[ZONE_0]->GetExtIter();
-  su2double seeding = 1.0;
-
-  if (time_stepping){
-    if (ExtIter < IterAvg_Obj){
-      seeding = 1.0/((su2double)IterAvg_Obj);
-    }
-    else{
-      seeding = 0.0;
-    }
-  }
-
-#ifdef HAVE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-
-  if (rank == MASTER_NODE){
-    SU2_TYPE::SetDerivative(ObjFunc, SU2_TYPE::GetValue(seeding));
-  } else {
-    SU2_TYPE::SetDerivative(ObjFunc, 0.0);
-  }*/
-
-}
-
-void COneShotFluidDriver::SetConstrFunction(){
-
-/*  bool output_1d       = config_container[ZONE_0]->GetWrt_1D_Output();
-  bool output_massflow = (config_container[ZONE_0]->GetKind_ObjFunc() == MASS_FLOW_RATE);
-
-  int rank = MASTER_NODE;
-#ifdef HAVE_MPI
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-
-  ObjFunc = 0.0;
-
-  for (iZone = 0; iZone < nZone; iZone++){
-    solver_container[iZone][MESH_0][FLOW_SOL]->SetTotal_ComboObj(0.0);
-  }
-
-  for (iZone = 0; iZone < nZone; iZone++){
-    if (output_1d) {
-      switch (config_container[iZone]->GetKind_Solver()) {
-        case EULER:                   case NAVIER_STOKES:                   case RANS:
-        case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
-        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
-          output->OneDimensionalOutput(solver_container[iZone][MESH_0][FLOW_SOL], geometry_container[iZone][MESH_0], config_container[iZone]);
-          break;
-      }
-    }
-    if (output_massflow && !output_1d) {
-      switch (config_container[iZone]->GetKind_Solver()) {
-        case EULER:                   case NAVIER_STOKES:                   case RANS:
-        case DISC_ADJ_EULER:          case DISC_ADJ_NAVIER_STOKES:          case DISC_ADJ_RANS:
-        case ONE_SHOT_EULER:          case ONE_SHOT_NAVIER_STOKES:          case ONE_SHOT_RANS:
-          output->SetMassFlowRate(solver_container[iZone][MESH_0][FLOW_SOL], geometry_container[iZone][MESH_0], config_container[iZone]);
-          break;
-      }
-    }
-  }*/
-
-  /*--- Here we can add new (scalar) objective functions ---*/
-
-  /*--- Surface based obj. function ---*/
-
-/*  for (iZone = 0; iZone < nZone; iZone++){
-    solver_container[iZone][MESH_0][FLOW_SOL]->Evaluate_ObjFunc(config_container[iZone]);
-    ObjFunc += solver_container[iZone][MESH_0][FLOW_SOL]->GetTotal_ComboObj();
-  }
-
-  if (rank == MASTER_NODE){
-    AD::RegisterOutput(ObjFunc);
-  }*/
 }
 
 void COneShotFluidDriver::SetProjection_AD(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, su2double* Gradient){
@@ -8501,7 +8447,19 @@ void COneShotFluidDriver::CalculateLagrangian(bool augmented){
   std::cout<<"Objective function value: "<<ObjFunc<<std::endl;
   Lagrangian = 0.0;
   Lagrangian += ObjFunc; //TODO use for BFGS either only objective function or normal Lagrangian
+  std::cout<<"Constraint function value: ";
+  for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    Lagrangian += ConstrFunc[iConstr]*multiplier[iConstr];
+    std::cout<<ConstrFunc[iConstr]<<" ";
+  }
+  std::cout<<std::endl;
   if(augmented){
+    su2double helper=0.0;
+    for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++)
+    {
+      helper += ConstrFunc[iConstr]*ConstrFunc[iConstr];
+    }
+    Lagrangian += helper*(config_container[ZONE_0]->GetOneShotAlpha()/2);
     for (iZone = 0; iZone < nZone; iZone++) {
       Lagrangian+=solver_container[iZone][MESH_0][ADJFLOW_SOL]->CalculateLagrangianPart(config_container[iZone], augmented);
     }
@@ -8585,6 +8543,7 @@ void COneShotFluidDriver::ComputeAlphaTerm(){
     /*--- Initialize the adjoint of the objective function with 0.0. ---*/
 
     SetAdj_ObjFunction_Zero();
+    SetAdj_ConstrFunction(ConstrFunc);
 
     /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
 
@@ -8632,6 +8591,7 @@ void COneShotFluidDriver::ComputeBetaTerm(){
     /*--- Initialize the adjoint of the objective function with 1.0. ---*/
 
     SetAdj_ObjFunction();
+    SetAdj_ConstrFunction(multiplier);
 
     /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
 
@@ -8671,5 +8631,60 @@ void COneShotFluidDriver::ProjectMeshSensitivities(){
     // project sensitivities (surface) on design variables
     SetProjection_AD(geometry_container[iZone][MESH_0], config_container[iZone], surface_movement[iZone] , Gradient);
     config_container[iZone]->SetKind_SU2(1); // set SU2_CFD as solver
+  }
+}
+
+void COneShotFluidDriver::SetAdj_ConstrFunction(su2double *seeding){
+
+  int rank = MASTER_NODE;
+
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+
+  for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    if (rank == MASTER_NODE){
+      SU2_TYPE::SetDerivative(ConstrFunc[iConstr], SU2_TYPE::GetValue(seeding[iConstr]));
+    } else {
+      SU2_TYPE::SetDerivative(ConstrFunc[iConstr], 0.0);
+    }
+  }
+
+}
+
+void COneShotFluidDriver::SetConstrFunction(){
+
+  int rank = MASTER_NODE;
+#ifdef HAVE_MPI
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
+  for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    ConstrFunc[iConstr] = 0.0;
+    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr);
+    if (rank == MASTER_NODE){
+      AD::RegisterOutput(ConstrFunc[iConstr]);
+    }
+  }
+
+}
+
+void COneShotFluidDriver::UpdateMultiplier(su2double stepsize){
+  su2double helper;
+  std::cout<<"Multiplier Update: ";
+  for(unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    helper = 0.0;
+    for(unsigned short jConstr = 0; jConstr < config_container[ZONE_0]->GetnConstr(); jConstr++){
+       helper+= BCheck_Inv[iConstr][jConstr]*ConstrFunc_Store[jConstr];
+    }
+    multiplier[iConstr] = multiplier[iConstr]+stepsize*helper;
+    std::cout<<ConstrFunc_Store[iConstr]<<" "<<multiplier[iConstr]<<" ";
+  }
+  std::cout<<std::endl;
+
+}
+
+void COneShotFluidDriver::StoreConstrFunction(){
+  for(unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    ConstrFunc_Store[iConstr] = ConstrFunc[iConstr];
   }
 }

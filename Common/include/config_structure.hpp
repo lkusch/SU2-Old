@@ -1025,6 +1025,11 @@ private:
   bool OS_Lagrange; /*!< \brief option for a line search based on the design updated Lagrangian */
   bool OS_LS_PrimalDual; /*!< \brief option for a line search including the primal and dual update */
   unsigned short OS_LS_MaxCounter; /*!< \brief Maximum line search counter */
+  unsigned short *Kind_ConstrFunc;  /*!< \brief Kind of constraint functions. */
+  unsigned short nConstr;              /*! \brief Number of constraint functions. */
+  su2double* Multiplier_Start; /*! \brief Start values for constraint multipliers. */
+  su2double* Multiplier_Factor; /*! \brief Values for constant factor for multiplier update. */
+  su2double* ConstraintTarget; /*! \brief Target value for constraints. */
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8575,6 +8580,38 @@ public:
    * \return Value for the maximum number of line searches.
    */
   unsigned short GetOneShotMaxCounter(void);
+
+  /*!
+   * \brief Get the kind of constraint function. There are several options: Drag coefficient,
+   *        Lift coefficient, efficiency, etc.
+   * \return Kind of constraint function.
+   */
+  unsigned short GetKind_ConstrFunc(unsigned short val_cons);
+
+  /*!
+   * \brief Get the total number of constraints in list
+   * \return Total number of constraints in list
+   */
+  unsigned short GetnConstr(void);
+
+  /*!
+   * \brief Get the starting value for the constraint multiplier
+   * \return Value of Multiplier (start).
+   */
+  su2double GetMultiplierStart(unsigned short val_cons);
+
+  /*!
+   * \brief Get constant factor for multiplier update
+   * \return Value of multiplier factor.
+   */
+  su2double GetMultiplierFactor(unsigned short val_cons);
+
+
+  /*!
+   * \brief Get target value for constraint functions
+   * \return Value of target value for constraint functions.
+   */
+  su2double GetConstraintTarget(unsigned short val_cons);
 };
 
 #include "config_structure.inl"

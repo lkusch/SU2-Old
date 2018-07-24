@@ -1510,6 +1510,11 @@ protected:
   su2double cwolfeone; /*!< \brief First Wolfe line search parameter.*/
   bool* activeset; /*!< \brief Flag for indices belonging to the active set (lower and upper design bounds are reached).*/
 
+  su2double* ConstrFunc; /*!< \brief Constraint function values.*/
+  su2double* multiplier; /*!< \brief Lagrange multipliers for constraint functions.*/
+  su2double* ConstrFunc_Store; /*!< \brief Old Constraint function (stored when overwritten).*/
+  su2double** BCheck_Inv; /*!< \brief Inverse matrix for multiplier update.*/
+
 public:
 
   /*!
@@ -1568,16 +1573,6 @@ public:
    * \param[in] kind_recording - Type of recording (either CONS_VARS, MESH_COORDS, COMBINED or NONE)
    */
   void SetRecording(unsigned short kind_recording);
-
-  /*!
-   * \brief Set the constraint functions. 
-   */
-  void SetConstrFunction();
-
-  /*!
-   * \brief Initialize the adjoint value of the constraint functions.
-   */
-  void SetAdj_ConstrFunction();
 
   /*!
    * \brief Projection of the surface sensitivity using algorithmic differentiation (AD) (see also SU2_DOT).
@@ -1691,4 +1686,24 @@ public:
    * \return projected value
    */
   su2double ProjectionPAP(unsigned short iDV, unsigned short jDV, su2double value, bool active);
+
+  /*!
+   * \brief Update the constraint multiplier.
+   */
+  void UpdateMultiplier(su2double stepsize);
+
+  /*!
+   * \brief Set the constraint functions.
+   */
+  void SetConstrFunction();
+
+  /*!
+   * \brief Initialize the adjoint value of the constraint functions.
+   */
+  void SetAdj_ConstrFunction(su2double *seeding);
+
+  /*!
+   * \brief Store the constraints.
+   */
+  void StoreConstrFunction();
 };

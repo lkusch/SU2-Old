@@ -1929,3 +1929,13 @@ inline bool CConfig::GetOneShotLagrange(void) { return OS_Lagrange; }
 inline bool CConfig::GetOneShotPartStep(void) { return OS_LS_PrimalDual; }
 
 inline unsigned short CConfig::GetOneShotMaxCounter(void) { return OS_LS_MaxCounter; }
+
+inline unsigned short CConfig::GetKind_ConstrFunc(unsigned short val_cons) { return Kind_ConstrFunc[val_cons]; }
+
+inline unsigned short CConfig::GetnConstr(void) { return nConstr;}
+
+inline su2double CConfig::GetMultiplierStart(unsigned short val_cons) { return Multiplier_Start[val_cons]; }
+
+inline su2double CConfig::GetMultiplierFactor(unsigned short val_cons) { return Multiplier_Factor[val_cons]; }
+
+inline su2double CConfig::GetConstraintTarget(unsigned short val_cons) { return ConstraintTarget[val_cons]; }

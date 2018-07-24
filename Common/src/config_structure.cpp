@@ -457,8 +457,12 @@ void CConfig::SetPointersNull(void) {
   Kind_Inc_Inlet = NULL;
 
   Kind_ObjFunc   = NULL;
+  Kind_ConstrFunc = NULL;
 
   Weight_ObjFunc = NULL;
+  Multiplier_Start = NULL;
+  Multiplier_Factor = NULL;
+  ConstraintTarget = NULL;
 
   /*--- Moving mesh pointers ---*/
 
@@ -2188,6 +2192,18 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /*!\brief ONE_LS_COUNTER \n DESCRIPTION: Maximum line search counter in one-shot method \ingroup Config*/
   addUnsignedShortOption("OS_LS_COUNTER", OS_LS_MaxCounter, 15);
+
+  /*!\brief CONSTRAINT_FUNCTION \n DESCRIPTION: List of constraint functions \ingroup Config*/
+  addEnumListOption("CONSTRAINT_FUNCTION", nConstr, Kind_ConstrFunc, Objective_Map);
+
+  /*!\brief MULTIPLIER_START  \n DESCRIPTION: Starting values for multiplier \ingroup Config*/
+  addDoubleListOption("MULTIPLIER_START", nConstr, Multiplier_Start);
+
+  /*!\brief MULTIPLIER_START  \n DESCRIPTION: Factors for multiplier update \ingroup Config*/
+  addDoubleListOption("MULTIPLIER_FACTOR", nConstr, Multiplier_Factor);
+
+  /*!\brief MULTIPLIER_START  \n DESCRIPTION: Factors for multiplier update \ingroup Config*/
+  addDoubleListOption("CONSTR_VALUE", nConstr, ConstraintTarget);
   
   /* END_CONFIG_OPTIONS */
 
@@ -2519,6 +2535,25 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
     Weight_ObjFunc = new su2double[nObj];
     for (unsigned short iObj=0; iObj<nObj; iObj++)
       Weight_ObjFunc[iObj] = 1.0;
+  }
+
+  if(nConstr!=0 && Multiplier_Start == NULL){
+    Multiplier_Start = new su2double[nConstr];
+    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+      Multiplier_Start[iConstr] = 0.0;
+    }
+  }
+  if(nConstr!=0 && Multiplier_Factor == NULL){
+    Multiplier_Factor = new su2double[nConstr];
+    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+      Multiplier_Factor[iConstr] = 1.0;
+    }
+  }
+  if(nConstr!=0 && ConstraintTarget == NULL){
+    ConstraintTarget = new su2double[nConstr];
+    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+      ConstraintTarget[iConstr] = 0.0;
+    }
   }
 
   /*--- Low memory only for ASCII Tecplot ---*/
@@ -6422,7 +6457,11 @@ CConfig::~CConfig(void) {
   }
 
   if (Kind_ObjFunc != NULL)      delete[] Kind_ObjFunc;
+  if (Kind_ConstrFunc != NULL)  delete[] Kind_ConstrFunc;
   if (Weight_ObjFunc != NULL)      delete[] Weight_ObjFunc;
+  if (Multiplier_Start != NULL)      delete[] Multiplier_Start;
+  if (Multiplier_Factor != NULL)      delete[] Multiplier_Factor;
+  if (ConstraintTarget != NULL)      delete[] ConstraintTarget;
 
   if (DV_Value != NULL) {
     for (iDV = 0; iDV < nDV; iDV++) delete[] DV_Value[iDV];
