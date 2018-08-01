@@ -7693,6 +7693,11 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
   ConstrFunc_Store = new su2double[config_container[ZONE_0]->GetnConstr()];
   BCheck_Inv = new su2double*[config_container[ZONE_0]->GetnConstr()];
 
+  nBFGSmax = 38;
+  nBFGS = 0;
+  ykvec = new su2double*[nBFGSmax];
+  skvec = new su2double*[nBFGSmax];
+
   for (iDV = 0; iDV  < nDV_Total; iDV++){
     Gradient[iDV] = 0.0;
     Gradient_Old[iDV] = 0.0;
@@ -7722,6 +7727,15 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
     BCheck_Inv[iConstr][iConstr] = config_container[ZONE_0]->GetMultiplierFactor(iConstr);
   }
 
+  for (unsigned short iBFGS = 0; iBFGS < nBFGSmax; iBFGS++){
+    ykvec[iBFGS] = new su2double[nDV_Total];
+    skvec[iBFGS] = new su2double[nDV_Total];
+    for (jDV = 0; jDV < nDV_Total; jDV++){
+      ykvec[iBFGS][jDV] = 0.0;
+      skvec[iBFGS][jDV] = 0.0;
+    }
+  }
+
   /*----- calculate values for bound projection algorithm -------*/
   lb=-0.005/config_container[ZONE_0]->GetDesignScale();
   ub=0.005/config_container[ZONE_0]->GetDesignScale();
@@ -7734,6 +7748,8 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
     grid_movement[iZone] = new CVolumetricMovement(geometry_container[iZone][MESH_0], config_container[iZone]);
     surface_movement[iZone] = new CSurfaceMovement();
   }
+
+  BFGS_Init = config_container[ZONE_0]->GetBFGSInitValue();
 
 }
 
@@ -7766,12 +7782,21 @@ COneShotFluidDriver::~COneShotFluidDriver(void){
     delete [] grid_movement[iZone];
     delete [] surface_movement[iZone];
   }
+  delete [] grid_movement;
+  delete [] surface_movement;
+
+  for (unsigned short iBFGS = 0; iBFGS < nBFGSmax; iBFGS++){
+    delete [] ykvec[iBFGS];
+    delete [] skvec[iBFGS];
+  }
+  delete [] ykvec;
+  delete [] skvec;
 
 }
 
 void COneShotFluidDriver::RunOneShot(){
 
-  su2double stepsize = 1.0;
+  su2double stepsize = config_container[ZONE_0]->GetStepSize();
   unsigned short maxcounter = config_container[ZONE_0]->GetOneShotMaxCounter();
   unsigned short whilecounter = 0;
   bool testLagrange = config_container[ZONE_0]->GetOneShotLagrange(); //Lagrange function includes all updates and not only design update if testLagrange is set to false
@@ -7788,7 +7813,7 @@ void COneShotFluidDriver::RunOneShot(){
   }
   /*--- This is the line search loop that is only called once, if no update is performed ---*/
   do{
-    if(ExtIter>config_container[ZONE_0]->GetOneShotStart()){
+    if(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&ExtIter<config_container[ZONE_0]->GetOneShotStop()){
       if(!CheckDescent()&&whilecounter==0&&config_container[ZONE_0]->GetCheckDescent()){
           //whilecounter=maxcounter-1;
           ComputeNegativeSearchDirection();
@@ -7798,6 +7823,9 @@ void COneShotFluidDriver::RunOneShot(){
       if(whilecounter>0){
         //Armijo line search (halfen step)
         stepsize=stepsize*0.5;
+        if(whilecounter==maxcounter && partstep){
+          stepsize = config_container[ZONE_0]->GetStepSize();
+        }
         /*---Load the old design for line search---*/
         for (iZone = 0; iZone < nZone; iZone++){
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[iZone], geometry_container[iZone][MESH_0]);
@@ -7819,7 +7847,7 @@ void COneShotFluidDriver::RunOneShot(){
         }
       }
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
-      if (whilecounter!=maxcounter) ComputeDesignVarUpdate(stepsize);
+      if (whilecounter!=maxcounter || (!config_container[ZONE_0]->GetZeroStep())) ComputeDesignVarUpdate(stepsize);
       else ComputeDesignVarUpdate(0.0);
       for (iZone = 0; iZone < nZone; iZone++){
         config_container[iZone]->SetKind_SU2(2); // set SU2_DEF as the solver
@@ -7828,21 +7856,17 @@ void COneShotFluidDriver::RunOneShot(){
       }
     }
     /*--- Do a primal and adjoint update ---*/
-    if(!testLagrange || ExtIter>config_container[ZONE_0]->GetOneShotStart()){
+    if(!testLagrange || (ExtIter>config_container[ZONE_0]->GetOneShotStart()&&ExtIter<config_container[ZONE_0]->GetOneShotStop())){
       PrimalDualStep();
       CalculateLagrangian(true);
     }
     whilecounter++;
-    if(whilecounter==maxcounter){
-      if(!partstep) stepsize=0.0;
-      else stepsize=2.0;
-    }
   }
-  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe())&&whilecounter<maxcounter+1);
+  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&ExtIter<config_container[ZONE_0]->GetOneShotStop()&&(!CheckFirstWolfe())&&whilecounter<maxcounter+1);
   std::cout<<"Line search information: "<<Lagrangian<<" "<<ObjFunc<<" "<<stepsize<<std::endl;
   if(testLagrange){
 
-    if(ExtIter>config_container[ZONE_0]->GetOneShotStart()){
+    if(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&ExtIter<config_container[ZONE_0]->GetOneShotStop()){
       //Evaluate sensitivity of augmented Lagrangian for an update only in the design
       /*--- N_u ---*/
       for (iZone = 0; iZone < nZone; iZone++){
@@ -7889,7 +7913,7 @@ void COneShotFluidDriver::RunOneShot(){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->StoreSolutionDelta();
     }
   }
-  if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
+  if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()&&ExtIter<config_container[ZONE_0]->GetOneShotStop()){
 
     /*--- Update design variable ---*/
     UpdateDesignVariable();
@@ -7939,7 +7963,8 @@ void COneShotFluidDriver::RunOneShot(){
     ComputeActiveSet();
 
     /*--- Do a BFGS update to approximate the inverse preconditioner ---*/
-    if(ExtIter>config_container[ZONE_0]->GetOneShotStart()) BFGSUpdate(config_container[ZONE_0]);
+    if(ExtIter>config_container[ZONE_0]->GetOneShotStart() && !config_container[ZONE_0]->GetLimitedMemory()) BFGSUpdate(config_container[ZONE_0]);
+    if(config_container[ZONE_0]->GetLimitedMemory()) LBFGSUpdate(config_container[ZONE_0]);
 
     if (testLagrange){ SetAugmentedLagrangianGradient(); }
     /*--- Compute the search direction for the line search procedure ---*/
@@ -7956,7 +7981,7 @@ void COneShotFluidDriver::Run(){
 }
 
 void COneShotFluidDriver::RunBFGS(){
-  su2double stepsize = 1.0;
+  su2double stepsize = config_container[ZONE_0]->GetStepSize();
   unsigned short whilecounter = 0;
   unsigned short nConvIter = 500; //Achtung vorher 500 // dann 2000
   unsigned short iterCount;
@@ -8357,6 +8382,11 @@ void COneShotFluidDriver::BFGSUpdate(CConfig *config){
         delete [] MatA[iDV];
       }
       delete [] MatA;
+      if(config->GetBFGSInit()){
+        for (iDV=0;iDV<nDV_Total;iDV++){
+          BFGS_Init = vk/normyk;
+        }
+      }
 
     }else{
       std::cout<<"!Attention: Hessian not positive definite - Reset Preconditioner!"<<std::endl;
@@ -8364,13 +8394,96 @@ void COneShotFluidDriver::BFGSUpdate(CConfig *config){
         for (iDV = 0; iDV < nDV_Total; iDV++){
           for (jDV = 0; jDV < nDV_Total; jDV++){
             BFGS_Inv[iDV][jDV]=0.0;
-            if(iDV==jDV){ BFGS_Inv[iDV][jDV]=ProjectionSet(iDV,1.0,false); }
+            if(iDV==jDV){ BFGS_Inv[iDV][jDV]=ProjectionSet(iDV,BFGS_Init,false); }
           }
         }
       }
     }
     delete [] yk;
     delete [] sk;
+}
+
+void COneShotFluidDriver::LBFGSUpdate(CConfig *config){
+  unsigned long iDV;
+  su2double vk;
+
+  if (nBFGS == nBFGSmax) {
+    nBFGS--;
+    for (unsigned short iBFGS=0; iBFGS<nBFGSmax-1; iBFGS++){
+      for (iDV = 0; iDV < nDV_Total; iDV++){
+        ykvec[iBFGS][iDV]= ykvec[iBFGS+1][iDV];
+        skvec[iBFGS][iDV]= skvec[iBFGS+1][iDV];
+      }
+    }
+  }
+  for (iDV = 0; iDV < nDV_Total; iDV++){
+    ykvec[nBFGS][iDV]=ProjectionSet(iDV, AugmentedLagrangianGradient[iDV]-AugmentedLagrangianGradient_Old[iDV], false);
+    skvec[nBFGS][iDV]=ProjectionSet(iDV, DesignVarUpdate[iDV], false);
+    SearchDirection[iDV]=-ShiftedLagrangianGradient[iDV];
+    vk+=ykvec[nBFGS][iDV]*skvec[nBFGS][iDV];
+  }
+  if(vk>0){
+    nBFGS = nBFGS + 1;
+    if(config->GetBFGSInit()){
+      su2double helper = 0.0;
+      for (iDV=0;iDV<nDV_Total;iDV++){
+        helper+=ykvec[nBFGS-1][iDV]*ykvec[nBFGS-1][iDV];
+      }
+      for (iDV=0;iDV<nDV_Total;iDV++){
+        for (unsigned short jDV=0;jDV<nDV_Total;jDV++){
+          BFGS_Inv[iDV][jDV]= (ykvec[nBFGS-1][iDV]*skvec[nBFGS-1][jDV])/helper;
+        }
+      }
+    }
+  }else{
+    nBFGS = 0;
+  }
+
+  LBFGSUpdateRecursive(config, nBFGS);
+}
+
+void COneShotFluidDriver::LBFGSUpdateRecursive(CConfig *config, unsigned short nCounter){
+  unsigned long iDV, jDV;
+  su2double *helper = new su2double [nDV_Total];
+  su2double alpha = 0.0;
+  su2double alphahelpone = 0.0;
+  su2double alphahelptwo = 0.0;
+  for (iDV = 0; iDV < nDV_Total; iDV++){
+    SearchDirection[iDV]=ProjectionSet(iDV,SearchDirection[iDV],false);
+  }
+  if(nCounter == 0){
+    for (iDV=0;iDV<nDV_Total;iDV++){
+      helper[iDV]=0.0;
+      for (jDV=0;jDV<nDV_Total;jDV++){
+        helper[iDV]+=BFGS_Inv[iDV][jDV]*SearchDirection[jDV];
+      }
+    }
+    for (iDV=0;iDV<nDV_Total;iDV++){
+      SearchDirection[iDV] = helper[iDV];
+    }
+  }
+  else{
+    for (iDV=0;iDV<nDV_Total;iDV++){
+      ykvec[nCounter-1][iDV] = ProjectionSet(iDV, ykvec[nCounter-1][iDV], false);
+      skvec[nCounter-1][iDV] = ProjectionSet(iDV, skvec[nCounter-1][iDV], false);
+      alphahelpone+=skvec[nCounter-1][iDV]*SearchDirection[iDV];
+      alphahelptwo+=ykvec[nCounter-1][iDV]*skvec[nCounter-1][iDV];
+    }
+    alpha = alphahelpone/alphahelptwo;
+    for (iDV=0;iDV<nDV_Total;iDV++){
+      SearchDirection[iDV] -= alpha*ykvec[nCounter-1][iDV];
+    }
+    LBFGSUpdateRecursive(config, nCounter-1);
+    alphahelpone = 0.0;
+    for (iDV=0;iDV<nDV_Total;iDV++){
+      alphahelpone+=ykvec[nCounter-1][iDV]*SearchDirection[iDV];
+    }
+    for (iDV=0;iDV<nDV_Total;iDV++){
+      SearchDirection[iDV] += (alpha - alphahelpone/alphahelptwo)*skvec[nCounter-1][iDV];
+      SearchDirection[iDV] = ProjectionSet(iDV,SearchDirection[iDV],false);
+    }
+  }
+  delete [] helper;
 }
 
 bool COneShotFluidDriver::CheckFirstWolfe(){
@@ -8396,11 +8509,13 @@ void COneShotFluidDriver::ComputeDesignVarUpdate(su2double stepsize){
 void COneShotFluidDriver::ComputeSearchDirection(){
   unsigned short iDV, jDV;
   for (iDV=0;iDV<nDV_Total;iDV++){
-    SearchDirection[iDV]=0.0;
-    for (jDV=0;jDV<nDV_Total;jDV++){
-      SearchDirection[iDV]+=BFGS_Inv[iDV][jDV]*ProjectionSet(jDV,-ShiftedLagrangianGradient[jDV],false); //should give the same result as ProjectionPAP(iDV,jDV,BFGS_Inv[iDV][jDV],false)*(-ShiftedLagrangianGradient[jDV])
+    if(!config_container[ZONE_0]->GetLimitedMemory()){
+      SearchDirection[iDV]=0.0;
+      for (jDV=0;jDV<nDV_Total;jDV++){
+        SearchDirection[iDV]+= BFGS_Inv[iDV][jDV]*ProjectionSet(jDV,-ShiftedLagrangianGradient[jDV],false); //ProjectionPAP(iDV, jDV, BFGS_Inv[iDV][jDV], false)*(-ShiftedLagrangianGradient[jDV]);//
+      }
     }
-    SearchDirection[iDV]=-ProjectionSet(iDV, ShiftedLagrangianGradient[iDV],true)+ProjectionSet(iDV, SearchDirection[iDV], false);
+    SearchDirection[iDV]=-ProjectionSet(iDV, ShiftedLagrangianGradient[iDV],true)+ProjectionSet(iDV, SearchDirection[iDV], false); // + SearchDirection[iDV];
   }
 }
 
@@ -8447,12 +8562,12 @@ void COneShotFluidDriver::CalculateLagrangian(bool augmented){
   std::cout<<"Objective function value: "<<ObjFunc<<std::endl;
   Lagrangian = 0.0;
   Lagrangian += ObjFunc; //TODO use for BFGS either only objective function or normal Lagrangian
-  std::cout<<"Constraint function value: ";
   for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    if(iConstr==0) std::cout<<"Constraint function value: ";
     Lagrangian += ConstrFunc[iConstr]*multiplier[iConstr];
     std::cout<<ConstrFunc[iConstr]<<" ";
+    if (iConstr==config_container[ZONE_0]->GetnConstr()-1) std::cout<<std::endl;
   }
-  std::cout<<std::endl;
   if(augmented){
     su2double helper=0.0;
     for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++)
@@ -8660,7 +8775,8 @@ void COneShotFluidDriver::SetConstrFunction(){
 #endif
   for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
     ConstrFunc[iConstr] = 0.0;
-    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr);
+    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr));
+    std::cout<<"Lift coefficient: "<<ConstrFunc[0]<<std::endl;
     if (rank == MASTER_NODE){
       AD::RegisterOutput(ConstrFunc[iConstr]);
     }
@@ -8670,16 +8786,17 @@ void COneShotFluidDriver::SetConstrFunction(){
 
 void COneShotFluidDriver::UpdateMultiplier(su2double stepsize){
   su2double helper;
-  std::cout<<"Multiplier Update: ";
   for(unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    if(iConstr==0) std::cout<<"Multiplier Update: ";
     helper = 0.0;
     for(unsigned short jConstr = 0; jConstr < config_container[ZONE_0]->GetnConstr(); jConstr++){
        helper+= BCheck_Inv[iConstr][jConstr]*ConstrFunc_Store[jConstr];
     }
     multiplier[iConstr] = multiplier[iConstr]+stepsize*helper;
     std::cout<<ConstrFunc_Store[iConstr]<<" "<<multiplier[iConstr]<<" ";
+    if(iConstr==config_container[ZONE_0]->GetnConstr()-1) std::cout<<std::endl;
   }
-  std::cout<<std::endl;
+
 
 }
 

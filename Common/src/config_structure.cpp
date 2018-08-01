@@ -463,6 +463,7 @@ void CConfig::SetPointersNull(void) {
   Multiplier_Start = NULL;
   Multiplier_Factor = NULL;
   ConstraintTarget = NULL;
+  ConstraintScale = NULL;
 
   /*--- Moving mesh pointers ---*/
 
@@ -2160,6 +2161,9 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /*!\brief ONE_SHOT_START \n DESCRIPTION: Starting iteration of one-shot method \ingroup Config*/
   addUnsignedShortOption("ONE_SHOT_START", One_Shot_Start, 0);
 
+  /*!\brief ONE_SHOT_STOP \n DESCRIPTION: Stopping iteration of one-shot method \ingroup Config*/
+  addUnsignedShortOption("ONE_SHOT_STOP", One_Shot_Stop, nExtIter);
+
   /*!\brief ONE_SHOT_ALPHA \n DESCRIPTION: Factor for first additional term in augmented Lagrangian \ingroup Config*/
   addDoubleOption("ONE_SHOT_ALPHA", One_Shot_Alpha, 200.0);
 
@@ -2199,11 +2203,29 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /*!\brief MULTIPLIER_START  \n DESCRIPTION: Starting values for multiplier \ingroup Config*/
   addDoubleListOption("MULTIPLIER_START", nConstr, Multiplier_Start);
 
-  /*!\brief MULTIPLIER_START  \n DESCRIPTION: Factors for multiplier update \ingroup Config*/
+  /*!\brief MULTIPLIER_FACTOR  \n DESCRIPTION: Factors for multiplier update \ingroup Config*/
   addDoubleListOption("MULTIPLIER_FACTOR", nConstr, Multiplier_Factor);
 
-  /*!\brief MULTIPLIER_START  \n DESCRIPTION: Factors for multiplier update \ingroup Config*/
+  /*!\brief CONSTR_VALUE  \n DESCRIPTION: Target values for constraints \ingroup Config*/
   addDoubleListOption("CONSTR_VALUE", nConstr, ConstraintTarget);
+
+  /*!\brief CONSTR_SCALE  \n DESCRIPTION: Scaling values for constraints \ingroup Config*/
+  addDoubleListOption("CONSTR_SCALE", nConstr, ConstraintScale);
+
+  /*!\brief BFGS_INIT \n DESCRIPTION: Indicates if an approximation of the inital inverse is calculated for BFGS or LBFGS \ingroup Config*/
+  addBoolOption("BFGS_INIT", BFGS_Init, false);
+
+  /*!\brief BFGS_SCALE \n DESCRIPTION: Initial Scaling of BFGS inverse \ingroup Config*/
+  addDoubleOption("BFGS_SCALE", BFGS_Init_Value, 1.0);
+
+  /*!\brief LBFGS \n DESCRIPTION: Indicates if BFGS with limited memory is used \ingroup Config*/
+  addBoolOption("LBFGS", Limited_Memory_BFGS, false);
+
+  /*!\brief LBFGS \n DESCRIPTION: Indicates if stepsize is set to zero if line search fails \ingroup Config*/
+  addBoolOption("ZERO_STEP", Zero_Step, true);
+
+  /*!\brief OS_STEP_SIZE \n DESCRIPTION: Indicates if stepsize is set to zero if line search fails \ingroup Config*/
+  addDoubleOption("OS_STEP_SIZE", Step_Size, 1.0);
   
   /* END_CONFIG_OPTIONS */
 
@@ -2553,6 +2575,12 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
     ConstraintTarget = new su2double[nConstr];
     for (unsigned short iConstr; iConstr < nConstr; iConstr++){
       ConstraintTarget[iConstr] = 0.0;
+    }
+  }
+  if(nConstr!=0 && ConstraintScale == NULL){
+    ConstraintScale = new su2double[nConstr];
+    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+      ConstraintScale[iConstr] = 1.0;
     }
   }
 
@@ -6462,6 +6490,7 @@ CConfig::~CConfig(void) {
   if (Multiplier_Start != NULL)      delete[] Multiplier_Start;
   if (Multiplier_Factor != NULL)      delete[] Multiplier_Factor;
   if (ConstraintTarget != NULL)      delete[] ConstraintTarget;
+  if (ConstraintScale != NULL)      delete[] ConstraintScale;
 
   if (DV_Value != NULL) {
     for (iDV = 0; iDV < nDV; iDV++) delete[] DV_Value[iDV];

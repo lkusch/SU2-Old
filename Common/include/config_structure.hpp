@@ -1016,6 +1016,7 @@ private:
   bool Piggy_Back; /*!< \brief option for piggy-back method */
   bool Quasi_Newton; /*!< \brief option for quasi-Newton method */
   unsigned short One_Shot_Start; /*!< \brief Start iteration for one-shot method */
+  unsigned short One_Shot_Stop; /*!< \brief Stop iteration for one-shot method */
   su2double One_Shot_Alpha, One_Shot_Beta; /*!< \brief factors for augmented Lagrangian in one-shot method */ 
   su2double One_Shot_FD; /*!< \brief Finite difference step-size for one-shot method */
   su2double OS_Design_Scale; /*!< \brief Value for scaling the design space */
@@ -1030,6 +1031,12 @@ private:
   su2double* Multiplier_Start; /*! \brief Start values for constraint multipliers. */
   su2double* Multiplier_Factor; /*! \brief Values for constant factor for multiplier update. */
   su2double* ConstraintTarget; /*! \brief Target value for constraints. */
+  su2double* ConstraintScale; /*! \brief Scaling value for constraints. */
+  bool BFGS_Init; /*!< \brief option for approximating the BFGS initial inverse */
+  su2double BFGS_Init_Value;  /*!< \brief value of initial scaling of BFGS inverse */
+  bool Limited_Memory_BFGS; /*!< \brief option for using limited memory BFGS */
+  bool Zero_Step; /*!< \brief option for setting the stepsize to zero in line search */
+  su2double Step_Size; /*!< \brief value of initial step size in line search */
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8504,10 +8511,16 @@ public:
   bool GetOSHessianIdentity(void);
 
   /*!
-   * \brief Get the iteration number for starting with the one-shot method.
+   * \brief Get the iteration number for starting the one-shot method.
    * \return Value for iteration number
    */
   unsigned short GetOneShotStart(void);
+
+  /*!
+   * \brief Get the iteration number for stopping the one-shot method.
+   * \return Value for iteration number
+   */
+  unsigned short GetOneShotStop(void);
 
   /*!
    * \brief Get the multiplier for the "alpha"-term in the doubly augmented Lagrangian.
@@ -8606,12 +8619,47 @@ public:
    */
   su2double GetMultiplierFactor(unsigned short val_cons);
 
-
   /*!
    * \brief Get target value for constraint functions
    * \return Value of target value for constraint functions.
    */
   su2double GetConstraintTarget(unsigned short val_cons);
+
+  /*!
+   * \brief Get scaling value for constraint functions
+   * \return Value of scaling value for constraint functions.
+   */
+  su2double GetConstraintScale(unsigned short val_cons);
+
+  /*!
+   * \brief Check if limited memory BFGS is used.
+   * \return YES if limited memory BFGS shall be used.
+   */
+  bool GetLimitedMemory(void);
+
+  /*!
+   * \brief Check if initial Hessian inverse is approximated.
+   * \return YES if initial Hessian inverse is approximated.
+   */
+  bool GetBFGSInit(void);
+
+  /*!
+   * \brief Check if stepsize is set to zero when line search does not work.
+   * \return YES if stepsize is set to zero when line search does not work.
+   */
+  bool GetZeroStep(void);
+
+  /*!
+   * \brief Get the initial value of the stepsize for line search
+   * \return Value of initial stepsize.
+   */
+  su2double GetStepSize(void);
+
+  /*!
+   * \brief Get the initial scaling of the BFGS inverse
+   * \return Value of initial scaling.
+   */
+  su2double GetBFGSInitValue(void);
 };
 
 #include "config_structure.inl"

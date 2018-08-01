@@ -1904,6 +1904,8 @@ inline bool CConfig::GetBoolQuasiNewton(void) { return Quasi_Newton;}
 
 inline unsigned short CConfig::GetOneShotStart(void) { return One_Shot_Start; }
 
+inline unsigned short CConfig::GetOneShotStop(void) { return One_Shot_Stop; }
+
 inline bool CConfig::GetOSHessianIdentity(void) { return OS_Hessian_ID; }
 
 inline su2double CConfig::GetOneShotAlpha(void) { return One_Shot_Alpha; }
@@ -1939,3 +1941,15 @@ inline su2double CConfig::GetMultiplierStart(unsigned short val_cons) { return M
 inline su2double CConfig::GetMultiplierFactor(unsigned short val_cons) { return Multiplier_Factor[val_cons]; }
 
 inline su2double CConfig::GetConstraintTarget(unsigned short val_cons) { return ConstraintTarget[val_cons]; }
+
+inline su2double CConfig::GetConstraintScale(unsigned short val_cons) { return ConstraintScale[val_cons]; }
+
+inline bool CConfig::GetBFGSInit(void) { return BFGS_Init; }
+
+inline bool CConfig::GetLimitedMemory(void) { return Limited_Memory_BFGS; }
+
+inline bool CConfig::GetZeroStep(void) { return Zero_Step; }
+
+inline su2double CConfig::GetStepSize(void) {return Step_Size; }
+
+inline su2double CConfig::GetBFGSInitValue(void) {return BFGS_Init_Value; }

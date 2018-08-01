@@ -1515,6 +1515,14 @@ protected:
   su2double* ConstrFunc_Store; /*!< \brief Old Constraint function (stored when overwritten).*/
   su2double** BCheck_Inv; /*!< \brief Inverse matrix for multiplier update.*/
 
+  //Limited memory BFGS
+  unsigned short nBFGSmax; /*!< \brief Maximum number of stored values for BFGS update.*/
+  unsigned short nBFGS; /*!< \brief Counter for limited memory BFGS update.*/
+  su2double** ykvec; /*!< \brief Vector yk stored for limited memory BFGS.*/
+  su2double** skvec; /*!< \brief Vector sk stored for limited memory BFGS.*/
+
+  su2double BFGS_Init;
+
 public:
 
   /*!
@@ -1597,6 +1605,18 @@ public:
    * \param[in] config - config class.
    */
   void BFGSUpdate(CConfig *config);
+
+  /*!
+   * \brief Update the inverse of the Limited memory BFGS approximation.
+   * \param[in] config - config class.
+   */
+  void LBFGSUpdate(CConfig *config);
+
+  /*!
+   * \brief Recursive application for Limited memory BFGS approximation.
+   * \param[in] config - config class.
+   */
+  void LBFGSUpdateRecursive(CConfig *config, unsigned short nCounter);
 
   /*!
    * \brief Compute the search direction using the approximated inverse, the gradient N_u and an active set projection.
