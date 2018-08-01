@@ -2201,16 +2201,16 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addEnumListOption("CONSTRAINT_FUNCTION", nConstr, Kind_ConstrFunc, Objective_Map);
 
   /*!\brief MULTIPLIER_START  \n DESCRIPTION: Starting values for multiplier \ingroup Config*/
-  addDoubleListOption("MULTIPLIER_START", nConstr, Multiplier_Start);
+  addDoubleListOption("MULTIPLIER_START", nConstrHelp, Multiplier_Start);
 
   /*!\brief MULTIPLIER_FACTOR  \n DESCRIPTION: Factors for multiplier update \ingroup Config*/
-  addDoubleListOption("MULTIPLIER_FACTOR", nConstr, Multiplier_Factor);
+  addDoubleListOption("MULTIPLIER_FACTOR", nConstrHelp, Multiplier_Factor);
 
   /*!\brief CONSTR_VALUE  \n DESCRIPTION: Target values for constraints \ingroup Config*/
-  addDoubleListOption("CONSTR_VALUE", nConstr, ConstraintTarget);
+  addDoubleListOption("CONSTR_VALUE", nConstrHelp, ConstraintTarget);
 
   /*!\brief CONSTR_SCALE  \n DESCRIPTION: Scaling values for constraints \ingroup Config*/
-  addDoubleListOption("CONSTR_SCALE", nConstr, ConstraintScale);
+  addDoubleListOption("CONSTR_SCALE", nConstrHelp, ConstraintScale);
 
   /*!\brief BFGS_INIT \n DESCRIPTION: Indicates if an approximation of the inital inverse is calculated for BFGS or LBFGS \ingroup Config*/
   addBoolOption("BFGS_INIT", BFGS_Init, false);

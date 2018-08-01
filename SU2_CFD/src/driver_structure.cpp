@@ -8611,7 +8611,7 @@ void COneShotFluidDriver::ComputeActiveSet(){
   unsigned short iDV;
   su2double norm = 0.0;
   for (iDV=0; iDV<nDV_Total; iDV++) {
-    norm+=(DesignVariable[iDV]-BoundProjection(DesignVariable[iDV]-ShiftedLagrangianGradient[iDV]))*(DesignVariable[iDV]-BoundProjection(DesignVariable[iDV]-ShiftedLagrangianGradient[iDV]));
+    norm+=(DesignVariable[iDV]-BoundProjection(DesignVariable[iDV]-config_container[ZONE_0]->GetStepSize()*ShiftedLagrangianGradient[iDV]))*(DesignVariable[iDV]-BoundProjection(DesignVariable[iDV]-config_container[ZONE_0]->GetStepSize()*ShiftedLagrangianGradient[iDV]));
   }
   norm=sqrt(norm);
   if(norm<(ub-lb)/2.0) {

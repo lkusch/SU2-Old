@@ -1027,7 +1027,7 @@ private:
   bool OS_LS_PrimalDual; /*!< \brief option for a line search including the primal and dual update */
   unsigned short OS_LS_MaxCounter; /*!< \brief Maximum line search counter */
   unsigned short *Kind_ConstrFunc;  /*!< \brief Kind of constraint functions. */
-  unsigned short nConstr;              /*! \brief Number of constraint functions. */
+  unsigned short nConstr, nConstrHelp;              /*! \brief Number of constraint functions. */
   su2double* Multiplier_Start; /*! \brief Start values for constraint multipliers. */
   su2double* Multiplier_Factor; /*! \brief Values for constant factor for multiplier update. */
   su2double* ConstraintTarget; /*! \brief Target value for constraints. */
