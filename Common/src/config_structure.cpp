@@ -2561,25 +2561,25 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
 
   if(nConstr!=0 && Multiplier_Start == NULL){
     Multiplier_Start = new su2double[nConstr];
-    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+    for (unsigned short iConstr=0; iConstr < nConstr; iConstr++){
       Multiplier_Start[iConstr] = 0.0;
     }
   }
   if(nConstr!=0 && Multiplier_Factor == NULL){
     Multiplier_Factor = new su2double[nConstr];
-    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+    for (unsigned short iConstr=0; iConstr < nConstr; iConstr++){
       Multiplier_Factor[iConstr] = 1.0;
     }
   }
   if(nConstr!=0 && ConstraintTarget == NULL){
     ConstraintTarget = new su2double[nConstr];
-    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+    for (unsigned short iConstr=0; iConstr < nConstr; iConstr++){
       ConstraintTarget[iConstr] = 0.0;
     }
   }
   if(nConstr!=0 && ConstraintScale == NULL){
     ConstraintScale = new su2double[nConstr];
-    for (unsigned short iConstr; iConstr < nConstr; iConstr++){
+    for (unsigned short iConstr=0; iConstr < nConstr; iConstr++){
       ConstraintScale[iConstr] = 1.0;
     }
   }

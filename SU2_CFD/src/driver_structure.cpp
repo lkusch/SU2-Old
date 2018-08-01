@@ -8405,7 +8405,7 @@ void COneShotFluidDriver::BFGSUpdate(CConfig *config){
 
 void COneShotFluidDriver::LBFGSUpdate(CConfig *config){
   unsigned long iDV;
-  su2double vk;
+  su2double vk=0.0;
 
   if (nBFGS == nBFGSmax) {
     nBFGS--;
