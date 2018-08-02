@@ -8778,8 +8778,8 @@ void COneShotFluidDriver::SetConstrFunction(){
 #endif
   for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
     ConstrFunc[iConstr] = 0.0;
-    //ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr));
-    //std::cout<<"Lift coefficient: "<<solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr)<<std::endl;
+    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr));
+    std::cout<<"Lift coefficient: "<<solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr)<<std::endl;
     if (rank == MASTER_NODE){
       AD::RegisterOutput(ConstrFunc[iConstr]);
     }
