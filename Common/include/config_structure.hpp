@@ -1035,6 +1035,7 @@ private:
   bool BFGS_Init; /*!< \brief option for approximating the BFGS initial inverse */
   su2double BFGS_Init_Value;  /*!< \brief value of initial scaling of BFGS inverse */
   bool Limited_Memory_BFGS; /*!< \brief option for using limited memory BFGS */
+  unsigned short LBFGS_Iter; /*!< \brief number of stored iterations in limited memory BFGS */
   bool Zero_Step; /*!< \brief option for setting the stepsize to zero in line search */
   su2double Step_Size; /*!< \brief value of initial step size in line search */
 
@@ -8636,6 +8637,12 @@ public:
    * \return YES if limited memory BFGS shall be used.
    */
   bool GetLimitedMemory(void);
+
+  /*!
+   * \brief Return number of stored iterations in LBFGS method.
+   * \return Number of stored iterations.
+   */
+  unsigned short GetLimitedMemoryIter(void);
 
   /*!
    * \brief Check if initial Hessian inverse is approximated.

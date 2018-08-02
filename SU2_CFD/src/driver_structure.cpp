@@ -7693,10 +7693,12 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
   ConstrFunc_Store = new su2double[config_container[ZONE_0]->GetnConstr()];
   BCheck_Inv = new su2double*[config_container[ZONE_0]->GetnConstr()];
 
-  nBFGSmax = 38;
+  nBFGSmax = config_container[ZONE_0]->GetLimitedMemoryIter();
   nBFGS = 0;
   ykvec = new su2double*[nBFGSmax];
   skvec = new su2double*[nBFGSmax];
+
+  BFGS_Init = config_container[ZONE_0]->GetBFGSInitValue();
 
   for (iDV = 0; iDV  < nDV_Total; iDV++){
     Gradient[iDV] = 0.0;
@@ -7712,7 +7714,7 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
     BFGS_Inv[iDV] = new su2double[nDV_Total];
     for (jDV = 0; jDV < nDV_Total; jDV++){
       BFGS_Inv[iDV][jDV] = 0.0;
-      if (iDV==jDV) BFGS_Inv[iDV][jDV] = 1.0;
+      if (iDV==jDV) BFGS_Inv[iDV][jDV] = BFGS_Init;
     }
   }
 
@@ -7749,7 +7751,7 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
     surface_movement[iZone] = new CSurfaceMovement();
   }
 
-  BFGS_Init = config_container[ZONE_0]->GetBFGSInitValue();
+
 
 }
 
@@ -8776,8 +8778,8 @@ void COneShotFluidDriver::SetConstrFunction(){
 #endif
   for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
     ConstrFunc[iConstr] = 0.0;
-    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr));
-    std::cout<<"Lift coefficient: "<<solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr)<<std::endl;
+    //ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr));
+    //std::cout<<"Lift coefficient: "<<solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr)<<std::endl;
     if (rank == MASTER_NODE){
       AD::RegisterOutput(ConstrFunc[iConstr]);
     }

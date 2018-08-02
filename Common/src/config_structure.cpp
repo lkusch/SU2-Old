@@ -2221,6 +2221,9 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /*!\brief LBFGS \n DESCRIPTION: Indicates if BFGS with limited memory is used \ingroup Config*/
   addBoolOption("LBFGS", Limited_Memory_BFGS, false);
 
+  /*!\brief LBFGS_ITER \n DESCRIPTION: Number of limited memory BFGS iterations to build Inverse Hessian approximation \ingroup Config*/
+  addUnsignedShortOption("LBFGS_ITER", LBFGS_Iter, 38);
+
   /*!\brief LBFGS \n DESCRIPTION: Indicates if stepsize is set to zero if line search fails \ingroup Config*/
   addBoolOption("ZERO_STEP", Zero_Step, true);
 

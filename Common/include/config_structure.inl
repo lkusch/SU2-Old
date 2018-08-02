@@ -1948,6 +1948,8 @@ inline bool CConfig::GetBFGSInit(void) { return BFGS_Init; }
 
 inline bool CConfig::GetLimitedMemory(void) { return Limited_Memory_BFGS; }
 
+inline unsigned short CConfig::GetLimitedMemoryIter(void) { return LBFGS_Iter; }
+
 inline bool CConfig::GetZeroStep(void) { return Zero_Step; }
 
 inline su2double CConfig::GetStepSize(void) {return Step_Size; }
