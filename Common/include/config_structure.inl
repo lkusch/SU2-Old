@@ -1920,6 +1920,8 @@ inline su2double CConfig::GetSensScale(void) { return OS_Sens_Scale; }
 
 inline su2double CConfig::GetObjScale(void) { return Obj_Func_Scale; }
 
+inline su2double CConfig::GetBound(void) { return DV_Bound; }
+
 inline void CConfig::SetOneShotAlpha(su2double input) { One_Shot_Alpha = input; }
 
 inline void CConfig::SetOneShotBeta(su2double input) { One_Shot_Beta = input; }

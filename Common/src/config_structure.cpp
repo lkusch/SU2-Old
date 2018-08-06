@@ -2182,6 +2182,9 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   /*!\brief SENS_SCALE \n DESCRIPTION: Scaling of sensitivities for optimization \ingroup Config*/
   addDoubleOption("SENS_SCALE", OS_Sens_Scale, 1E-0);
 
+  /*!\brief DV_BOUND \n DESCRIPTION: Lower and upper bound of design variables \ingroup Config*/
+  addDoubleOption("DV_BOUND", DV_Bound, 0.005);
+
   /*!\brief OS_HESSIAN_ID \n DESCRIPTION: Indicates if the Hessian is reset by its identity \ingroup Config*/
   addBoolOption("OS_HESSIAN_ID", OS_Hessian_ID, false);
 

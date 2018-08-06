@@ -7739,8 +7739,8 @@ COneShotFluidDriver::COneShotFluidDriver(char* confFile,
   }
 
   /*----- calculate values for bound projection algorithm -------*/
-  lb=-0.005/config_container[ZONE_0]->GetDesignScale();
-  ub=0.005/config_container[ZONE_0]->GetDesignScale();
+  lb=-config_container[ZONE_0]->GetBound()/config_container[ZONE_0]->GetDesignScale();
+  ub=config_container[ZONE_0]->GetBound()/config_container[ZONE_0]->GetDesignScale();
   epsilon=(ub-lb)/2.0;
 
   /*---- calculate line search parameter ----*/
@@ -7865,7 +7865,11 @@ void COneShotFluidDriver::RunOneShot(){
     whilecounter++;
   }
   while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&ExtIter<config_container[ZONE_0]->GetOneShotStop()&&(!CheckFirstWolfe())&&whilecounter<maxcounter+1);
-  if(config_container[ZONE_0]->GetZeroStep()&&whilecounter==maxcounter+1) stepsize = 0.0;
+  if (whilecounter==maxcounter+1){
+    descent = false;
+    if(config_container[ZONE_0]->GetZeroStep()) stepsize = 0.0;
+  }
+  
   std::cout<<"Line search information: "<<Lagrangian<<" "<<ObjFunc<<" "<<stepsize<<std::endl;
   if(testLagrange){
 

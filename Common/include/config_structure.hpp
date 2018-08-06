@@ -1022,6 +1022,7 @@ private:
   su2double OS_Design_Scale; /*!< \brief Value for scaling the design space */
   su2double Obj_Func_Scale; /*!< \brief Value for scaling the objective function */
   su2double OS_Sens_Scale; /*!< \brief Value for scaling the geometry sensitivities */
+  su2double DV_Bound; /*!< \brief Value for design variable lower and upper bound */
   bool OS_Check_Descent; /*!< \brief option for a descent check in the line search */
   bool OS_Lagrange; /*!< \brief option for a line search based on the design updated Lagrangian */
   bool OS_LS_PrimalDual; /*!< \brief option for a line search including the primal and dual update */
@@ -8570,6 +8571,12 @@ public:
    * \return Value for objective function scaling
    */
   su2double GetObjScale(void);
+
+  /*!
+   * \brief Get the value for the lower and upper bound.
+   * \return Value for bound of design variables
+   */
+  su2double GetBound(void);
   
   /*!
    * \brief Check if during line search a checking for descent direction is used.
