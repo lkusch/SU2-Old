@@ -8268,7 +8268,8 @@ void COneShotFluidDriver::SetProjection_AD(CGeometry *geometry, CConfig *config,
 #else
       localGradient = my_Gradient;
 #endif
-      /*--- Angle of Attack design variable (this is different,
+      /*--- Angle of Attack design variable (this is different,tor<su2double>[1];
+        vector<su2double> *Variable_Airfoil = new vector<su2double>[1];
        the value comes form the input file) ---*/
 
 /*      if ((config->GetDesign_Variable(iDV) == ANGLE_OF_ATTACK) ||
@@ -8780,15 +8781,50 @@ void COneShotFluidDriver::SetConstrFunction(){
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
+  unsigned short Kind_ConstrFunc;
+  su2double FunctionValue = 0.0;
+  std::cout<<"Function Value: ";
   for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
     ConstrFunc[iConstr] = 0.0;
-    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr));
-    std::cout<<"Lift coefficient: "<<solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr)<<std::endl;
+
+    Kind_ConstrFunc = config_container[ZONE_0]->GetKind_ConstrFunc(iConstr);
+    if( Kind_ConstrFunc == AIRFOIL_AREA ) {
+        unsigned short iPlane = 0;
+        su2double *Plane_P0 = new su2double[3];
+        su2double *Plane_Normal = new su2double[3];
+        vector<su2double> *Xcoord_Airfoil = new vector<su2double>[1];
+        vector<su2double> *Ycoord_Airfoil = new vector<su2double>[1];
+        vector<su2double> *Zcoord_Airfoil = new vector<su2double>[1];
+        vector<su2double> *Variable_Airfoil = new vector<su2double>[1];
+
+        Plane_Normal[0] = 0.0;   Plane_P0[0] = 0.0;
+        Plane_Normal[1] = 1.0;   Plane_P0[1] = 0.0;
+        Plane_Normal[2] = 0.0;   Plane_P0[2] = 0.0;
+
+        geometry_container[ZONE_0][MESH_0]->ComputeAirfoil_Section(Plane_P0, Plane_Normal, -1E6, 1E6, -1E6, 1E6, -1E6, 1E6, NULL,
+                                                           Xcoord_Airfoil[iPlane], Ycoord_Airfoil[iPlane], Zcoord_Airfoil[iPlane],
+                                                           Variable_Airfoil[iPlane], true, config_container[ZONE_0]);
+        FunctionValue = geometry_container[ZONE_0][MESH_0]->Compute_Area(Plane_P0, Plane_Normal, config_container[ZONE_0], Xcoord_Airfoil[iPlane], Ycoord_Airfoil[iPlane], Zcoord_Airfoil[iPlane]);
+
+        delete [] Plane_P0;
+        delete [] Plane_Normal;
+        delete [] Xcoord_Airfoil;
+        delete [] Ycoord_Airfoil;
+        delete [] Zcoord_Airfoil;
+        delete [] Variable_Airfoil;
+
+    }else{
+        FunctionValue = solver_container[ZONE_0][MESH_0][FLOW_SOL]->Evaluate_ConstrFunc(config_container[ZONE_0], iConstr);
+    }
+
+    ConstrFunc[iConstr] = config_container[ZONE_0]->GetConstraintScale(iConstr)*(config_container[ZONE_0]->GetConstraintTarget(iConstr) - FunctionValue);
+
+    std::cout<<FunctionValue<<" ";
     if (rank == MASTER_NODE){
       AD::RegisterOutput(ConstrFunc[iConstr]);
     }
   }
-
+  std::cout<<std::endl;
 }
 
 void COneShotFluidDriver::UpdateMultiplier(su2double stepsize){

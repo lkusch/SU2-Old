@@ -1971,7 +1971,7 @@ void CDiscAdjFluidIteration::InitializeAdjoint(CSolver ****solver_container, CGe
 
   /*--- Initialize the adjoint of the objective function (typically with 1.0) ---*/
   
-  solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[iZone][MESH_0], config_container[iZone]);
+ // solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdj_ObjFunc(geometry_container[iZone][MESH_0], config_container[iZone]);
 
   /*--- Initialize the adjoints the conservative variables ---*/
 
