@@ -1957,3 +1957,7 @@ inline bool CConfig::GetZeroStep(void) { return Zero_Step; }
 inline su2double CConfig::GetStepSize(void) {return Step_Size; }
 
 inline su2double CConfig::GetBFGSInitValue(void) {return BFGS_Init_Value; }
+
+inline su2double CConfig::GetBCheckEpsilon(void) {return BCheck_Epsilon; }
+
+inline su2double CConfig::GetMultiplierScale(unsigned short val_cons) { return MultiplierScale[val_cons]; }

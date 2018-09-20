@@ -1007,6 +1007,8 @@ inline void CSolver::SetAdjoint_Output(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config){}
 
+inline void CSolver::SetAdjoint_OutputZero(CGeometry *geometry, CConfig *config){}
+
 inline void CSolver::ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config){}
 
 inline void CSolver::ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config){}
@@ -2329,4 +2331,8 @@ inline void CSolver::SetFiniteDifferenceSens(CGeometry *geometry, CConfig* confi
 inline void CSolver::ShiftStoreSolution(){}
 
 inline void CSolver::StoreSolutionDelta(){}
+
+inline void CSolver::SetConstrDerivative(unsigned short iConstr){}
+
+inline su2double CSolver::MultiplyConstrDerivative(unsigned short iConstr, unsigned short jConstr){}
 

@@ -464,6 +464,7 @@ void CConfig::SetPointersNull(void) {
   Multiplier_Factor = NULL;
   ConstraintTarget = NULL;
   ConstraintScale = NULL;
+  MultiplierScale = NULL;
 
   /*--- Moving mesh pointers ---*/
 
@@ -2232,6 +2233,11 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   /*!\brief OS_STEP_SIZE \n DESCRIPTION: Indicates if stepsize is set to zero if line search fails \ingroup Config*/
   addDoubleOption("OS_STEP_SIZE", Step_Size, 1.0);
+
+  addDoubleOption("BCHECK_EPSILON", BCheck_Epsilon, 1E-5);
+
+  addDoubleListOption("MULTIPLIER_SCALE", nConstrHelp, MultiplierScale);
+
   
   /* END_CONFIG_OPTIONS */
 
@@ -2587,6 +2593,12 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
     ConstraintScale = new su2double[nConstr];
     for (unsigned short iConstr=0; iConstr < nConstr; iConstr++){
       ConstraintScale[iConstr] = 1.0;
+    }
+  }
+  if(nConstr!=0 && MultiplierScale == NULL){
+    MultiplierScale = new su2double[nConstr];
+    for (unsigned short iConstr=0; iConstr < nConstr; iConstr++){
+      MultiplierScale[iConstr] = 1.0;
     }
   }
 
@@ -6497,6 +6509,7 @@ CConfig::~CConfig(void) {
   if (Multiplier_Factor != NULL)      delete[] Multiplier_Factor;
   if (ConstraintTarget != NULL)      delete[] ConstraintTarget;
   if (ConstraintScale != NULL)      delete[] ConstraintScale;
+  if (MultiplierScale != NULL)      delete[] MultiplierScale;
 
   if (DV_Value != NULL) {
     for (iDV = 0; iDV < nDV; iDV++) delete[] DV_Value[iDV];

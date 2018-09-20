@@ -2896,6 +2896,26 @@ void COneShotFluidIteration::InitializeAdjoint_Update(CSolver ****solver_contain
   }
 }
 
+void COneShotFluidIteration::InitializeAdjoint_Zero(CSolver ****solver_container, CGeometry ***geometry_container, CConfig **config_container, unsigned short iZone){
+
+  unsigned short Kind_Solver = config_container[iZone]->GetKind_Solver();
+  bool frozen_visc = config_container[iZone]->GetFrozen_Visc_Disc();
+
+  /*--- Initialize the adjoints the conservative variables ---*/
+
+  if ((Kind_Solver == DISC_ADJ_NAVIER_STOKES) || (Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == DISC_ADJ_EULER) ||
+      (Kind_Solver == ONE_SHOT_EULER) || (Kind_Solver == ONE_SHOT_NAVIER_STOKES) || (Kind_Solver == ONE_SHOT_RANS)) {
+
+    solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetAdjoint_OutputZero(geometry_container[iZone][MESH_0],
+                                                                  config_container[iZone]);
+  }
+
+  if (((Kind_Solver == DISC_ADJ_RANS) || (Kind_Solver == ONE_SHOT_RANS)) && !frozen_visc) {
+    solver_container[iZone][MESH_0][ADJTURB_SOL]->SetAdjoint_OutputZero(geometry_container[iZone][MESH_0],
+        config_container[iZone]);
+  }
+}
+
 void COneShotFluidIteration::Iterate_No_Residual(COutput *output,
                                         CIntegration ***integration_container,
                                         CGeometry ***geometry_container,

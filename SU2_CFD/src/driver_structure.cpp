@@ -7833,7 +7833,7 @@ void COneShotFluidDriver::RunOneShot(){
           solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[iZone], geometry_container[iZone][MESH_0]);
         }
       }else{
-        if(!testLagrange && !partstep) UpdateMultiplier(1.0);
+        if(!testLagrange && !partstep && config_container[ZONE_0]->GetnConstr()>0) UpdateMultiplier(1.0);
       }
       if(partstep) UpdateMultiplier(stepsize);
       if(!partstep||(whilecounter==0)){
@@ -7924,7 +7924,7 @@ void COneShotFluidDriver::RunOneShot(){
 
     /*--- Update design variable ---*/
     UpdateDesignVariable();
-    StoreConstrFunction();
+    if(config_container[ZONE_0]->GetnConstr()>0) StoreConstrFunction();
 
     /*--- N_u ---*/
     for (iZone = 0; iZone < nZone; iZone++){
@@ -7934,6 +7934,7 @@ void COneShotFluidDriver::RunOneShot(){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateSensitivityLagrangian(geometry_container[iZone][MESH_0],1.0);
     }   
 
+    if(config_container[ZONE_0]->GetnConstr()>0) ComputePreconditioner();
     /*--- Alpha*Deltay^T*G_u ---*/
     ComputeAlphaTerm();
     for (iZone = 0; iZone < nZone; iZone++){
@@ -8691,6 +8692,89 @@ void COneShotFluidDriver::ComputeAlphaTerm(){
     AD::Reset();
 }
 
+void COneShotFluidDriver::ComputePreconditioner(){
+
+  unsigned short iConstr, jConstr;
+  unsigned short nConstr = config_container[ZONE_0]->GetnConstr();
+
+  su2double* seeding = new su2double[nConstr];
+  for (iConstr = 0; iConstr < nConstr; iConstr++){
+    seeding[iConstr] = 0.0;
+  }
+  su2double **BCheck = new su2double*[nConstr];
+  for (iConstr = 0; iConstr  < nConstr; iConstr++){
+    BCheck[iConstr] = new su2double[nConstr];
+    for (jConstr = 0; jConstr  < nConstr; jConstr++){
+      BCheck[iConstr][jConstr] = 0.0;
+    }
+  }
+
+  for (unsigned short iConstr = 0; iConstr < nConstr; iConstr++){
+    seeding[iConstr] = 1.0;
+
+    for (iZone = 0; iZone < nZone; iZone++) {
+      config_container[iZone]->SetIntIter(0);
+      iteration_container[iZone]->InitializeAdjoint_Zero(solver_container, geometry_container, config_container, iZone);
+    }
+
+    /*--- Initialize the adjoint of the objective function with 0.0. ---*/
+
+    SetAdj_ObjFunction_Zero();
+    SetAdj_ConstrFunction(seeding);
+
+    /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
+
+    AD::ComputeAdjoint();
+
+    /*--- Extract the computed adjoint values of the input variables and store them for the next iteration. ---*/
+    for (iZone = 0; iZone < nZone; iZone++) {
+      iteration_container[iZone]->Iterate_No_Residual(output, integration_container, geometry_container,
+                                          solver_container, numerics_container, config_container,
+                                          surface_movement, grid_movement, FFDBox, iZone);
+    }
+
+    for (iZone = 0; iZone < nZone; iZone++) {
+      solver_container[iZone][MESH_0][ADJFLOW_SOL]->SetConstrDerivative(iConstr);
+    }
+
+
+    AD::ClearAdjoints();
+
+    seeding[iConstr]=0.0;
+
+  }
+
+  su2double bcheck=0;
+  for (iConstr = 0; iConstr  < nConstr; iConstr++){
+    BCheck[iConstr][iConstr]=config_container[ZONE_0]->GetBCheckEpsilon();
+    for (jConstr = 0; jConstr  < nConstr; jConstr++){
+      for (iZone = 0; iZone < nZone; iZone++) {
+        BCheck[iConstr][jConstr]+=config_container[ZONE_0]->GetOneShotBeta()*solver_container[iZone][MESH_0][ADJFLOW_SOL]->MultiplyConstrDerivative(iConstr,jConstr);
+      }
+    }
+  }
+  if (nConstr==1){
+    BCheck_Inv[0][0]=1./BCheck[0][0];
+  } else {
+    bcheck=1./(BCheck[0][0]*BCheck[1][1]*BCheck[2][2]+BCheck[1][0]*BCheck[2][1]*BCheck[0][2]+BCheck[2][0]*BCheck[0][1]*BCheck[1][2]-BCheck[0][0]*BCheck[2][1]*BCheck[1][2]-BCheck[2][0]*BCheck[1][1]*BCheck[0][2]-BCheck[1][0]*BCheck[0][1]*BCheck[2][2]);
+    BCheck_Inv[0][0]=bcheck*(BCheck[1][1]*BCheck[2][2]-BCheck[1][2]*BCheck[2][1]);
+    BCheck_Inv[0][1]=bcheck*(BCheck[0][2]*BCheck[2][1]-BCheck[0][1]*BCheck[2][2]);
+    BCheck_Inv[0][2]=bcheck*(BCheck[0][1]*BCheck[1][2]-BCheck[0][2]*BCheck[1][1]);
+    BCheck_Inv[1][0]=bcheck*(BCheck[1][2]*BCheck[2][0]-BCheck[1][0]*BCheck[2][2]);
+    BCheck_Inv[1][1]=bcheck*(BCheck[0][0]*BCheck[2][2]-BCheck[0][2]*BCheck[2][0]);
+    BCheck_Inv[1][2]=bcheck*(BCheck[0][2]*BCheck[1][0]-BCheck[0][0]*BCheck[1][2]);
+    BCheck_Inv[2][0]=bcheck*(BCheck[1][0]*BCheck[2][1]-BCheck[1][1]*BCheck[2][0]);
+    BCheck_Inv[2][1]=bcheck*(BCheck[0][1]*BCheck[2][0]-BCheck[0][0]*BCheck[2][1]);
+    BCheck_Inv[2][2]=bcheck*(BCheck[0][0]*BCheck[1][1]-BCheck[0][1]*BCheck[1][0]);
+  }
+
+  for (unsigned short iConstr = 0; iConstr  < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    delete [] BCheck[iConstr];
+  }
+  delete [] BCheck;
+  delete [] seeding;
+}
+
 void COneShotFluidDriver::ComputeBetaTerm(){
     unsigned short iZone = 0;
 
@@ -8835,12 +8919,10 @@ void COneShotFluidDriver::UpdateMultiplier(su2double stepsize){
     for(unsigned short jConstr = 0; jConstr < config_container[ZONE_0]->GetnConstr(); jConstr++){
        helper+= BCheck_Inv[iConstr][jConstr]*ConstrFunc_Store[jConstr];
     }
-    multiplier[iConstr] = multiplier[iConstr]+stepsize*helper;
+    multiplier[iConstr] = multiplier[iConstr]+stepsize*helper*config_container[ZONE_0]->GetMultiplierScale(iConstr);
     std::cout<<ConstrFunc_Store[iConstr]<<" "<<multiplier[iConstr]<<" ";
     if(iConstr==config_container[ZONE_0]->GetnConstr()-1) std::cout<<std::endl;
   }
-
-
 }
 
 void COneShotFluidDriver::StoreConstrFunction(){

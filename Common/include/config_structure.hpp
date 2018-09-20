@@ -1033,12 +1033,14 @@ private:
   su2double* Multiplier_Factor; /*! \brief Values for constant factor for multiplier update. */
   su2double* ConstraintTarget; /*! \brief Target value for constraints. */
   su2double* ConstraintScale; /*! \brief Scaling value for constraints. */
+  su2double* MultiplierScale;
   bool BFGS_Init; /*!< \brief option for approximating the BFGS initial inverse */
   su2double BFGS_Init_Value;  /*!< \brief value of initial scaling of BFGS inverse */
   bool Limited_Memory_BFGS; /*!< \brief option for using limited memory BFGS */
   unsigned short LBFGS_Iter; /*!< \brief number of stored iterations in limited memory BFGS */
   bool Zero_Step; /*!< \brief option for setting the stepsize to zero in line search */
   su2double Step_Size; /*!< \brief value of initial step size in line search */
+  su2double BCheck_Epsilon;
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8674,6 +8676,10 @@ public:
    * \return Value of initial scaling.
    */
   su2double GetBFGSInitValue(void);
+
+  su2double GetBCheckEpsilon(void);
+
+  su2double GetMultiplierScale(unsigned short val_cons);
 };
 
 #include "config_structure.inl"

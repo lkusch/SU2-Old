@@ -3614,6 +3614,13 @@ public:
    * \param[in] config - The particular config.
    */
   virtual void SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config);
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  virtual void SetAdjoint_OutputZero(CGeometry *geometry, CConfig *config);
   
   /*!
    * \brief A virtual member.
@@ -4382,6 +4389,10 @@ public:
    * \param[in] geometry - geometry class object
    */
   virtual void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);
+
+  virtual void SetConstrDerivative(unsigned short iConstr);
+
+  virtual su2double MultiplyConstrDerivative(unsigned short iConstr, unsigned short jConstr);
 
 };
 
@@ -13242,6 +13253,9 @@ public:
 class COneShotSolver : public CDiscAdjSolver {
 private:
   su2double theta, rho;
+  unsigned short nConstr;
+  su2double *** DConsVec;
+
 public:
 
   /*!
@@ -13398,6 +13412,14 @@ public:
   void SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *config);
 
   /*!
+   * \brief Set the adjoint output to zero.
+   * (Is done to evaluate the adjoint solution for the constraint function only)
+   * \param[in] geometry - geometry class element
+   * \param[in] config - config class element
+   */
+  void SetAdjoint_OutputZero(CGeometry *geometry, CConfig *config);
+
+  /*!
    * \brief Set the sensitivity of the doubly augmented Lagrangian to zero.
    * \param[in] geometry - geometry class element
    */
@@ -13423,6 +13445,9 @@ public:
    * \param[in] config - config class element
    */
   void SetFiniteDifferenceSens(CGeometry *geometry, CConfig *config);
+
+  void SetConstrDerivative(unsigned short iConstr);
+  su2double MultiplyConstrDerivative(unsigned short iConstr, unsigned short jConstr);
 
 };
 #include "solver_structure.inl"

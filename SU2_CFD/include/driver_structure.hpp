@@ -1726,4 +1726,6 @@ public:
    * \brief Store the constraints.
    */
   void StoreConstrFunction();
+
+  void ComputePreconditioner();
 };

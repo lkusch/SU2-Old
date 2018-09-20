@@ -228,6 +228,11 @@ public:
                                  CConfig **config_container,
                                  unsigned short iZone){}
 
+  virtual void InitializeAdjoint_Zero(CSolver ****solver_container,
+                                 CGeometry ***geometry_container,
+                                 CConfig **config_container,
+                                 unsigned short iZone){}
+
   virtual void RegisterInput(CSolver ****solver_container,
                              CGeometry*** geometry_container,
                              CConfig** config_container,
@@ -1449,6 +1454,18 @@ public:
    * \param[in] iZone - Index of the zone.
    */
   void InitializeAdjoint_Update(CSolver ****solver_container,
+                         CGeometry*** geometry_container,
+                         CConfig** config_container,
+                         unsigned short iZone);
+
+  /*!
+   * \brief Registers all input variables of the fluid iteration. - Setting the adjoint output to zero
+   * \param[in] solver_container - Container vector with all the solutions.
+   * \param[in] geometry_container - Geometrical definition of the problem.
+   * \param[in] config_container - Definition of the particular problem.
+   * \param[in] iZone - Index of the zone.
+   */
+  void InitializeAdjoint_Zero(CSolver ****solver_container,
                          CGeometry*** geometry_container,
                          CConfig** config_container,
                          unsigned short iZone);

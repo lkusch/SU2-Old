@@ -1099,9 +1099,28 @@ COneShotSolver::COneShotSolver(CGeometry *geometry, CConfig *config, CSolver *di
  //     node[iPoint] = new COneShotVariable(Solution, nDim, nVar, config);
  theta = 0.0;
  rho = 0.0;
+ nConstr = config->GetnConstr();
+
+ DConsVec = new su2double** [nConstr];
+ for (unsigned short iConstr=0; iConstr<nConstr;iConstr++){
+   DConsVec[iConstr] = new su2double* [nPoint];
+   for (unsigned long iPoint = 0; iPoint < nPoint; iPoint++){
+     DConsVec[iConstr][iPoint] = new su2double [nVar];
+     for (unsigned short iVar = 0; iVar < nVar; iVar++){
+       DConsVec[iConstr][iPoint][iVar]=0.0;
+     }
+   }
+ }
 }
 
 COneShotSolver::~COneShotSolver(void) {
+  for (unsigned short iConstr=0; iConstr<nConstr;iConstr++){
+    for (unsigned long iPoint = 0; iPoint < nPoint; iPoint++){
+      delete [] DConsVec[iConstr][iPoint];
+    }
+    delete [] DConsVec[iConstr];
+  }
+  delete [] DConsVec;
 }
 
 void COneShotSolver::SetRecording(CGeometry* geometry, CConfig *config){
@@ -1391,6 +1410,22 @@ void COneShotSolver::SetAdjoint_OutputUpdate(CGeometry *geometry, CConfig *confi
   }
 }
 
+void COneShotSolver::SetAdjoint_OutputZero(CGeometry *geometry, CConfig *config) {
+
+  unsigned long iPoint;
+  unsigned short iVar;
+  su2double * ZeroSolution = new su2double[nVar];
+  for (iVar = 0; iVar < nVar; iVar++){
+      ZeroSolution[iVar] = 0.0;
+  }
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++) {
+    direct_solver->node[iPoint]->SetAdjointSolution(ZeroSolution);
+  }
+
+  delete [] ZeroSolution;
+}
+
 void COneShotSolver::ExtractAdjoint_Solution_Clean(CGeometry *geometry, CConfig *config){
 
   unsigned long iPoint;
@@ -1447,3 +1482,30 @@ void COneShotSolver::StoreSolutionDelta(){
     }
   }
 }
+
+void COneShotSolver::SetConstrDerivative(unsigned short iConstr){
+  unsigned short iVar;
+  unsigned long iPoint;
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    for (iVar = 0; iVar < nVar; iVar++){
+      DConsVec[iConstr][iPoint][iVar]=node[iPoint]->GetSolution(iVar);;
+    }
+  }
+
+}
+
+su2double COneShotSolver::MultiplyConstrDerivative(unsigned short iConstr, unsigned short jConstr){
+  unsigned short iVar;
+  unsigned long iPoint;
+  su2double product = 0.0;
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+    for (iVar = 0; iVar < nVar; iVar++){
+      product+= DConsVec[iConstr][iPoint][iVar]*DConsVec[jConstr][iPoint][iVar];
+    }
+  }
+  return product;
+}
+
+
+
