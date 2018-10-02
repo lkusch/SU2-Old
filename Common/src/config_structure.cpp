@@ -2160,10 +2160,10 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
   addBoolOption("QUASI_NEWTON", Quasi_Newton, false);
 
   /*!\brief ONE_SHOT_START \n DESCRIPTION: Starting iteration of one-shot method \ingroup Config*/
-  addUnsignedShortOption("ONE_SHOT_START", One_Shot_Start, 0);
+  addUnsignedLongOption("ONE_SHOT_START", One_Shot_Start, 0);
 
   /*!\brief ONE_SHOT_STOP \n DESCRIPTION: Stopping iteration of one-shot method \ingroup Config*/
-  addUnsignedShortOption("ONE_SHOT_STOP", One_Shot_Stop, nExtIter);
+  addUnsignedLongOption("ONE_SHOT_STOP", One_Shot_Stop, 999999);
 
   /*!\brief ONE_SHOT_ALPHA \n DESCRIPTION: Factor for first additional term in augmented Lagrangian \ingroup Config*/
   addDoubleOption("ONE_SHOT_ALPHA", One_Shot_Alpha, 200.0);

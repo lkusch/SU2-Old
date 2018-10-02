@@ -1015,8 +1015,8 @@ private:
   bool OS_Hessian_ID; /*!< \brief flag for reset of the Hessian to Identity in one-shot method */
   bool Piggy_Back; /*!< \brief option for piggy-back method */
   bool Quasi_Newton; /*!< \brief option for quasi-Newton method */
-  unsigned short One_Shot_Start; /*!< \brief Start iteration for one-shot method */
-  unsigned short One_Shot_Stop; /*!< \brief Stop iteration for one-shot method */
+  unsigned long One_Shot_Start; /*!< \brief Start iteration for one-shot method */
+  unsigned long One_Shot_Stop; /*!< \brief Stop iteration for one-shot method */
   su2double One_Shot_Alpha, One_Shot_Beta; /*!< \brief factors for augmented Lagrangian in one-shot method */ 
   su2double One_Shot_FD; /*!< \brief Finite difference step-size for one-shot method */
   su2double OS_Design_Scale; /*!< \brief Value for scaling the design space */
@@ -8518,13 +8518,13 @@ public:
    * \brief Get the iteration number for starting the one-shot method.
    * \return Value for iteration number
    */
-  unsigned short GetOneShotStart(void);
+  unsigned long GetOneShotStart(void);
 
   /*!
    * \brief Get the iteration number for stopping the one-shot method.
    * \return Value for iteration number
    */
-  unsigned short GetOneShotStop(void);
+  unsigned long GetOneShotStop(void);
 
   /*!
    * \brief Get the multiplier for the "alpha"-term in the doubly augmented Lagrangian.

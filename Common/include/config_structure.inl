@@ -1902,9 +1902,9 @@ inline bool CConfig::GetBoolPiggyBack(void) { return Piggy_Back;}
 
 inline bool CConfig::GetBoolQuasiNewton(void) { return Quasi_Newton;}
 
-inline unsigned short CConfig::GetOneShotStart(void) { return One_Shot_Start; }
+inline unsigned long CConfig::GetOneShotStart(void) { return One_Shot_Start; }
 
-inline unsigned short CConfig::GetOneShotStop(void) { return One_Shot_Stop; }
+inline unsigned long CConfig::GetOneShotStop(void) { return One_Shot_Stop; }
 
 inline bool CConfig::GetOSHessianIdentity(void) { return OS_Hessian_ID; }
 

@@ -2334,5 +2334,5 @@ inline void CSolver::StoreSolutionDelta(){}
 
 inline void CSolver::SetConstrDerivative(unsigned short iConstr){}
 
-inline su2double CSolver::MultiplyConstrDerivative(unsigned short iConstr, unsigned short jConstr){}
+inline su2double CSolver::MultiplyConstrDerivative(unsigned short iConstr, unsigned short jConstr){ return 0; }
 
