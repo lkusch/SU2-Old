@@ -7934,7 +7934,7 @@ void COneShotFluidDriver::RunOneShot(){
       solver_container[iZone][MESH_0][ADJFLOW_SOL]->UpdateSensitivityLagrangian(geometry_container[iZone][MESH_0],1.0);
     }   
 
-    if(config_container[ZONE_0]->GetnConstr()>0) ComputePreconditioner();
+    if(config_container[ZONE_0]->GetnConstr()>0 && !config_container[ZONE_0]->GetConstPrecond()) ComputePreconditioner();
     /*--- Alpha*Deltay^T*G_u ---*/
     ComputeAlphaTerm();
     for (iZone = 0; iZone < nZone; iZone++){

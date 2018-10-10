@@ -2238,6 +2238,8 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   addDoubleListOption("MULTIPLIER_SCALE", nConstrHelp, MultiplierScale);
 
+  addBoolOption("CONST_PRECOND", Constant_Preconditioner, false);
+
   
   /* END_CONFIG_OPTIONS */
 

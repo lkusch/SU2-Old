@@ -1961,3 +1961,5 @@ inline su2double CConfig::GetBFGSInitValue(void) {return BFGS_Init_Value; }
 inline su2double CConfig::GetBCheckEpsilon(void) {return BCheck_Epsilon; }
 
 inline su2double CConfig::GetMultiplierScale(unsigned short val_cons) { return MultiplierScale[val_cons]; }
+
+inline bool CConfig::GetConstPrecond(void) { return Constant_Preconditioner; }
