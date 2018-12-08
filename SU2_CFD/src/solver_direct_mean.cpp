@@ -8907,6 +8907,7 @@ void CEulerSolver::Evaluate_ObjFunc(CConfig *config) {
         Total_ComboObj+=Weight_ObjFunc*config->GetSurface_SecondOverUniform(0);
         break;
       case CUSTOM_OBJFUNC:
+        Total_Custom_ObjFunc=config->GetSurface_FlowUniformityIndex(1);
         Total_ComboObj+=Weight_ObjFunc*Total_Custom_ObjFunc;
         break;
       default:
@@ -9021,6 +9022,7 @@ su2double CEulerSolver::Evaluate_ConstrFunc(CConfig *config, unsigned short iCon
         ConstraintFunction = config->GetSurface_SecondOverUniform(0);
         break;
       case CUSTOM_OBJFUNC:
+        Total_Custom_ObjFunc=config->GetSurface_FlowUniformityIndex(1);
         ConstraintFunction = Total_Custom_ObjFunc;
         break;
       default:

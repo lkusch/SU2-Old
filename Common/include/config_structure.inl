@@ -135,6 +135,8 @@ inline void CConfig::SetSurface_TotalPressure(unsigned short val_imarker, su2dou
 
 inline void CConfig::SetSurface_PressureDrop(unsigned short val_imarker, su2double val_surface_pressuredrop) { Surface_PressureDrop[val_imarker] = val_surface_pressuredrop; }
 
+inline void CConfig::SetSurface_FlowUniformityIndex(unsigned short val_imarker, su2double val_surface_flowuniformityindex) { Surface_FlowUniformityIndex[val_imarker] = val_surface_flowuniformityindex; }
+
 inline void CConfig::SetSurface_IDC(unsigned short val_imarker, su2double val_surface_distortion) { Surface_IDC[val_imarker] = val_surface_distortion; }
 
 inline void CConfig::SetSurface_IDC_Mach(unsigned short val_imarker, su2double val_surface_distortion) { Surface_IDC_Mach[val_imarker] = val_surface_distortion; }
@@ -210,6 +212,8 @@ inline su2double CConfig::GetSurface_TotalTemperature(unsigned short val_imarker
 inline su2double CConfig::GetSurface_TotalPressure(unsigned short val_imarker) { return Surface_TotalPressure[val_imarker]; }
 
 inline su2double CConfig::GetSurface_PressureDrop(unsigned short val_imarker) { return Surface_PressureDrop[val_imarker]; }
+
+inline su2double CConfig::GetSurface_FlowUniformityIndex(unsigned short val_imarker) { return Surface_FlowUniformityIndex[val_imarker]; }
 
 inline su2double CConfig::GetSurface_DC60(unsigned short val_imarker) { return Surface_DC60[val_imarker]; }
 

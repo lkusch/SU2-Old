@@ -366,6 +366,7 @@ private:
   su2double *Surface_TotalTemperature;   /*!< \brief Total temperature at the boundaries. */
   su2double *Surface_TotalPressure;    /*!< \brief Total pressure at the boundaries. */
   su2double *Surface_PressureDrop;    /*!< \brief Pressure drop between boundaries. */
+  su2double *Surface_FlowUniformityIndex;
   su2double *Surface_DC60;    /*!< \brief Specified fan face mach for nacelle boundaries. */
   su2double *Surface_IDC;    /*!< \brief Specified fan face mach for nacelle boundaries. */
   su2double *Surface_IDC_Mach;    /*!< \brief Specified fan face mach for nacelle boundaries. */
@@ -7261,6 +7262,8 @@ public:
    * \param[in] val_surface_totalpressure - Value of the total pressure.
    */
   void SetSurface_TotalPressure(unsigned short val_imarker, su2double val_surface_totalpressure);
+  
+  void SetSurface_FlowUniformityIndex(unsigned short val_imarker, su2double val_surface_flowuniformityindex);
 
   /*!
    * \brief Set the pressure drop between two surfaces.
@@ -7527,6 +7530,8 @@ public:
    * \return The total pressure.
    */
   su2double GetSurface_TotalPressure(unsigned short val_imarker);
+  
+  su2double GetSurface_FlowUniformityIndex(unsigned short val_imarker);
 
   /*!
    * \brief Get the pressure drop between two surfaces.

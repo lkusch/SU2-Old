@@ -420,6 +420,7 @@ void CConfig::SetPointersNull(void) {
 
   Surface_Uniformity = NULL; Surface_SecondaryStrength = NULL; Surface_SecondOverUniform = NULL;
   Surface_MomentumDistortion = NULL;
+  Surface_FlowUniformityIndex = NULL;
 
   Surface_IDC_Mach        = NULL;    Surface_IDR            = NULL;    ActDisk_Mach             = NULL;
   ActDisk_Force           = NULL;    ActDisk_BCThrust       = NULL;    ActDisk_BCThrust_Old     = NULL;
@@ -4065,6 +4066,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
   Surface_IDC = new su2double[nMarker_Analyze];
   Surface_IDC_Mach = new su2double[nMarker_Analyze];
   Surface_IDR = new su2double[nMarker_Analyze];
+  Surface_FlowUniformityIndex = new su2double[nMarker_Analyze];
   for (iMarker_Analyze = 0; iMarker_Analyze < nMarker_Analyze; iMarker_Analyze++) {
     Surface_MassFlow[iMarker_Analyze] = 0.0;
     Surface_Mach[iMarker_Analyze] = 0.0;
@@ -4084,6 +4086,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
     Surface_IDC[iMarker_Analyze] = 0.0;
     Surface_IDC_Mach[iMarker_Analyze] = 0.0;
     Surface_IDR[iMarker_Analyze] = 0.0;
+    Surface_FlowUniformityIndex[iMarker_Analyze] = 0.0;
   }
 
   /*--- Populate the marker information in the config file (all domains) ---*/
@@ -6619,6 +6622,7 @@ CConfig::~CConfig(void) {
   if (Surface_IDC != NULL)    delete[]  Surface_IDC;
   if (Surface_IDC_Mach != NULL)    delete[]  Surface_IDC_Mach;
   if (Surface_IDR != NULL)    delete[]  Surface_IDR;
+  if (Surface_FlowUniformityIndex != NULL) delete[] Surface_FlowUniformityIndex;
 
   if (Inlet_Ttotal != NULL) delete[]  Inlet_Ttotal;
   if (Inlet_Ptotal != NULL) delete[]  Inlet_Ptotal;
