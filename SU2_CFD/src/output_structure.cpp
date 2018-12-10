@@ -11118,7 +11118,7 @@ void COutput::SpecialOutput_FSI(ofstream *FSIHist_file, CGeometry ***geometry, C
     string Monitoring_Tag, monitoring_coeff, aeroelastic_coeff, turbo_coeff;
 
     bool turbulent = ((config[ZONE_FLOW]->GetKind_Solver() == RANS) || (config[ZONE_FLOW]->GetKind_Solver() == ADJ_RANS) ||
-                       (config[ZONE_FLOW]->GetKind_Solver() == DISC_ADJ_RANS));
+                       (config[ZONE_FLOW]->GetKind_Solver() == DISC_ADJ_RANS) || (config[ZONE_FLOW]->GetKind_Solver() == ONE_SHOT_RANS));
 
     unsigned short direct_diff = config[ZONE_FLOW]->GetDirectDiff();
 
@@ -18386,7 +18386,8 @@ void COutput::Write_InletFile_Flow(CConfig *config, CGeometry *geometry, CSolver
 
   bool turbulent = (config->GetKind_Solver() == RANS ||
                     config->GetKind_Solver() == ADJ_RANS ||
-                    config->GetKind_Solver() == DISC_ADJ_RANS);
+                    config->GetKind_Solver() == DISC_ADJ_RANS ||
+                    config->GetKind_Solver() == ONE_SHOT_RANS);
 
   unsigned short nVar_Turb = 0;
   if (turbulent)

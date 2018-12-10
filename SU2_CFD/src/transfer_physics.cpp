@@ -123,7 +123,9 @@ void CTransfer_FlowTraction::GetDonor_Variable(CSolver *flow_solution, CGeometry
   bool viscous_flow       = ((flow_config->GetKind_Solver() == NAVIER_STOKES) ||
                               (flow_config->GetKind_Solver() == RANS) ||
                               (flow_config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES) ||
-                              (flow_config->GetKind_Solver() == DISC_ADJ_RANS));
+                              (flow_config->GetKind_Solver() == DISC_ADJ_RANS) ||
+                              (flow_config->GetKind_Solver() == ONE_SHOT_NAVIER_STOKES) ||
+                              (flow_config->GetKind_Solver() == ONE_SHOT_RANS));
 
   // Parameters for the calculations
   // Pn: Pressure
@@ -354,7 +356,9 @@ void CTransfer_FlowTraction_DiscAdj::GetDonor_Variable(CSolver *flow_solution, C
   bool viscous_flow       = ((flow_config->GetKind_Solver() == NAVIER_STOKES) ||
                               (flow_config->GetKind_Solver() == RANS) ||
                               (flow_config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES) ||
-                              (flow_config->GetKind_Solver() == DISC_ADJ_RANS));
+                              (flow_config->GetKind_Solver() == DISC_ADJ_RANS) ||
+                              (flow_config->GetKind_Solver() == ONE_SHOT_RANS) ||
+                              (flow_config->GetKind_Solver() == ONE_SHOT_NAVIER_STOKES));
 
   // Parameters for the calculations
   // Pn: Pressure
@@ -515,7 +519,7 @@ void CTransfer_MixingPlaneInterface::GetDonor_Variable(CSolver *donor_solution, 
     unsigned long iSpan, unsigned long rank) {
 
   unsigned short nDim = nVar - 2;
-  bool turbulent = ((donor_config->GetKind_Solver() == RANS) || (donor_config->GetKind_Solver() == DISC_ADJ_RANS));
+  bool turbulent = ((donor_config->GetKind_Solver() == RANS) || (donor_config->GetKind_Solver() == DISC_ADJ_RANS) || (donor_config->GetKind_Solver() == ONE_SHOT_RANS));
 
 
 
@@ -550,7 +554,7 @@ void CTransfer_MixingPlaneInterface::SetTarget_Variable(CSolver *target_solution
     unsigned long iSpan, unsigned long rank) {
 
   unsigned short nDim = nVar - 2;
-  bool turbulent = ((target_config->GetKind_Solver() == RANS) || (target_config->GetKind_Solver() == DISC_ADJ_RANS));
+  bool turbulent = ((target_config->GetKind_Solver() == RANS) || (target_config->GetKind_Solver() == DISC_ADJ_RANS) || (target_config->GetKind_Solver() == ONE_SHOT_RANS));
 
 
   target_solution->SetExtAverageDensity(Marker_Target, iSpan, Target_Variable[0]);
@@ -701,7 +705,8 @@ void CTransfer_ConjugateHeatVars::GetDonor_Variable(CSolver *donor_solution, CGe
   bool flow = ((donor_config->GetKind_Solver() == NAVIER_STOKES)
                || (donor_config->GetKind_Solver() == RANS)
                || (donor_config->GetKind_Solver() == DISC_ADJ_NAVIER_STOKES)
-               || (donor_config->GetKind_Solver() == DISC_ADJ_RANS));
+               || (donor_config->GetKind_Solver() == DISC_ADJ_RANS)
+               || (donor_config->GetKind_Solver() == ONE_SHOT_RANS));
   bool compressible_flow  = (donor_config->GetKind_Regime() == COMPRESSIBLE) && flow;
   bool incompressible_flow = (donor_config->GetEnergy_Equation()) && flow;
   bool heat_equation      = donor_config->GetKind_Solver() == HEAT_EQUATION_FVM;

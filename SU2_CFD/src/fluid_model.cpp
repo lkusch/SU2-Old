@@ -86,7 +86,7 @@ void CFluidModel::SetThermalConductivityModel (CConfig *config) {
     ThermalConductivity = new CConstantConductivity(config->GetKt_ConstantND());
     break;
   case CONSTANT_PRANDTL:
-    if ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == ADJ_RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS)) {
+    if ((config->GetKind_Solver() == RANS) || (config->GetKind_Solver() == ADJ_RANS) || (config->GetKind_Solver() == DISC_ADJ_RANS) || (config->GetKind_Solver() == ONE_SHOT_RANS)) {
       ThermalConductivity = new CConstantPrandtlRANS(config->GetPrandtl_Lam(),config->GetPrandtl_Turb());
     } else {
       ThermalConductivity = new CConstantPrandtl(config->GetPrandtl_Lam());

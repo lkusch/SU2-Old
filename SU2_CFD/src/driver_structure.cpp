@@ -920,8 +920,8 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); heat_fvm = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_FEM: fem = true; disc_adj_fem = true; break;
     case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
-    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
-    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; adj_turb = (!config->GetFrozen_Visc_Disc()); break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); heat_fvm = config->GetWeakly_Coupled_Heat(); break;
   }
   
   /*--- Assign turbulence model booleans ---*/
@@ -1127,6 +1127,9 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver_container, CGeometry **geome
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; break;
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); break;
     case DISC_ADJ_FEM: fem = true; disc_adj_fem = true; break;
+    case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); break;
   }
 
 
@@ -1268,6 +1271,9 @@ void CDriver::Solver_Restart(CSolver ***solver_container, CGeometry **geometry,
     case DISC_ADJ_NAVIER_STOKES: ns = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); heat_fvm = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_FEM: fem = true; disc_adj_fem = true; break;
+    case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); heat_fvm = config->GetWeakly_Coupled_Heat(); break;
   }
 
 
@@ -1375,8 +1381,8 @@ void CDriver::Solver_Postprocessing(CSolver ***solver_container, CGeometry **geo
     case DISC_ADJ_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); heat_fvm = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_FEM: fem = true; disc_adj_fem = true; break;
     case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
-    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
-    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); heat_fvm = config->GetWeakly_Coupled_Heat(); break;
   }
   
   /*--- Assign turbulence model booleans ---*/
@@ -1481,8 +1487,8 @@ void CDriver::Integration_Preprocessing(CIntegration **integration_container,
     case DISC_ADJ_RANS : ns = true; turbulent = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_FEM: fem = true; disc_adj_fem = true; break;
     case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
-    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
-    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
   }
 
   /*--- Allocate solution for a template problem ---*/
@@ -1543,8 +1549,8 @@ void CDriver::Integration_Postprocessing(CIntegration **integration_container,
     case DISC_ADJ_RANS : ns = true; turbulent = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_FEM: fem = true; disc_adj_fem = true; break;
     case ONE_SHOT_EULER: euler = true; disc_adj = true; break;
-    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; break;
-    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; break;
+    case ONE_SHOT_NAVIER_STOKES: ns = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
+    case ONE_SHOT_RANS: ns = true; turbulent = true; disc_adj = true; heat_fvm = config->GetWeakly_Coupled_Heat(); break;
   }
 
   /*--- DeAllocate solution for a template problem ---*/
@@ -3010,6 +3016,7 @@ void CDriver::Interface_Preprocessing() {
 
       case EULER : case NAVIER_STOKES: case RANS: 
       case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
+      case ONE_SHOT_EULER: case ONE_SHOT_NAVIER_STOKES: case ONE_SHOT_RANS:
         fluid_donor  = true;   
 
           break;

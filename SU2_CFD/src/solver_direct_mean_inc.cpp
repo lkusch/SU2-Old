@@ -1715,7 +1715,8 @@ void CIncEulerSolver::SetNondimensionalization(CGeometry *geometry, CConfig *con
   bool viscous       = config->GetViscous();
   bool grid_movement = config->GetGrid_Movement();
   bool turbulent     = ((config->GetKind_Solver() == RANS) ||
-                        (config->GetKind_Solver() == DISC_ADJ_RANS));
+                        (config->GetKind_Solver() == DISC_ADJ_RANS) ||
+                        (config->GetKind_Solver() == ONE_SHOT_RANS));
   bool tkeNeeded     = ((turbulent) && (config->GetKind_Turb_Model() == SST));
   bool energy        = config->GetEnergy_Equation();
   bool boussinesq    = (config->GetKind_DensityModel() == BOUSSINESQ);
@@ -2228,7 +2229,8 @@ void CIncEulerSolver::SetInitialCondition(CGeometry **geometry, CSolver ***solve
   bool restart   = (config->GetRestart() || config->GetRestart_Flow());
   bool rans      = ((config->GetKind_Solver() == RANS) ||
                     (config->GetKind_Solver() == ADJ_RANS) ||
-                    (config->GetKind_Solver() == DISC_ADJ_RANS));
+                    (config->GetKind_Solver() == DISC_ADJ_RANS) ||
+                    (config->GetKind_Solver() == ONE_SHOT_RANS));
   bool dual_time = ((config->GetUnsteady_Simulation() == DT_STEPPING_1ST) ||
                     (config->GetUnsteady_Simulation() == DT_STEPPING_2ND));
   
@@ -5335,7 +5337,8 @@ void CIncEulerSolver::BC_Euler_Wall(CGeometry *geometry, CSolver **solver_contai
   
   bool implicit = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   bool tkeNeeded = (((config->GetKind_Solver() == RANS ) ||
-                     (config->GetKind_Solver() == DISC_ADJ_RANS)) &&
+                     (config->GetKind_Solver() == DISC_ADJ_RANS) ||
+                     (config->GetKind_Solver() == ONE_SHOT_RANS)) &&
                     (config->GetKind_Turb_Model() == SST));
   
   Normal     = new su2double[nDim];
