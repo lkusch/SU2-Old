@@ -8349,11 +8349,8 @@ void COneShotFluidDriver::SetProjection_FD(CGeometry *geometry, CConfig *config,
 
   /*--- Continuous adjoint gradient computation ---*/
 
-  if (rank == MASTER_NODE)
-    cout << "Evaluate functional gradient using Finite Differences." << endl;
-
   for (iDV = 0; iDV < nDV; iDV++) {
-
+    config_container[ZONE_0]->SetDV_Value(iDV,0, 1E-4);
     MoveSurface = true;
     Local_MoveSurface = true;
 
@@ -8376,8 +8373,6 @@ void COneShotFluidDriver::SetProjection_FD(CGeometry *geometry, CConfig *config,
 
       if (iDV == 0) {
 
-        if (rank == MASTER_NODE)
-          cout << "Read the FFD information from mesh file." << endl;
 
         /*--- Read the FFD information from the grid file ---*/
 
@@ -8390,22 +8385,12 @@ void COneShotFluidDriver::SetProjection_FD(CGeometry *geometry, CConfig *config,
 
         for (iFFDBox = 0; iFFDBox < surface_movement->GetnFFDBox(); iFFDBox++) {
 
-          if (rank == MASTER_NODE) cout << "Checking FFD box dimension." << endl;
           surface_movement->CheckFFDDimension(geometry, config, FFDBox[iFFDBox], iFFDBox);
 
-          if (rank == MASTER_NODE) cout << "Check the FFD box intersections with the solid surfaces." << endl;
           surface_movement->CheckFFDIntersections(geometry, config, FFDBox[iFFDBox], iFFDBox);
 
         }
 
-        if (rank == MASTER_NODE)
-          cout <<"-------------------------------------------------------------------------" << endl;
-
-      }
-
-      if (rank == MASTER_NODE) {
-        cout << endl << "Design variable number "<< iDV <<"." << endl;
-        cout << "Performing 3D deformation of the surface." << endl;
       }
 
       /*--- Apply the control point change ---*/
@@ -8415,7 +8400,6 @@ void COneShotFluidDriver::SetProjection_FD(CGeometry *geometry, CConfig *config,
       for (iFFDBox = 0; iFFDBox < surface_movement->GetnFFDBox(); iFFDBox++) {
 
         /*--- Reset FFD box ---*/
-
         switch (config->GetDesign_Variable(iDV) ) {
           case FFD_CONTROL_POINT_2D : Local_MoveSurface = surface_movement->SetFFDCPChange_2D(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
           case FFD_CAMBER_2D :        Local_MoveSurface = surface_movement->SetFFDCamber_2D(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
@@ -8528,15 +8512,18 @@ void COneShotFluidDriver::SetProjection_FD(CGeometry *geometry, CConfig *config,
               if ((iPoint < geometry->GetnPointDomain()) && UpdatePoint[iPoint]) {
 
                 Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+                su2double Prod = 0.0;
                 VarCoord = geometry->vertex[iMarker][iVertex]->GetVarCoord();
-                Sensitivity = geometry->vertex[iMarker][iVertex]->GetAuxVar();
 
                 dS = 0.0;
                 for (iDim = 0; iDim < geometry->GetnDim(); iDim++) {
+                  Sensitivity = geometry->GetSensitivity(iPoint,iDim);
+                  Prod+=Normal[iDim]*Sensitivity;
                   dS += Normal[iDim]*Normal[iDim];
                   deps[iDim] = VarCoord[iDim] / delta_eps;
                 }
                 dS = sqrt(dS);
+                Sensitivity = -Prod/dS;
 
                 dalpha_deps = 0.0;
                 for (iDim = 0; iDim < geometry->GetnDim(); iDim++) {
