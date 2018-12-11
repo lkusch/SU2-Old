@@ -2428,6 +2428,7 @@ unsigned long CIncEulerSolver::SetPrimitive_Variables(CSolver **solver_container
     /*--- Initialize the convective, source and viscous residual vector ---*/
     
     if (!Output) LinSysRes.SetBlock_Zero(iPoint);
+
     
   }
 
@@ -4173,7 +4174,7 @@ void CIncEulerSolver::ImplicitEuler_Iteration(CGeometry *geometry, CSolver **sol
     }
     
   }
-  
+
   /*--- Initialize residual and solution at the ghost points ---*/
   
   for (iPoint = nPointDomain; iPoint < nPoint; iPoint++) {
@@ -5066,7 +5067,7 @@ void CIncEulerSolver::Evaluate_ObjFunc(CConfig *config) {
         Total_ComboObj+=Weight_ObjFunc*config->GetSurface_PressureDrop(0);
         break;
       case CUSTOM_OBJFUNC:
-        Total_ComboObj+=Weight_ObjFunc*Total_Custom_ObjFunc;
+        Total_ComboObj+=Weight_ObjFunc*config->GetSurface_FlowUniformityIndex(0);
         break;
       default:
         break;
@@ -5174,7 +5175,7 @@ su2double CIncEulerSolver::Evaluate_ConstrFunc(CConfig *config, unsigned short i
         ConstraintFunction = config->GetSurface_PressureDrop(0);
         break;
       case CUSTOM_OBJFUNC:
-        ConstraintFunction = Total_Custom_ObjFunc;
+        ConstraintFunction = config->GetSurface_FlowUniformityIndex(0);
         break;
       default:
         break;
@@ -7548,7 +7549,6 @@ unsigned long CIncNSSolver::SetPrimitive_Variables(CSolver **solver_container, C
     /*--- Initialize the convective, source and viscous residual vector ---*/
     
     if (!Output) LinSysRes.SetBlock_Zero(iPoint);
-    
   }
 
   return ErrorCounter;

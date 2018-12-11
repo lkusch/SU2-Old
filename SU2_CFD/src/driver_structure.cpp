@@ -1037,8 +1037,12 @@ void CDriver::Solver_Preprocessing(CSolver ***solver_container, CGeometry **geom
     
     if (config->GetBoolOneShot()) {
       solver_container[iMGlevel][ADJFLOW_SOL] = new COneShotSolver(geometry[iMGlevel], config, solver_container[iMGlevel][FLOW_SOL], RUNTIME_FLOW_SYS, iMGlevel);
-      if (adj_turb)
+      if (iMGlevel == MESH_0) DOFsPerPoint += solver_container[iMGlevel][ADJFLOW_SOL]->GetnVar();
+      if (disc_adj_turb) {
         solver_container[iMGlevel][ADJTURB_SOL] = new COneShotSolver(geometry[iMGlevel], config, solver_container[iMGlevel][TURB_SOL], RUNTIME_TURB_SYS, iMGlevel);
+        if (iMGlevel == MESH_0) DOFsPerPoint += solver_container[iMGlevel][ADJTURB_SOL]->GetnVar();
+      }
+
     }
     else if (disc_adj) {
       solver_container[iMGlevel][ADJFLOW_SOL] = new CDiscAdjSolver(geometry[iMGlevel], config, solver_container[iMGlevel][FLOW_SOL], RUNTIME_FLOW_SYS, iMGlevel);
