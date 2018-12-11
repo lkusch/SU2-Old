@@ -1967,3 +1967,5 @@ inline su2double CConfig::GetBCheckEpsilon(void) {return BCheck_Epsilon; }
 inline su2double CConfig::GetMultiplierScale(unsigned short val_cons) { return MultiplierScale[val_cons]; }
 
 inline bool CConfig::GetConstPrecond(void) { return Constant_Preconditioner; }
+
+inline bool CConfig::GetProjectionAD(void) { return Projection_AD; }

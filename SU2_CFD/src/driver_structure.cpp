@@ -8240,6 +8240,15 @@ void COneShotFluidDriver::SetProjection_AD(CGeometry *geometry, CConfig *config,
 
   AD::StopRecording();
 
+  /*--- Create a structure to identify points that have been already visited.
+   * We need that to make sure to set the sensitivity of surface points only once
+   *  (Markers share points, so we would visit them more than once in the loop over the markers below) ---*/
+
+  bool* visited = new bool[geometry->GetnPoint()];
+  for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++){
+    visited[iPoint] = false;
+  }
+
   /*--- Initialize the derivatives of the output of the surface deformation routine
    * with the discrete adjoints from the CFD solution ---*/
 
@@ -8248,22 +8257,31 @@ void COneShotFluidDriver::SetProjection_AD(CGeometry *geometry, CConfig *config,
       nVertex = geometry->nVertex[iMarker];
       for (iVertex = 0; iVertex <nVertex; iVertex++) {
         iPoint      = geometry->vertex[iMarker][iVertex]->GetNode();
-        VarCoord    = geometry->vertex[iMarker][iVertex]->GetVarCoord();
- /*       Normal      = geometry->vertex[iMarker][iVertex]->GetNormal();
+        if (!visited[iPoint]){
+          VarCoord    = geometry->vertex[iMarker][iVertex]->GetVarCoord();
+         /* Normal      = geometry->vertex[iMarker][iVertex]->GetNormal();
 
-        Area = 0.0;
-        for (iDim = 0; iDim < nDim; iDim++){
-          Area += Normal[iDim]*Normal[iDim];
-        }
-        Area = sqrt(Area);*/
+          Area = 0.0;
+          for (iDim = 0; iDim < nDim; iDim++){
+            Area += Normal[iDim]*Normal[iDim];
+          }
+          Area = sqrt(Area);*/
 
-        for (iDim = 0; iDim < nDim; iDim++){
-          Sensitivity = config->GetSensScale()*geometry->GetSensitivity(iPoint, iDim);
-          SU2_TYPE::SetDerivative(VarCoord[iDim], SU2_TYPE::GetValue(Sensitivity));
+          for (iDim = 0; iDim < nDim; iDim++){
+           // if (config->GetDiscrete_Adjoint()){
+              Sensitivity = geometry->GetSensitivity(iPoint, iDim);
+           /* } else {
+              Sensitivity = -Normal[iDim]*geometry->vertex[iMarker][iVertex]->GetAuxVar()/Area;
+            }*/
+            SU2_TYPE::SetDerivative(VarCoord[iDim], SU2_TYPE::GetValue(Sensitivity));
+          }
+          visited[iPoint] = true;
         }
       }
     }
   }
+
+  delete [] visited;
 
   /*--- Compute derivatives and extract gradient ---*/
 
@@ -8297,6 +8315,268 @@ void COneShotFluidDriver::SetProjection_AD(CGeometry *geometry, CConfig *config,
   std::cout<<std::endl;
   AD::Reset();
 
+}
+
+void COneShotFluidDriver::SetProjection_FD(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, su2double* Gradient){
+  unsigned short iDV, nDV, iFFDBox, nDV_Value, iMarker, iDim;
+  unsigned long iVertex, iPoint;
+  su2double delta_eps, my_Gradient, localGradient, *Normal, dS, *VarCoord, Sensitivity,
+  dalpha[3], deps[3], dalpha_deps;
+  bool *UpdatePoint, MoveSurface, Local_MoveSurface;
+  CFreeFormDefBox **FFDBox;
+    unsigned long nDV_Count = 0;
+
+  int rank = SU2_MPI::GetRank();
+
+  nDV = config->GetnDV();
+
+  /*--- Boolean controlling points to be updated ---*/
+
+  UpdatePoint = new bool[geometry->GetnPoint()];
+
+  /*--- Definition of the FFD deformation class ---*/
+
+  unsigned short nFFDBox = MAX_NUMBER_FFD;
+  FFDBox = new CFreeFormDefBox*[nFFDBox];
+  for (iFFDBox = 0; iFFDBox < MAX_NUMBER_FFD; iFFDBox++) FFDBox[iFFDBox] = NULL;
+
+  for (iDV = 0; iDV  < nDV; iDV++){
+    nDV_Value = config->GetnDV_Value(iDV);
+    if (nDV_Value != 1){
+      SU2_MPI::Error("The projection using finite differences currently only supports a fixed direction of movement for FFD points.", CURRENT_FUNCTION);
+    }
+  }
+
+  /*--- Continuous adjoint gradient computation ---*/
+
+  if (rank == MASTER_NODE)
+    cout << "Evaluate functional gradient using Finite Differences." << endl;
+
+  for (iDV = 0; iDV < nDV; iDV++) {
+
+    MoveSurface = true;
+    Local_MoveSurface = true;
+
+    /*--- Free Form deformation based ---*/
+
+    if ((config->GetDesign_Variable(iDV) == FFD_CONTROL_POINT_2D) ||
+        (config->GetDesign_Variable(iDV) == FFD_CAMBER_2D) ||
+        (config->GetDesign_Variable(iDV) == FFD_THICKNESS_2D) ||
+        (config->GetDesign_Variable(iDV) == FFD_TWIST_2D) ||
+        (config->GetDesign_Variable(iDV) == FFD_CONTROL_POINT) ||
+        (config->GetDesign_Variable(iDV) == FFD_NACELLE) ||
+        (config->GetDesign_Variable(iDV) == FFD_GULL) ||
+        (config->GetDesign_Variable(iDV) == FFD_TWIST) ||
+        (config->GetDesign_Variable(iDV) == FFD_ROTATION) ||
+        (config->GetDesign_Variable(iDV) == FFD_CAMBER) ||
+        (config->GetDesign_Variable(iDV) == FFD_THICKNESS) ||
+        (config->GetDesign_Variable(iDV) == FFD_ANGLE_OF_ATTACK)) {
+
+      /*--- Read the FFD information in the first iteration ---*/
+
+      if (iDV == 0) {
+
+        if (rank == MASTER_NODE)
+          cout << "Read the FFD information from mesh file." << endl;
+
+        /*--- Read the FFD information from the grid file ---*/
+
+        surface_movement->ReadFFDInfo(geometry, config, FFDBox, config->GetMesh_FileName());
+
+        /*--- If the FFDBox was not defined in the input file ---*/
+        if (!surface_movement->GetFFDBoxDefinition()) {
+          SU2_MPI::Error("The input grid doesn't have the entire FFD information!", CURRENT_FUNCTION);
+        }
+
+        for (iFFDBox = 0; iFFDBox < surface_movement->GetnFFDBox(); iFFDBox++) {
+
+          if (rank == MASTER_NODE) cout << "Checking FFD box dimension." << endl;
+          surface_movement->CheckFFDDimension(geometry, config, FFDBox[iFFDBox], iFFDBox);
+
+          if (rank == MASTER_NODE) cout << "Check the FFD box intersections with the solid surfaces." << endl;
+          surface_movement->CheckFFDIntersections(geometry, config, FFDBox[iFFDBox], iFFDBox);
+
+        }
+
+        if (rank == MASTER_NODE)
+          cout <<"-------------------------------------------------------------------------" << endl;
+
+      }
+
+      if (rank == MASTER_NODE) {
+        cout << endl << "Design variable number "<< iDV <<"." << endl;
+        cout << "Performing 3D deformation of the surface." << endl;
+      }
+
+      /*--- Apply the control point change ---*/
+
+      MoveSurface = false;
+
+      for (iFFDBox = 0; iFFDBox < surface_movement->GetnFFDBox(); iFFDBox++) {
+
+        /*--- Reset FFD box ---*/
+
+        switch (config->GetDesign_Variable(iDV) ) {
+          case FFD_CONTROL_POINT_2D : Local_MoveSurface = surface_movement->SetFFDCPChange_2D(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_CAMBER_2D :        Local_MoveSurface = surface_movement->SetFFDCamber_2D(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_THICKNESS_2D :     Local_MoveSurface = surface_movement->SetFFDThickness_2D(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_TWIST_2D :         Local_MoveSurface = surface_movement->SetFFDTwist_2D(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_CONTROL_POINT :    Local_MoveSurface = surface_movement->SetFFDCPChange(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_NACELLE :          Local_MoveSurface = surface_movement->SetFFDNacelle(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_GULL :             Local_MoveSurface = surface_movement->SetFFDGull(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_TWIST :            Local_MoveSurface = surface_movement->SetFFDTwist(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_ROTATION :         Local_MoveSurface = surface_movement->SetFFDRotation(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_CAMBER :           Local_MoveSurface = surface_movement->SetFFDCamber(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_THICKNESS :        Local_MoveSurface = surface_movement->SetFFDThickness(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+          case FFD_CONTROL_SURFACE :  Local_MoveSurface = surface_movement->SetFFDControl_Surface(geometry, config, FFDBox[iFFDBox], FFDBox, iDV, true); break;
+       //   case FFD_ANGLE_OF_ATTACK :  Gradient[iDV][0] = config->GetAoA_Sens(); break;
+        }
+
+        /*--- Recompute cartesian coordinates using the new control points position ---*/
+
+        if (Local_MoveSurface) {
+          MoveSurface = true;
+          surface_movement->SetCartesianCoord(geometry, config, FFDBox[iFFDBox], iFFDBox, true);
+        }
+
+      }
+
+    }
+
+    /*--- Hicks Henne design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == HICKS_HENNE) {
+      surface_movement->SetHicksHenne(geometry, config, iDV, true);
+    }
+
+    /*--- Surface bump design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == SURFACE_BUMP) {
+      surface_movement->SetSurface_Bump(geometry, config, iDV, true);
+    }
+
+    /*--- Kulfan (CST) design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == CST) {
+      surface_movement->SetCST(geometry, config, iDV, true);
+    }
+
+    /*--- Displacement design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == TRANSLATION) {
+      surface_movement->SetTranslation(geometry, config, iDV, true);
+    }
+
+    /*--- Angle of Attack design variable ---*/
+
+ /*   else if (config->GetDesign_Variable(iDV) == ANGLE_OF_ATTACK) {
+      Gradient[iDV][0] = config->GetAoA_Sens();
+    }*/
+
+    /*--- Scale design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == SCALE) {
+      surface_movement->SetScale(geometry, config, iDV, true);
+    }
+
+    /*--- Rotation design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == ROTATION) {
+      surface_movement->SetRotation(geometry, config, iDV, true);
+    }
+
+    /*--- NACA_4Digits design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == NACA_4DIGITS) {
+      surface_movement->SetNACA_4Digits(geometry, config);
+    }
+
+    /*--- Parabolic design variable ---*/
+
+    else if (config->GetDesign_Variable(iDV) == PARABOLIC) {
+      surface_movement->SetParabolic(geometry, config);
+    }
+
+    /*--- Design variable not implement ---*/
+
+    else {
+      if (rank == MASTER_NODE)
+        cout << "Design Variable not implement yet" << endl;
+    }
+
+    /*--- Load the delta change in the design variable (finite difference step). ---*/
+
+    if ((config->GetDesign_Variable(iDV) != ANGLE_OF_ATTACK) &&
+        (config->GetDesign_Variable(iDV) != FFD_ANGLE_OF_ATTACK)) {
+
+      /*--- If the Angle of attack is not involved, reset the value of the gradient ---*/
+
+      my_Gradient = 0.0; Gradient[nDV_Count] = 0.0;
+
+      if (MoveSurface) {
+
+        delta_eps = config->GetDV_Value(iDV);
+
+        for (iPoint = 0; iPoint < geometry->GetnPoint(); iPoint++)
+          UpdatePoint[iPoint] = true;
+
+        for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
+          if (config->GetMarker_All_DV(iMarker) == YES) {
+            for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+
+              iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+              if ((iPoint < geometry->GetnPointDomain()) && UpdatePoint[iPoint]) {
+
+                Normal = geometry->vertex[iMarker][iVertex]->GetNormal();
+                VarCoord = geometry->vertex[iMarker][iVertex]->GetVarCoord();
+                Sensitivity = geometry->vertex[iMarker][iVertex]->GetAuxVar();
+
+                dS = 0.0;
+                for (iDim = 0; iDim < geometry->GetnDim(); iDim++) {
+                  dS += Normal[iDim]*Normal[iDim];
+                  deps[iDim] = VarCoord[iDim] / delta_eps;
+                }
+                dS = sqrt(dS);
+
+                dalpha_deps = 0.0;
+                for (iDim = 0; iDim < geometry->GetnDim(); iDim++) {
+                  dalpha[iDim] = Normal[iDim] / dS;
+                  dalpha_deps -= dalpha[iDim]*deps[iDim];
+                }
+
+                my_Gradient += Sensitivity*dalpha_deps;
+                UpdatePoint[iPoint] = false;
+              }
+            }
+          }
+        }
+
+      }
+
+#ifdef HAVE_MPI
+    SU2_MPI::Allreduce(&my_Gradient, &localGradient, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#else
+    localGradient = my_Gradient;
+#endif
+    Gradient[nDV_Count] = localGradient;
+    nDV_Count++;
+    std::cout<<std::setprecision(9)<<localGradient<<", ";
+    }
+  }
+  std::cout<<std::endl;
+
+  /*--- Delete memory for parameterization. ---*/
+
+  if (FFDBox != NULL) {
+    for (iFFDBox = 0; iFFDBox < MAX_NUMBER_FFD; iFFDBox++) {
+      if (FFDBox[iFFDBox] != NULL) {
+        delete FFDBox[iFFDBox];
+      }
+    }
+    delete [] FFDBox;
+  }
+
+  delete [] UpdatePoint;
 }
 
 void COneShotFluidDriver::SurfaceDeformation(CGeometry *geometry, CConfig *config, CSurfaceMovement *surface_movement, CVolumetricMovement *grid_movement){
@@ -8847,7 +9127,12 @@ void COneShotFluidDriver::ProjectMeshSensitivities(){
   for (iZone = 0; iZone < nZone; iZone++){
     surface_movement[iZone]->CopyBoundary(geometry_container[iZone][MESH_0], config_container[iZone]);
     // project sensitivities (surface) on design variables
-    SetProjection_AD(geometry_container[iZone][MESH_0], config_container[iZone], surface_movement[iZone] , Gradient);
+    if (config_container[iZone]->GetProjectionAD()){
+      SetProjection_AD(geometry_container[iZone][MESH_0], config_container[iZone], surface_movement[iZone] , Gradient);
+    }else{
+      SetProjection_FD(geometry_container[iZone][MESH_0], config_container[iZone], surface_movement[iZone] , Gradient);
+    }
+
     config_container[iZone]->SetKind_SU2(1); // set SU2_CFD as solver
   }
 }

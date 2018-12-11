@@ -1043,6 +1043,7 @@ private:
   su2double Step_Size; /*!< \brief value of initial step size in line search */
   su2double BCheck_Epsilon;
   bool Constant_Preconditioner;
+  bool Projection_AD;
 
   /*--- all_options is a map containing all of the options. This is used during config file parsing
    to track the options which have not been set (so the default values can be used). Without this map
@@ -8688,6 +8689,8 @@ public:
   su2double GetMultiplierScale(unsigned short val_cons);
 
   bool GetConstPrecond(void);
+
+  bool GetProjectionAD(void);
 };
 
 #include "config_structure.inl"

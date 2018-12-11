@@ -2241,6 +2241,7 @@ void CConfig::SetConfig_Options(unsigned short val_iZone, unsigned short val_nZo
 
   addBoolOption("CONST_PRECOND", Constant_Preconditioner, true);
 
+  addBoolOption("PROJECTION_AD", Projection_AD, true);
   
   /* END_CONFIG_OPTIONS */
 
