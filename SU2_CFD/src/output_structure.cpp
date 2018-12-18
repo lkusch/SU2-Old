@@ -436,7 +436,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   
   unsigned short iMarker;
   unsigned long iPoint, iVertex, Global_Index;
-  su2double PressCoeff = 0.0, SkinFrictionCoeff[3], HeatFlux;
+  su2double PressCoeff = 0.0, SkinFrictionCoeff[3], HeatFlux, NodalForce[3];
   su2double xCoord = 0.0, yCoord = 0.0, zCoord = 0.0, Mach, Pressure;
   char cstr[200];
   
@@ -472,7 +472,8 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", ";
   if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
   SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
-  
+  SurfFlow_file << "\"Nodal_Force_X\", \"Nodal_Force_Y\", ";
+  if (nDim == 3) SurfFlow_file << "\"Nodal_Force_Z\", ";
   switch (solver) {
     case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
     case NAVIER_STOKES: case RANS:
@@ -480,6 +481,7 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
       if (nDim == 3) SurfFlow_file <<  "\"Skin_Friction_Coefficient_X\", \"Skin_Friction_Coefficient_Y\", \"Skin_Friction_Coefficient_Z\", \"Heat_Flux\"" << "\n";
       break;
   }
+
   
   for (iMarker = 0; iMarker < config->GetnMarker_All(); iMarker++) {
     if (config->GetMarker_All_Plotting(iMarker) == YES) {
@@ -502,6 +504,11 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
         SurfFlow_file << scientific << Global_Index << ", " << xCoord << ", " << yCoord << ", ";
         if (nDim == 3) SurfFlow_file << scientific << zCoord << ", ";
         SurfFlow_file << scientific << Pressure << ", " << PressCoeff << ", ";
+        for (iDim = 0; iDim < nDim; iDim++){
+          NodalForce[iDim] = FlowSolver->GetNodalForce(iMarker, iVertex, iDim);
+        }
+        SurfFlow_file << scientific << NodalForce[0]<< ", " << NodalForce[1] << ", ";
+        if (nDim == 3) SurfFlow_file << scientific << NodalForce[2] << ", ";
         switch (solver) {
           case EULER :
             Mach = sqrt(FlowSolver->node[iPoint]->GetVelocity2()) / FlowSolver->node[iPoint]->GetSoundSpeed();
@@ -587,6 +594,15 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   
   unsigned long *Buffer_Send_GlobalIndex = new unsigned long [MaxLocalVertex_Surface];
   unsigned long *Buffer_Recv_GlobalIndex = NULL;
+
+  su2double *Buffer_Send_NodalForce_x = new su2double [MaxLocalVertex_Surface];
+  su2double *Buffer_Recv_NodalForce_x = NULL;
+
+  su2double *Buffer_Send_NodalForce_y = new su2double [MaxLocalVertex_Surface];
+  su2double *Buffer_Recv_NodalForce_y = NULL;
+
+  su2double *Buffer_Send_NodalForce_z = new su2double [MaxLocalVertex_Surface];
+  su2double *Buffer_Recv_NodalForce_z = NULL;
   
   /*--- Prepare the receive buffers on the master node only. ---*/
   
@@ -602,6 +618,9 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     if (nDim == 3) Buffer_Recv_SkinFriction_z = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_HeatTransfer = new su2double [nProcessor*MaxLocalVertex_Surface];
     Buffer_Recv_GlobalIndex  = new unsigned long [nProcessor*MaxLocalVertex_Surface];
+    Buffer_Recv_NodalForce_x = new su2double [nProcessor*MaxLocalVertex_Surface];
+    Buffer_Recv_NodalForce_y = new su2double [nProcessor*MaxLocalVertex_Surface];
+    if (nDim == 3) Buffer_Recv_NodalForce_z = new su2double [nProcessor*MaxLocalVertex_Surface];
   }
   
   /*--- Loop over all vertices in this partition and load the
@@ -629,6 +648,10 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
           }
           
           Buffer_Send_GlobalIndex[nVertex_Surface] = geometry->node[iPoint]->GetGlobalIndex();
+
+          Buffer_Send_NodalForce_x[nVertex_Surface] = FlowSolver->GetNodalForce(iMarker, iVertex, 0);
+          Buffer_Send_NodalForce_y[nVertex_Surface] = FlowSolver->GetNodalForce(iMarker, iVertex, 1);
+          if (nDim == 3) Buffer_Send_NodalForce_z[nVertex_Surface] = FlowSolver->GetNodalForce(iMarker, iVertex, 2);
           
           if (solver == EULER)
             Buffer_Send_Mach[nVertex_Surface] = sqrt(FlowSolver->node[iPoint]->GetVelocity2()) / FlowSolver->node[iPoint]->GetSoundSpeed();
@@ -649,6 +672,9 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   if (nDim == 3) SU2_MPI::Gather(Buffer_Send_Coord_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Coord_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_Press, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Press, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   SU2_MPI::Gather(Buffer_Send_CPress, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_CPress, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Gather(Buffer_Send_NodalForce_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_NodalForce_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  SU2_MPI::Gather(Buffer_Send_NodalForce_y, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_NodalForce_y, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
+  if (nDim == 3) SU2_MPI::Gather(Buffer_Send_NodalForce_z, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_NodalForce_z, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   if (solver == EULER) SU2_MPI::Gather(Buffer_Send_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_Mach, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
   if ((solver == NAVIER_STOKES) || (solver == RANS)) {
     SU2_MPI::Gather(Buffer_Send_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, Buffer_Recv_SkinFriction_x, MaxLocalVertex_Surface, MPI_DOUBLE, MASTER_NODE, MPI_COMM_WORLD);
@@ -689,6 +715,8 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     SurfFlow_file << "\"Global_Index\", \"x_coord\", \"y_coord\", ";
     if (nDim == 3) SurfFlow_file << "\"z_coord\", ";
     SurfFlow_file << "\"Pressure\", \"Pressure_Coefficient\", ";
+    SurfFlow_file << "\"Nodal_Force_X\", \"Nodal_Force_Y\", ";
+    if (nDim == 3) SurfFlow_file << "\"Nodal_Force_Z\", ";
     
     switch (solver) {
       case EULER : SurfFlow_file <<  "\"Mach_Number\"" << "\n"; break;
@@ -719,7 +747,11 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
         SurfFlow_file << scientific << Global_Index << ", " << xCoord << ", " << yCoord << ", ";
         if (nDim == 3) SurfFlow_file << scientific << zCoord << ", ";
         SurfFlow_file << scientific << Pressure << ", " << PressCoeff << ", ";
-        
+        NodalForce[0] = Buffer_Recv_NodalForce_x[Total_Index];
+        NodalForce[1] = Buffer_Recv_NodalForce_y[Total_Index];
+        if (nDim == 3) NodalForce[2] = Buffer_Recv_NodalForce_z[Total_Index];
+        SurfFlow_file << scientific << NodalForce[0]<< ", " << NodalForce[1] << ", ";
+        if (nDim == 3) SurfFlow_file << scientific << NodalForce[2] << ", ";
         /*--- Write the solver-dependent part of the data ---*/
         switch (solver) {
           case EULER :
@@ -756,6 +788,10 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
     delete [] Buffer_Recv_GlobalIndex;
     
     delete [] Buffer_Recv_nVertex;
+
+    delete [] Buffer_Recv_NodalForce_x;
+    delete [] Buffer_Recv_NodalForce_y;
+    if (nDim == 3) delete [] Buffer_Recv_NodalForce_z;
     
   }
   
@@ -772,6 +808,10 @@ void COutput::SetSurfaceCSV_Flow(CConfig *config, CGeometry *geometry,
   delete [] Buffer_Send_SkinFriction_z;
   delete [] Buffer_Send_HeatTransfer;
   delete [] Buffer_Send_GlobalIndex;
+
+  delete [] Buffer_Send_NodalForce_x;
+  delete [] Buffer_Send_NodalForce_y;
+  delete [] Buffer_Send_NodalForce_z;
   
 #endif
   
