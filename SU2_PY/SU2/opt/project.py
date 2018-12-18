@@ -174,7 +174,7 @@ class Project(object):
             
         return
     
-    def _eval(self,config,func,*args):
+    def _eval(self,config,func, *args):
         """ evalautes a config, checking for existing designs
         """
         
@@ -223,6 +223,41 @@ class Project(object):
         # done, return output
         return vals
     
+    def f(self, function_list, update_design=False, design_number=0):
+            
+        dvs = [0.0]
+
+        if update_design:
+            dvs                    = [design_number]
+            self.config['DV_VALUE_NEW'] = design_number
+            self.config['DV_VALUE_OLD'] = 0.0
+        else: 
+            dvs                    = [design_number]
+            self.config['DV_VALUE_NEW'] = design_number
+            self.config['DV_VALUE_OLD'] = design_number
+
+        func = su2eval.f
+        konfig,dvs = self.unpack_dvs(dvs)
+        return self._eval(konfig, func, dvs, function_list, update_design)
+
+    def df (self, function_list, update_design=False, design_number=0):
+            
+        dvs = [0.0]
+
+        if update_design:
+            dvs                    = [design_number]
+            self.config['DV_VALUE_NEW'] = design_number
+            self.config['DV_VALUE_OLD'] = 0.0
+        else: 
+            dvs                    = [design_number]
+            self.config['DV_VALUE_NEW'] = design_number
+            self.config['DV_VALUE_OLD'] = design_number
+
+        func = su2eval.df
+        konfig,dvs = self.unpack_dvs(dvs)
+        return self._eval(konfig, func,dvs, function_list, update_design)
+    
+
     def unpack_dvs(self,dvs):
         dvs = copy.deepcopy(dvs)
         konfig = copy.deepcopy( self.config )
