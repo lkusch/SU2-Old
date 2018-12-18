@@ -162,6 +162,10 @@ CEulerSolver::CEulerSolver(void) : CSolver() {
   CkInflow                      = NULL;
   CkOutflow1                    = NULL;
   CkOutflow2                    = NULL;
+
+  /*--- Initial nodal force ---*/
+
+  Nodal_Force = NULL;
  
 }
 
@@ -597,6 +601,19 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config, unsigned short 
     for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
       CPressure[iMarker][iVertex] = 0.0;
       CPressureTarget[iMarker][iVertex] = 0.0;
+    }
+  }
+
+  /*--- Nodal Forces in all the markers ---*/
+
+  Nodal_Force = new su2double** [nMarker];
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+    Nodal_Force[iMarker] = new su2double*[geometry->nVertex[iMarker]];
+    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+      Nodal_Force[iMarker][iVertex] = new su2double[nDim];
+      for (iDim = 0; iDim < nDim; iDim++) {
+        Nodal_Force[iMarker][iVertex][iDim] = 0.0;
+      }
     }
   }
   
@@ -1065,6 +1082,18 @@ CEulerSolver::~CEulerSolver(void) {
       }
     }
     delete [] Inlet_FlowDir;
+  }
+
+  if (Nodal_Force != NULL) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      if (Nodal_Force[iMarker] != NULL) {
+        for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++){
+          delete [] Nodal_Force[iMarker][iVertex];
+        }
+        delete [] Nodal_Force[iMarker];
+      }
+    }
+    delete [] Nodal_Force;
   }
 
   if (nVertex != NULL)  delete [] nVertex;
@@ -15180,6 +15209,8 @@ CNSSolver::CNSSolver(void) : CEulerSolver() {
   
   SlidingState      = NULL;
   SlidingStateNodes = NULL;
+
+  Nodal_Force = NULL;
   
 }
 
@@ -15607,6 +15638,19 @@ CNSSolver::CNSSolver(CGeometry *geometry, CConfig *config, unsigned short iMesh)
       }
     }
   }
+
+  /*--- Nodal Forces in all the markers ---*/
+
+  Nodal_Force = new su2double** [nMarker];
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+    Nodal_Force[iMarker] = new su2double*[geometry->nVertex[iMarker]];
+    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+      Nodal_Force[iMarker][iVertex] = new su2double[nDim];
+      for (iDim = 0; iDim < nDim; iDim++) {
+        Nodal_Force[iMarker][iVertex][iDim] = 0.0;
+      }
+    }
+  }
   
   /*--- Non dimensional coefficients ---*/
   
@@ -15977,6 +16021,17 @@ CNSSolver::~CNSSolver(void) {
     delete [] HeatConjugateVar;
   }
   
+  if (Nodal_Force != NULL) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      if (Nodal_Force[iMarker] != NULL) {
+        for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++){
+          delete [] Nodal_Force[iMarker][iVertex];
+        }
+        delete [] Nodal_Force[iMarker];
+      }
+    }
+    delete [] Nodal_Force;
+  }
 }
 
 void CNSSolver::Preprocessing(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iMesh, unsigned short iRKStep, unsigned short RunTime_EqSystem, bool Output) {

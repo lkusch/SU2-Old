@@ -3679,9 +3679,11 @@ CFluidDriver::~CFluidDriver(void) { }
 
 void CFluidDriver::Run() {
 
-  unsigned short iZone, jZone, checkConvergence;
-  unsigned long IntIter, nIntIter;
+  unsigned short iZone, jZone, checkConvergence, iMarker, iMarker_Monitoring;
+  unsigned long IntIter, nIntIter, iVertex;
   bool unsteady;
+
+  string Marker_Tag, Monitoring_Tag;
 
   /*--- Run a single iteration of a multi-zone problem by looping over all
    zones and executing the iterations. Note that data transers between zones
@@ -3729,6 +3731,22 @@ void CFluidDriver::Run() {
       iteration_container[iZone]->Iterate(output, integration_container, geometry_container, solver_container, numerics_container, config_container, surface_movement, grid_movement, FFDBox, iZone);
     }
 
+    for (iZone = 0; iZone < nZone; iZone++) {
+      for (iMarker_Monitoring = 0; iMarker_Monitoring < config_container[iZone]->GetnMarker_Monitoring(); iMarker_Monitoring++) {
+        for (iMarker = 0; iMarker < config_container[iZone]->GetnMarker_All(); iMarker++) {
+
+          Monitoring_Tag = config_container[iZone]->GetMarker_Monitoring_TagBound(iMarker_Monitoring);
+          Marker_Tag = config_container[iZone]->GetMarker_All_TagBound(iMarker);
+          if (Marker_Tag == Monitoring_Tag) {
+            for (iVertex = 0; iVertex < geometry_container[iZone][MESH_0]->nVertex[iMarker_Monitoring]; iVertex++) {
+              ComputeVertexForces(iMarker_Monitoring, iVertex);
+              solver_container[iZone][MESH_0][FLOW_SOL]->SetNodalForce(iMarker, iVertex, PyWrapNodalForce);
+            }
+          }
+
+        }
+      }
+    }
     /*--- Check convergence in each zone --*/
 
     checkConvergence = 0;

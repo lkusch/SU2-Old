@@ -91,6 +91,7 @@ CIncEulerSolver::CIncEulerSolver(void) : CSolver() {
   Cauchy_Serie = NULL;
   
   FluidModel = NULL;
+  Nodal_Force = NULL;
  
 }
 
@@ -389,6 +390,19 @@ CIncEulerSolver::CIncEulerSolver(CGeometry *geometry, CConfig *config, unsigned 
       Inlet_FlowDir[iMarker][iVertex] = new su2double [nDim];
       for (iDim = 0; iDim < nDim; iDim++) {
         Inlet_FlowDir[iMarker][iVertex][iDim] = 0;
+      }
+    }
+  }
+
+  /*--- Nodal Forces in all the markers ---*/
+
+  Nodal_Force = new su2double** [nMarker];
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+    Nodal_Force[iMarker] = new su2double*[geometry->nVertex[iMarker]];
+    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+      Nodal_Force[iMarker][iVertex] = new su2double[nDim];
+      for (iDim = 0; iDim < nDim; iDim++) {
+        Nodal_Force[iMarker][iVertex][iDim] = 0.0;
       }
     }
   }
@@ -693,6 +707,17 @@ CIncEulerSolver::~CIncEulerSolver(void) {
       delete [] YPlus[iMarker];
     }
     delete [] YPlus;
+  }
+
+  if (Nodal_Force != NULL) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      if (Nodal_Force[iMarker] != NULL) {
+        for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
+          delete [] Nodal_Force[iMarker][iVertex];
+        delete [] Nodal_Force[iMarker];
+      }
+    }
+    delete [] Nodal_Force;
   }
   
   if (Cauchy_Serie != NULL) delete [] Cauchy_Serie;
@@ -6717,6 +6742,8 @@ CIncNSSolver::CIncNSSolver(void) : CIncEulerSolver() {
   /*--- Rotorcraft simulation array initialization ---*/
   
   CMerit_Visc = NULL; CT_Visc = NULL; CQ_Visc = NULL;
+
+  Nodal_Force = NULL;
   
 }
 
@@ -7032,6 +7059,19 @@ CIncNSSolver::CIncNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
       }
     }
   }
+
+  /*--- Nodal Forces in all the markers ---*/
+
+  Nodal_Force = new su2double** [nMarker];
+  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+    Nodal_Force[iMarker] = new su2double*[geometry->nVertex[iMarker]];
+    for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+      Nodal_Force[iMarker][iVertex] = new su2double[nDim];
+      for (iDim = 0; iDim < nDim; iDim++) {
+        Nodal_Force[iMarker][iVertex][iDim] = 0.0;
+      }
+    }
+  }
   
   /*--- Non dimensional coefficients ---*/
   
@@ -7248,6 +7288,8 @@ CIncNSSolver::CIncNSSolver(CGeometry *geometry, CConfig *config, unsigned short 
 CIncNSSolver::~CIncNSSolver(void) {
   unsigned short iMarker, iDim;
 
+  unsigned long iVertex;
+
   if (CD_Visc != NULL)       delete [] CD_Visc;
   if (CL_Visc != NULL)       delete [] CL_Visc;
   if (CSF_Visc != NULL)  delete [] CSF_Visc;
@@ -7292,6 +7334,17 @@ CIncNSSolver::~CIncNSSolver(void) {
       delete [] CSkinFriction[iMarker];
     }
     delete [] CSkinFriction;
+  }
+
+  if (Nodal_Force != NULL) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      if (Nodal_Force[iMarker] != NULL) {
+        for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
+          delete [] Nodal_Force[iMarker][iVertex];
+        delete [] Nodal_Force[iMarker];
+      }
+    }
+    delete [] Nodal_Force;
   }
   
 }

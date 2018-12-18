@@ -4243,6 +4243,23 @@ public:
    */
   virtual void SetDES_LengthScale(CSolver** solver, CGeometry *geometry, CConfig *config);
 
+  /*!
+   * \brief A virtual member.
+   * \param[in] val_marker - Surface marker where the force is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the force is evaluated.
+   * \return Value of the nodel forces (pressure + viscous).
+   */
+  virtual su2double GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim);
+
+  /*!
+   * \brief A virtual member
+   * \param[in] val_marker - Surface marker where the flow direction is set.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the flow direction is set.
+   * \param[in] val_dim - The component of the nodal force to be set
+   * \param[in] val_nodalforce - The component of the nodal force.
+   */
+  virtual void SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce);
+
 };
 
 /*!
@@ -4415,7 +4432,8 @@ protected:
   **ActDisk_DeltaT;    /*!< \brief Value of the Delta T. */
   su2double **Inlet_Ptotal,    /*!< \brief Value of the Total P. */
   **Inlet_Ttotal,    /*!< \brief Value of the Total T. */
-  ***Inlet_FlowDir;    /*!< \brief Value of the Flow Direction. */
+  ***Inlet_FlowDir,    /*!< \brief Value of the Flow Direction. */
+  ***Nodal_Force;  /*!< \brief Nodal force (pressure and viscous) for each boundary and vertex. */
   
   su2double
   AllBound_CD_Inv,  /*!< \brief Total drag coefficient (inviscid contribution) for all the boundaries. */
@@ -6757,8 +6775,23 @@ public:
    * \param[in] value      - turboperformance value to set.
    * \param[in] inMarkerTP - turboperformance marker.
    */
-  void SetNuOut(su2double value, unsigned short inMarkerTP, unsigned short valSpan);
+  void SetNuOut(su2double value, unsigned short inMarkerTP, unsigned short valSpan); 
+  /*!
+   * \brief Get the nodal force (pressure and viscous).
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the nodal force.
+   */
+  su2double GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim);
 
+  /*!
+   * \brief Set a component of the nodal force (pressure + viscous)
+   * \param[in] val_marker - Surface marker where the flow direction is set.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the flow direction is set.
+   * \param[in] val_dim - The component of the nodal force to be set
+   * \param[in] val_nodalforce - The component of the nodal force.
+   */
+  void SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce);
 
 };
 
@@ -6843,7 +6876,8 @@ protected:
   InverseDesign;  /*!< \brief Inverse design functional for each boundary. */
   su2double **Inlet_Ptotal,    /*!< \brief Value of the Total P. */
   **Inlet_Ttotal,    /*!< \brief Value of the Total T. */
-  ***Inlet_FlowDir;    /*!< \brief Value of the Flow Direction. */
+  ***Inlet_FlowDir,    /*!< \brief Value of the Flow Direction. */
+  ***Nodal_Force;  /*!< \brief Nodal force (pressure and viscous) for each boundary and vertex. */
   
   su2double
   AllBound_CD_Inv,  /*!< \brief Total drag coefficient (inviscid contribution) for all the boundaries. */
@@ -8159,6 +8193,23 @@ public:
                              unsigned short val_kind_marker,
                              CGeometry *geometry,
                              CConfig *config);
+
+  /*!
+   * \brief Get the nodal force (pressure and viscous).
+   * \param[in] val_marker - Surface marker where the coefficient is computed.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the coefficient is evaluated.
+   * \return Value of the nodal force.
+   */
+  su2double GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim);
+
+  /*!
+   * \brief Set the component of the nodal force (pressure and viscous)
+   * \param[in] val_marker - Surface marker where the flow direction is set.
+   * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the flow direction is set.
+   * \param[in] val_dim - The component of the nodal force to be set
+   * \param[in] val_nodalforce - The component of the nodal force.
+   */
+  void SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce);
 
 };
 

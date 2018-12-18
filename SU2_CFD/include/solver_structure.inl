@@ -1135,6 +1135,10 @@ inline void CSolver::SetConjugateHeatVariable(unsigned short val_marker, unsigne
 
 inline su2double CSolver::GetConjugateHeatVariable(unsigned short val_marker, unsigned long val_vertex, unsigned short pos_var) { return 0.0; }
 
+inline su2double CSolver::GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim) { return 0; }
+
+inline void CSolver::SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce) { }
+
 inline su2double CEulerSolver::GetDensity_Inf(void) { return Density_Inf; }
 
 inline su2double CEulerSolver::GetModVelocity_Inf(void) { 
@@ -1622,6 +1626,14 @@ inline void CEulerSolver::SetPressure_Inf(su2double p_inf) {Pressure_Inf = p_inf
 
 inline void CEulerSolver::SetTemperature_Inf(su2double t_inf) {Temperature_Inf = t_inf;}
 
+inline su2double CEulerSolver::GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim) { return Nodal_Force[val_marker][val_vertex][val_dim]; }
+
+inline void CEulerSolver::SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce) {
+  for (unsigned short iDim = 0; iDim < nDim; iDim++){
+    Nodal_Force[val_marker][val_vertex][iDim] = val_nodalforce[iDim];
+  }
+}
+
 inline su2double CNSSolver::GetViscosity_Inf(void) { return Viscosity_Inf; }
 
 inline su2double CNSSolver::GetTke_Inf(void) { return Tke_Inf; }
@@ -1977,6 +1989,14 @@ inline void CIncEulerSolver::SetDensity_Inf(su2double rho_inf){Density_Inf = rho
 inline void CIncEulerSolver::SetTotal_ComboObj(su2double ComboObj) {Total_ComboObj = ComboObj; }
 
 inline su2double CIncEulerSolver::GetTotal_ComboObj() { return Total_ComboObj; }
+
+inline su2double CIncEulerSolver::GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim) { return Nodal_Force[val_marker][val_vertex][val_dim]; }
+
+inline void CIncEulerSolver::SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce) {
+  for (unsigned short iDim = 0; iDim < nDim; iDim++){
+    Nodal_Force[val_marker][val_vertex][iDim] = val_nodalforce[iDim];
+  }
+}
 
 inline su2double CIncNSSolver::GetViscosity_Inf(void) { return Viscosity_Inf; }
 
