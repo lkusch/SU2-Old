@@ -1,8 +1,8 @@
 #!/usr/bin/env python 
 
-## \file scipy_tools.py
-#  \brief tools for interfacing with scipy
-#  \author T. Lukaczyk, F. Palacios
+## \file ipopt_tools.py
+#  \brief tools for interfacing with ipopt
+#  \author L. Kusch (derived from scipy_tools.py)
 #  \version 6.1.0 "Falcon"
 #
 # The current SU2 release has been coordinated by the
