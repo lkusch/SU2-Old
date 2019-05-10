@@ -457,6 +457,7 @@ def con_dceq(dvs,config,state=None):
     def_cons = config['OPT_CONSTRAINT']['EQUALITY']
     constraints = def_cons.keys()
     
+    push  = def_cons[this_con]['SCALE']
     dv_scales = config['DEFINITION_DV']['SCALE']
     dv_size   = config['DEFINITION_DV']['SIZE']
 
@@ -473,7 +474,7 @@ def con_dceq(dvs,config,state=None):
         k = 0
         for i_dv,dv_scl in enumerate(dv_scales):
             for i_grd in range(dv_size[i_dv]):
-                grad[k] = grad[k] * global_factor / dv_scl
+                grad[k] = grad[k] * global_factor * push / dv_scl
                 k = k + 1
 
         vals_out.append(grad)
@@ -559,6 +560,7 @@ def con_dcieq(dvs,config,state=None):
     vals_out = []
     for i_obj,this_con in enumerate(constraints):
         global_factor = float(config['OPT_GRADIENT_FACTOR'])
+        push  = def_cons[this_con]['SCALE']
         value = def_cons[this_con]['VALUE']
         sign  = def_cons[this_con]['SIGN']
         sign  = su2io.get_constraintSign(sign)        
@@ -570,7 +572,7 @@ def con_dcieq(dvs,config,state=None):
         k = 0
         for i_dv,dv_scl in enumerate(dv_scales):
             for i_grd in range(dv_size[i_dv]):
-                grad[k] = grad[k] * sign * global_factor / dv_scl
+                grad[k] = grad[k] * sign * push * global_factor / dv_scl
                 k = k + 1
 
         vals_out.append(grad)
