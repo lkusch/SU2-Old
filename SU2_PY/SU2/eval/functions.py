@@ -121,7 +121,10 @@ def function( func_name, config, state=None ):
         # If combine_objective is true, use the 'combo' output.
         func_out = state['FUNCTIONS']['COMBO']
     else:
+        print state['FUNCTIONS']
+        print func_name
         func_out = state['FUNCTIONS'][func_name]
+        print "error"
 
     if func_name_string in config['OPT_OBJECTIVE']:
         marker = config['OPT_OBJECTIVE'][func_name_string]['MARKER']
