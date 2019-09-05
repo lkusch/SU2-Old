@@ -46,11 +46,11 @@ namespace SU2_TYPE{
 
   inline double GetForwardDerivative(const su2double& data){return 0.0;}
 
-  inline double SetForwardDerivative(su2double& data, const double &val){}
+  inline void SetForwardDerivative(su2double& data, const double &val){}
 
   inline double GetMixedDerivative(const su2double& data){return 0.0;}
 
-  inline double SetMixedDerivative(su2double& data, const double &val){}
+  inline void SetMixedDerivative(su2double& data, const double &val){}
 
 /*
     inline void SetValue(su2double& data, const double &val){data.value().value() = val;}
@@ -63,11 +63,11 @@ namespace SU2_TYPE{
 
     inline double GetForwardDerivative(const su2double& data){return data.getValue().getGradient();}
 
-    inline double SetForwardDerivative(su2double& data, const double &val){data.value().gradient() = val;}
+    inline void SetForwardDerivative(su2double& data, const double &val){data.value().gradient() = val;}
 
     inline double GetMixedDerivative(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]).getGradient();}
 
-    inline double SetMixedDerivative(su2double& data, const double &val){data.gradient().gradient() = val;}
+    inline void SetMixedDerivative(su2double& data, const double &val){data.gradient().gradient() = val;}
 */
 
 }

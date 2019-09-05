@@ -104,7 +104,7 @@ inline void CSolver::Compute_VolumeConstraint(CGeometry *geometry, CSolver **sol
 
 inline void CSolver::Compute_StressConstraint(CGeometry *geometry, CSolver **solver_container, CConfig *config) { }
 inline void CSolver::SetPenal(su2double penalty) {}
-inline su2double CSolver::GetPenal() {}
+inline su2double CSolver::GetPenal() {return 0.0;}
 
 inline void CSolver::SetCSensitivity(unsigned short val_marker, unsigned long val_vertex, su2double val_sensitivity) { }
 
@@ -1367,7 +1367,7 @@ inline void CSolver::UpdateMultiplier(CConfig *config){}
 
 inline void CSolver::RegisterConstraint_Func(CConfig *config, CGeometry *geometry){}
 
-inline bool CSolver::CheckFirstWolfe(CGeometry *geometry, su2double steplen){}
+inline bool CSolver::CheckFirstWolfe(CGeometry *geometry, su2double steplen){return 0.0;}
 
 inline void CSolver::SaveDensitySensitivity(CGeometry *geometry){}
 
@@ -1385,11 +1385,11 @@ inline void CSolver::LoadSaveSolution(){}
 
 inline void CSolver::AssembleLagrangian(CConfig *config){}
 
-inline su2double *CSolver::GetConstraintFunc_Value(){}
+inline su2double *CSolver::GetConstraintFunc_Value(){return NULL;}
 
 inline void CSolver::StoreConstraint(CConfig *config){}
 
-inline su2double* CSolver::GetMultiplier(){}
+inline su2double* CSolver::GetMultiplier(){return NULL;}
 
 inline void CSolver::SetMultiplier(CConfig *config, double * value){}
 

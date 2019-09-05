@@ -3095,7 +3095,7 @@ void CDiscAdjFEASolver::VolumeProjection(CGeometry *geometry, CConfig *config, s
 
     su2double a,b,c,d,e,fa,fb,fc,p,q,r,s, sumlambda, tol1, xm, min1, min2;
 
-    su2double itermax=10000;
+    int itermax=10000;
 
     su2double* lambda_l = new su2double[geometry->GetnElem()];
     su2double* lambda_u = new su2double[geometry->GetnElem()];
