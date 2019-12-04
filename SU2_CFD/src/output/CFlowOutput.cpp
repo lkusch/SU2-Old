@@ -554,7 +554,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
 
   if ((rank == MASTER_NODE) && !config->GetDiscrete_Adjoint() && output) {
     
-    cout.precision(6);
+    cout.precision(16);
     cout.setf(ios::scientific, ios::floatfield);
     cout << endl << "Computing surface mean values." << endl << endl;
     
