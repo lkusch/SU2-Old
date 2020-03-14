@@ -7995,7 +7995,7 @@ void COneShotFluidDriver::RunOneShot(){
 
 void COneShotFluidDriver::Run(){
  if (config_container[ZONE_0]->GetBoolPiggyBack()) RunPiggyBack();
- if (config_container[ZONE_0]->GetBoolQuasiNewton()) RunBFGS();
+ else if (config_container[ZONE_0]->GetBoolQuasiNewton()) RunBFGS();
  else RunOneShot();
 }
 
@@ -9172,6 +9172,31 @@ void COneShotFluidDriver::SetConstrFunction(){
                                                            Xcoord_Airfoil[iPlane], Ycoord_Airfoil[iPlane], Zcoord_Airfoil[iPlane],
                                                            Variable_Airfoil[iPlane], true, config_container[ZONE_0]);
         FunctionValue = geometry_container[ZONE_0][MESH_0]->Compute_Area(Plane_P0, Plane_Normal, config_container[ZONE_0], Xcoord_Airfoil[iPlane], Ycoord_Airfoil[iPlane], Zcoord_Airfoil[iPlane]);
+
+        delete [] Plane_P0;
+        delete [] Plane_Normal;
+        delete [] Xcoord_Airfoil;
+        delete [] Ycoord_Airfoil;
+        delete [] Zcoord_Airfoil;
+        delete [] Variable_Airfoil;
+    }
+    if( Kind_ConstrFunc == MAX_THICKNESS ) {
+        unsigned short iPlane = 0;
+        su2double *Plane_P0 = new su2double[3];
+        su2double *Plane_Normal = new su2double[3];
+        vector<su2double> *Xcoord_Airfoil = new vector<su2double>[1];
+        vector<su2double> *Ycoord_Airfoil = new vector<su2double>[1];
+        vector<su2double> *Zcoord_Airfoil = new vector<su2double>[1];
+        vector<su2double> *Variable_Airfoil = new vector<su2double>[1];
+
+        Plane_Normal[0] = 0.0;   Plane_P0[0] = 0.0;
+        Plane_Normal[1] = 1.0;   Plane_P0[1] = 0.0;
+        Plane_Normal[2] = 0.0;   Plane_P0[2] = 0.0;
+
+        geometry_container[ZONE_0][MESH_0]->ComputeAirfoil_Section(Plane_P0, Plane_Normal, -1E6, 1E6, -1E6, 1E6, -1E6, 1E6, NULL,
+                                                           Xcoord_Airfoil[iPlane], Ycoord_Airfoil[iPlane], Zcoord_Airfoil[iPlane],
+                                                           Variable_Airfoil[iPlane], true, config_container[ZONE_0]);
+        FunctionValue = geometry_container[ZONE_0][MESH_0]->Compute_MaxThickness(Plane_P0, Plane_Normal, config_container[ZONE_0], Xcoord_Airfoil[iPlane], Ycoord_Airfoil[iPlane], Zcoord_Airfoil[iPlane]);
 
         delete [] Plane_P0;
         delete [] Plane_Normal;
