@@ -117,7 +117,7 @@ namespace AD{
   }
 
   inline double GetDerivative(int index) {
-    return AD::globalTape.getGradient(index);
+    return AD::globalTape.getGradient(index).getValue();
   }
 
   inline void SetPreaccIn(const su2double &data) {

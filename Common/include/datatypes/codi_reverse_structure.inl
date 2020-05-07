@@ -28,20 +28,22 @@
 #pragma once
 
 namespace SU2_TYPE{
-  inline void SetValue(su2double& data, const double &val) {data.setValue(val);}
+  inline void SetValue(su2double& data, const double &val) {data.value().value() = val;}
 
-  inline double GetValue(const su2double& data) { return data.getValue();}
+  inline double GetValue(const su2double& data) { return data.getValue().getValue();}
 
-  inline void SetSecondary(su2double& data, const double &val) {data.setGradient(val);}
+//  inline void SetSecondary(su2double& data, const double &val) {data.setGradient(val);}
 
-  inline double GetSecondary(const su2double& data) { return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
+//  inline double GetSecondary(const su2double& data) { return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
 
-  inline double GetDerivative(const su2double& data) { return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]);}
+  inline double GetDerivative(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]).getValue();}
 
-  inline void SetDerivative(su2double& data, const double &val) {data.setGradient(val);}
+  inline void SetDerivative(su2double& data, const double &val) {data.gradient().value() = val;}
+
+
 }
 
-/*--- Object for the definition of getValue used in the printfOver definition.
+/*                                                                                                                       |  
  * Necessary for cases where the argument of sprintfOver is an expression, e.g:
  * SPRINTF("Residual: %d", log10(Residual)) ---*/
 

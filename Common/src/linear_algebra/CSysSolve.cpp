@@ -861,18 +861,18 @@ unsigned long CSysSolve<ScalarType>::Solve(CSysMatrix<ScalarType> & Jacobian, co
 
   bool TapeActive = NO;
 
-  if (config->GetDiscrete_Adjoint()) {
-#ifdef CODI_REVERSE_TYPE
-
-    TapeActive = AD::globalTape.isActive();
-
-    AD::StartExtFunc(false, false);
-
-    AD::SetExtFuncIn(&LinSysRes[0], LinSysRes.GetLocSize());
-
-    AD::StopRecording();
-#endif
-  }
+//  if (config->GetDiscrete_Adjoint()) {
+//#ifdef CODI_REVERSE_TYPE
+//
+//    TapeActive = AD::globalTape.isActive();
+//
+//    AD::StartExtFunc(false, false);
+//
+//    AD::SetExtFuncIn(&LinSysRes[0], LinSysRes.GetLocSize());
+//
+//    AD::StopRecording();
+//#endif
+//  }
 
   /*--- Create matrix-vector product, preconditioner, and solve the linear system ---*/
 
@@ -949,47 +949,47 @@ unsigned long CSysSolve<ScalarType>::Solve(CSysMatrix<ScalarType> & Jacobian, co
 
   delete precond;
 
-  if(TapeActive) {
-
-    bool RequiresTranspose = !mesh_deform; // jacobian is symmetric
-    if (!mesh_deform) KindPrecond = config->GetKind_DiscAdj_Linear_Prec();
-    else              KindPrecond = config->GetKind_Deform_Linear_Solver_Prec();
-
-    /*--- Start recording if it was stopped for the linear solver ---*/
-
-    AD::StartRecording();
-
-    AD::SetExtFuncOut(&LinSysSol[0], (int)LinSysSol.GetLocSize());
-
-#ifdef CODI_REVERSE_TYPE
-    AD::FuncHelper->addUserData(&LinSysRes);
-    AD::FuncHelper->addUserData(&LinSysSol);
-    AD::FuncHelper->addUserData(&Jacobian);
-    AD::FuncHelper->addUserData(geometry);
-    AD::FuncHelper->addUserData(config);
-    AD::FuncHelper->addUserData(this);
-    AD::FuncHelper->addToTape(CSysSolve_b<ScalarType>::Solve_b);
-#endif
-
-    /*--- Build preconditioner for the transposed Jacobian ---*/
-
-    switch(KindPrecond) {
-      case ILU:
-        Jacobian.BuildILUPreconditioner(RequiresTranspose);
-        break;
-      case JACOBI:
-        Jacobian.BuildJacobiPreconditioner(RequiresTranspose);
-        break;
-      case PASTIX_ILU: case PASTIX_LU_P: case PASTIX_LDLT_P:
-        Jacobian.BuildPastixPreconditioner(geometry, config, KindPrecond, RequiresTranspose);
-        break;
-      default:
-        SU2_MPI::Error("The specified preconditioner is not yet implemented for the discrete adjoint method.", CURRENT_FUNCTION);
-        break;
-    }
-
-    AD::EndExtFunc();
-  }
+//  if(TapeActive) {
+//
+//    bool RequiresTranspose = !mesh_deform; // jacobian is symmetric
+//    if (!mesh_deform) KindPrecond = config->GetKind_DiscAdj_Linear_Prec();
+//    else              KindPrecond = config->GetKind_Deform_Linear_Solver_Prec();
+//
+//    /*--- Start recording if it was stopped for the linear solver ---*/
+//
+//    AD::StartRecording();
+//
+//    AD::SetExtFuncOut(&LinSysSol[0], (int)LinSysSol.GetLocSize());
+//
+// #ifdef CODI_REVERSE_TYPE
+//    AD::FuncHelper->addUserData(&LinSysRes);
+//    AD::FuncHelper->addUserData(&LinSysSol);
+//    AD::FuncHelper->addUserData(&Jacobian);
+//    AD::FuncHelper->addUserData(geometry);
+//    AD::FuncHelper->addUserData(config);
+//    AD::FuncHelper->addUserData(this);
+//    AD::FuncHelper->addToTape(CSysSolve_b<ScalarType>::Solve_b);
+//#endif
+//
+//    /*--- Build preconditioner for the transposed Jacobian ---*/
+//
+//    switch(KindPrecond) {
+//      case ILU:
+//        Jacobian.BuildILUPreconditioner(RequiresTranspose);
+//        break;
+//      case JACOBI:
+//        Jacobian.BuildJacobiPreconditioner(RequiresTranspose);
+//        break;
+//      case PASTIX_ILU: case PASTIX_LU_P: case PASTIX_LDLT_P:
+//        Jacobian.BuildPastixPreconditioner(geometry, config, KindPrecond, RequiresTranspose);
+//        break;
+//      default:
+//        SU2_MPI::Error("The specified preconditioner is not yet implemented for the discrete adjoint method.", CURRENT_FUNCTION);
+//        break;
+//    }
+//
+//    AD::EndExtFunc();
+//  }
 
   return IterLinSol;
 }
