@@ -780,40 +780,40 @@ void CSysSolve<su2double>::HandleTemporariesOut(CSysVector<su2double> & LinSysSo
   SU2_OMP_BARRIER
 }
 
-#ifdef CODI_REVERSE_TYPE
-template<>
-void CSysSolve<passivedouble>::HandleTemporariesIn(const CSysVector<su2double> & LinSysRes, CSysVector<su2double> & LinSysSol) {
+//#ifdef CODI_REVERSE_TYPE
+//template<>
+//void CSysSolve<passivedouble>::HandleTemporariesIn(const CSysVector<su2double> & LinSysRes, CSysVector<su2double> & LinSysSol) {
+//
+//  /*--- When the type is different we need to copy data to the temporaries ---*/
+//  /*--- Copy data, the solution is also copied because it serves as initial conditions ---*/
+//  LinSysRes_tmp.PassiveCopy(LinSysRes);
+//  LinSysSol_tmp.PassiveCopy(LinSysSol);
+//
+//  /*--- Set the pointers ---*/
+//  SU2_OMP_MASTER
+//  {
+//    LinSysRes_ptr = &LinSysRes_tmp;
+//    LinSysSol_ptr = &LinSysSol_tmp;
+//  }
+//  SU2_OMP_BARRIER
+//}
 
-  /*--- When the type is different we need to copy data to the temporaries ---*/
-  /*--- Copy data, the solution is also copied because it serves as initial conditions ---*/
-  LinSysRes_tmp.PassiveCopy(LinSysRes);
-  LinSysSol_tmp.PassiveCopy(LinSysSol);
-
-  /*--- Set the pointers ---*/
-  SU2_OMP_MASTER
-  {
-    LinSysRes_ptr = &LinSysRes_tmp;
-    LinSysSol_ptr = &LinSysSol_tmp;
-  }
-  SU2_OMP_BARRIER
-}
-
-template<>
-void CSysSolve<passivedouble>::HandleTemporariesOut(CSysVector<su2double> & LinSysSol) {
-
-  /*--- When the type is different we need to copy data from the temporaries ---*/
-  /*--- Copy data, only the solution needs to be copied ---*/
-  LinSysSol.PassiveCopy(LinSysSol_tmp);
-
-  /*--- Reset the pointers ---*/
-  SU2_OMP_MASTER
-  {
-    LinSysRes_ptr = nullptr;
-    LinSysSol_ptr = nullptr;
-  }
-  SU2_OMP_BARRIER
-}
-#endif
+//template<>
+//void CSysSolve<passivedouble>::HandleTemporariesOut(CSysVector<su2double> & LinSysSol) {
+//
+//  /*--- When the type is different we need to copy data from the temporaries ---*/
+//  /*--- Copy data, only the solution needs to be copied ---*/
+//  LinSysSol.PassiveCopy(LinSysSol_tmp);
+//
+//  /*--- Reset the pointers ---*/
+//  SU2_OMP_MASTER
+//  {
+//    LinSysRes_ptr = nullptr;
+//    LinSysSol_ptr = nullptr;
+//  }
+//  SU2_OMP_BARRIER
+//}
+//#endif
 
 template<class ScalarType>
 unsigned long CSysSolve<ScalarType>::Solve(CSysMatrix<ScalarType> & Jacobian, const CSysVector<su2double> & LinSysRes,
@@ -859,7 +859,7 @@ unsigned long CSysSolve<ScalarType>::Solve(CSysMatrix<ScalarType> & Jacobian, co
 
   /*--- Stop the recording for the linear solver ---*/
 
-  bool TapeActive = NO;
+//  bool TapeActive = NO;
 
 //  if (config->GetDiscrete_Adjoint()) {
 //#ifdef CODI_REVERSE_TYPE
@@ -1093,6 +1093,6 @@ unsigned long CSysSolve<ScalarType>::Solve_b(CSysMatrix<ScalarType> & Jacobian, 
 /*--- Explicit instantiations ---*/
 template class CSysSolve<su2double>;
 
-#ifdef CODI_REVERSE_TYPE
-template class CSysSolve<passivedouble>;
-#endif
+//#ifdef CODI_REVERSE_TYPE
+//template class CSysSolve<passivedouble>;
+//#endif

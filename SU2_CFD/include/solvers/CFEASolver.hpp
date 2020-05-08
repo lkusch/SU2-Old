@@ -82,11 +82,11 @@ protected:
   CSysVector<su2double> TimeRes;      /*!< \brief Vector for adding mass and damping contributions to the residual */
   CSysVector<su2double> LinSysReact;  /*!< \brief Vector to store the residual before applying the BCs */
 
-#ifndef CODI_FORWARD_TYPE
-  CSysMatrix<passivedouble> MassMatrix;   /*!< \brief Sparse structure for storing the mass matrix. */
-#else
+//#ifndef CODI_FORWARD_TYPE
+//  CSysMatrix<passivedouble> MassMatrix;   /*!< \brief Sparse structure for storing the mass matrix. */
+//#else
   CSysMatrix<su2double> MassMatrix;
-#endif
+//#endif
 
   CElement*** element_container = nullptr;  /*!< \brief Vector which the define the finite element structure for each problem. */
   CProperty** element_properties = nullptr; /*!< \brief Vector which stores the properties of each element */

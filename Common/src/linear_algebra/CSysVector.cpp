@@ -100,7 +100,7 @@ void CSysVector<ScalarType>::PassiveCopy(const CSysVector<T>& other) {
 
   PARALLEL_FOR
   for(auto i=0ul; i<nElm; i++)
-    vec_val[i] = SU2_TYPE::GetValue(other[i]);
+    vec_val[i] = other[i];//SU2_TYPE::GetValue(other[i]);
 }
 
 template<class ScalarType>
@@ -242,8 +242,8 @@ ScalarType CSysVector<ScalarType>::dot(const CSysVector<ScalarType> & u) const {
 template class CSysVector<su2double>;
 template void CSysVector<su2double>::PassiveCopy(const CSysVector<su2double>&);
 
-#ifdef CODI_REVERSE_TYPE
-template class CSysVector<passivedouble>;
-template void CSysVector<su2double>::PassiveCopy(const CSysVector<passivedouble>&);
-template void CSysVector<passivedouble>::PassiveCopy(const CSysVector<su2double>&);
-#endif
+//#ifdef CODI_REVERSE_TYPE
+//template class CSysVector<passivedouble>;
+//template void CSysVector<su2double>::PassiveCopy(const CSysVector<passivedouble>&);
+//template void CSysVector<passivedouble>::PassiveCopy(const CSysVector<su2double>&);
+//#endif

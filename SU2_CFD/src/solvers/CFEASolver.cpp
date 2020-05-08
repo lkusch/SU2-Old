@@ -1946,11 +1946,11 @@ void CFEASolver::Postprocessing(CGeometry *geometry, CSolver **solver_container,
     /*--- If the problem is linear, the only check we do is the RMS of the residuals. ---*/
     /*---  Compute the residual Ax-f ---*/
 
-#ifndef CODI_FORWARD_TYPE
-    CSysVector<passivedouble> LinSysAux(nPoint, nPointDomain, nVar, nullptr);
-#else
+//#ifndef CODI_FORWARD_TYPE
+//    CSysVector<passivedouble> LinSysAux(nPoint, nPointDomain, nVar, nullptr);
+//#else
     CSysVector<su2double> LinSysAux(nPoint, nPointDomain, nVar, nullptr);
-#endif
+//#endif
 
     SU2_OMP_PARALLEL
     {
@@ -1958,7 +1958,7 @@ void CFEASolver::Postprocessing(CGeometry *geometry, CSolver **solver_container,
     Jacobian.ComputeResidual(LinSysSol, LinSysRes, LinSysAux);
 #else
     /*---  We need temporaries to interface with the passive matrix. ---*/
-    CSysVector<passivedouble> sol, res;
+    CSysVector<su2double> sol, res;
     sol.PassiveCopy(LinSysSol);
     res.PassiveCopy(LinSysRes);
     Jacobian.ComputeResidual(sol, res, LinSysAux);
@@ -2438,7 +2438,7 @@ void CFEASolver::ImplicitNewmark_Iteration(CGeometry *geometry, CNumerics **nume
        *
        */
       if ((nonlinear_analysis && (newton_raphson || first_iter)) || linear_analysis) {
-        Jacobian.MatrixMatrixAddition(SU2_TYPE::GetValue(a_dt[0]), MassMatrix);
+        Jacobian.MatrixMatrixAddition(a_dt[0], MassMatrix);
       }
 
       /*--- Loop over all points, and set aux vector TimeRes_Aux = a0*U+a2*U'+a3*U'' ---*/
@@ -2636,7 +2636,7 @@ void CFEASolver::GeneralizedAlpha_Iteration(CGeometry *geometry, CNumerics **num
 
       /*--- See notes on logic in ImplicitNewmark_Iteration(). ---*/
       if ((nonlinear_analysis && (newton_raphson || first_iter)) || linear_analysis) {
-        Jacobian.MatrixMatrixAddition(SU2_TYPE::GetValue(a_dt[0]), MassMatrix);
+        Jacobian.MatrixMatrixAddition(a_dt[0], MassMatrix);
       }
 
       /*--- Loop over all points, and set aux vector TimeRes_Aux = a0*U+a2*U'+a3*U'' ---*/

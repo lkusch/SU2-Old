@@ -159,7 +159,7 @@ private:
   template<class DstType, class SrcType>
   inline DstType PassiveAssign(const SrcType & val) const {
 #if defined(CODI_REVERSE_TYPE) || defined(CODI_FORWARD_TYPE)
-    return SU2_TYPE::GetValue(val);
+    return val; //SU2_TYPE::GetValue(val);
 #else
     return val;
 #endif
