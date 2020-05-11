@@ -3871,6 +3871,21 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   inline virtual void SetSensitivity(CGeometry *geometry, CSolver **solver, CConfig *config){ }
+  
+  /*!
+   * \brief A virtual member. Extract and set the second-order geometrical sensitivity.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver - The solver container holding all terms of the solution.
+   * \param[in] config - Definition of the particular problem.
+   */
+  inline virtual void SetMixedSensitivity(CGeometry *geometry, CConfig *config){ }
+  
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  inline virtual void SetForwardDirection(CConfig *config, unsigned short iPointDir, unsigned short iVarDir){ }
 
   /*!
    * \brief A virtual member. Extract and set the derivative of objective function.

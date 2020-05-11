@@ -297,4 +297,19 @@ public:
                    int val_iter,
                    bool val_update_geo) override;
 
+  /*!
+   * \brief Extract and set the second-order geometrical sensitivity.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver - The solver container holding all terms of the solution.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void SetMixedSensitivity(CGeometry *geometry, CConfig *config) override;
+
+  /*!
+   * \brief Sets the direction for the second-order adjoint calculation
+   *         before evaluation of the tape.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  void SetForwardDirection(CConfig *config, unsigned short iPointDir, unsigned short iVarDir) override;
 };

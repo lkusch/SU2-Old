@@ -109,6 +109,11 @@ namespace AD{
   void Reset();
 
   /*!
+   * \brief Reset the position of the vector for tape evaluation.
+   */
+  void ResetVectorPosition();
+
+  /*!
    * \brief Reset the variable (set index to zero).
    * \param[in] data - the variable to be unregistered from the tape.
    */

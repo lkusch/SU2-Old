@@ -107,6 +107,8 @@ namespace AD{
       TapePositions.clear();
     }    
   }
+  
+  inline void ResetVectorPosition(){ adjointVectorPosition = 0;}
 
   inline void SetIndex(int &index, const su2double &data) {
     index = data.getGradientData();
@@ -288,6 +290,8 @@ namespace AD{
   inline void Reset() {}
 
   inline void ResetInput(su2double &data) {}
+  
+  inline void ResetVectorPosition(){}
 
   inline void SetPreaccIn(const su2double &data) {}
 

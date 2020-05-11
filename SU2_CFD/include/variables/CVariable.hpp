@@ -2660,6 +2660,24 @@ public:
       adj_sol[iVar] = SU2_TYPE::GetDerivative(Solution_time_n1(iPoint,iVar));
   }
 
+   /*!
+   * \brief Set the forward direction for the solution.
+   * \param[in] dir - The direction for the solution.
+   */
+  inline void SetForwardSolution(unsigned long iPoint, const su2double *dir) {
+    for (unsigned long iVar = 0; iVar < nVar; iVar++)
+      SU2_TYPE::SetForwardDerivative(Solution(iPoint,iVar), SU2_TYPE::GetValue(dir[iVar]));
+  }
+   
+  /*!
+   * \brief Get the second-order derivative for the solution.
+   * \param[in] dir - The second-order derivative value of the solution.
+   */
+  inline void GetMixedSolution(unsigned long iPoint, su2double *sol) const {
+    for (unsigned long iVar = 0; iVar < nVar; iVar++)
+      sol[iVar] = SU2_TYPE::GetMixedDerivative(Solution(iPoint,iVar));
+  }
+
   /*!
    * \brief Set the sensitivity at the node
    * \param[in] iDim - spacial component

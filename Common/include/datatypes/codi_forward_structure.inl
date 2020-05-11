@@ -39,4 +39,12 @@ namespace SU2_TYPE{
   inline double GetDerivative(const su2double& data) { return data.getGradient();}
 
   inline void SetDerivative(su2double& data, const double &val) {data.setGradient(val);}
+  
+  inline double GetMixedDerivative(const su2double& data){return 0.0;}
+
+  inline void SetMixedDerivative(su2double& data, const double &val){ }
+  
+  inline double GetForwardDerivative(const su2double& data){return 0.0;}
+
+  inline void SetForwardDerivative(su2double& data, const double &val){ }
 }

@@ -115,6 +115,34 @@ namespace SU2_TYPE{
    * \return - The primary value casted to short.
    */
   short Short(const su2double& data);
+  
+  /*!
+   * \brief Get the second-order derivative value of the datatype.
+   * \param[in] data - The non-primitive datatype.
+   * \return The second-order derivative value.
+   */
+  double GetMixedDerivative(const su2double &data);
+
+  /*!
+   * \brief Set the second-order derivative of the datatype (needs to be implemented for each new type).
+   * \param[in] data - The non-primitive datatype.
+   * \param[in] val - The value of the derivative.
+   */
+   void SetMixedDerivative(su2double &data, const double &val);
+  
+  /*!
+   * \brief Get the forward direction of the datatype.
+   * \param[in] data - The non-primitive datatype.
+   * \return The second-order derivative value.
+   */
+  double GetForwardDerivative(const su2double &data);
+
+  /*!
+   * \brief Set the forward direction for the derivative of the datatype (needs to be implemented for each new type).
+   * \param[in] data - The non-primitive datatype.
+   * \param[in] val - The value of the derivative.
+   */
+   void SetForwardDerivative(su2double &data, const double &val);
 }
 
 #include "datatype_structure.inl"

@@ -40,6 +40,13 @@ namespace SU2_TYPE{
 
   inline void SetDerivative(su2double& data, const double &val) {data.gradient().value() = val;}
 
+  inline double GetForwardDerivative(const su2double& data){return data.getValue().getGradient();}
+
+  inline void SetForwardDerivative(su2double& data, const double &val){data.value().gradient() = val;}
+
+  inline double GetMixedDerivative(const su2double& data){return AD::globalTape.getGradient(AD::inputValues[AD::adjointVectorPosition++]).getGradient();}
+
+  inline void SetMixedDerivative(su2double& data, const double &val){data.gradient().gradient() = val;}
 
 }
 

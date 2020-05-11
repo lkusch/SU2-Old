@@ -774,7 +774,50 @@ void CDiscAdjSolver::SetSensitivity(CGeometry *geometry, CSolver **solver, CConf
       }
     }
   }
+ // std::cout << "Sensitivity: " << nodes->GetSensitivity(50,1) << std::endl;
   SetSurface_Sensitivity(geometry, config);
+}
+
+void CDiscAdjSolver::SetMixedSensitivity(CGeometry *geometry, CConfig *config){
+
+  unsigned long iPoint;
+  unsigned short iDim;
+  su2double *Coord, Sensitivity, eps;
+
+  AD::ResetVectorPosition();
+
+  for (iPoint = 0; iPoint < nPoint; iPoint++){
+     Coord = geometry->node[iPoint]->GetCoord();
+
+     for (iDim = 0; iDim < nDim; iDim++){
+       Sensitivity = SU2_TYPE::GetMixedDerivative(Coord[iDim]);
+       AD::ResetInput(Coord[iDim]);
+
+       if (config->GetSens_Remove_Sharp()) {
+         eps = config->GetVenkat_LimiterCoeff()*config->GetRefElemLength();
+         if ( geometry->node[iPoint]->GetSharpEdge_Distance() < config->GetAdjSharp_LimiterCoeff()*eps )
+           Sensitivity = 0.0;
+       }
+       nodes->SetSensitivity(iPoint, iDim, Sensitivity);
+     }
+  }
+  //std::cout << "Sensitivity: " << nodes->GetSensitivity(50,1) << std::endl;
+  SetSurface_Sensitivity(geometry, config);
+}
+
+void CDiscAdjSolver::SetForwardDirection(CConfig *config, unsigned short iPointDir, unsigned short iVarDir){
+    unsigned short iVar;
+    unsigned long iPoint;
+    for (iPoint = 0; iPoint < nPoint; iPoint++){
+      for (iVar = 0; iVar < nVar; iVar++){
+        Solution[iVar] = 0.0;
+        if (iPoint == iPointDir && iVar == iVarDir){
+            Solution[iVar] = 1.0;
+        }
+      }
+      //set y_dot as a direction for obtaining second-order derivatives
+      direct_solver->GetNodes()->SetForwardSolution(iPoint,Solution);
+    }
 }
 
 void CDiscAdjSolver::SetSurface_Sensitivity(CGeometry *geometry, CConfig *config) {
