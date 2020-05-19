@@ -103,25 +103,25 @@ def eval_jac_g(x,flag, user_data=None):
         ipopt: 	     dcons(x), ndarray[nceq*dim]
     """
     if flag:
-	iRow=[]
-	jCol=[]
-  	for i in range(0, ncon):
-	    for j in range(0, project.n_dv):
-		iRow.append(i);
-		jCol.append(j);
-	return (array(iRow), array(jCol))
+        iRow=[]
+        jCol=[]
+        for i in range(0, ncon):
+            for j in range(0, project.n_dv):
+                iRow.append(i);
+                jCol.append(j);
+        return (array(iRow), array(jCol))
     else:
-	assert len(x)==project.n_dv
+        assert len(x)==project.n_dv
 
-    	decons = project.con_dceq(x)
-    	diecons = project.con_dcieq(x)
+        decons = project.con_dceq(x)
+        diecons = project.con_dcieq(x)
 
-    	dcons= array(decons+diecons, float_)
-	values=[]
-	for j in range(0, ncon):
-	    for k in range(0, project.n_dv):
- 		values.append(dcons[j][k]);
-    	return array(values)
+        dcons= array(decons+diecons, float_)
+        values=[]
+        for j in range(0, ncon):
+            for k in range(0, project.n_dv):
+                values.append(dcons[j][k]);
+        return array(values)
 
 def eval_h(x, lagrange, obj_factor, flag, user_data = None):
     if flag:
@@ -169,11 +169,11 @@ def ipopt_run(projectx, x0=None,xb_low=None, xb_up=None, its=100,accu=1e-10,grad
     con_low=[]
     con_up=[]
     for i in range(0,ncieq):
-	con_low.append(-2.0*pow(10.0,19))
-	con_up.append(0.0)
+        con_low.append(-2.0*pow(10.0,19))
+        con_up.append(0.0)
     for i in range(0,nceq):
-	con_low.append(0.0)
-	con_up.append(0.0)
+        con_low.append(0.0)
+        con_up.append(0.0)
     g_L=array(con_low)
     g_U=array(con_up)
 
@@ -181,7 +181,7 @@ def ipopt_run(projectx, x0=None,xb_low=None, xb_up=None, its=100,accu=1e-10,grad
 	
     nnzh= 0;
     for i in range(1,ncon+1):
-  	nnzh = nnzh+i;
+        nnzh = nnzh+i;
     
     nlp = pyipopt.create(n_dv, x_L, x_U, ncon, g_L, g_U, nnzj, nnzh, eval_f, eval_grad_f, eval_g, eval_jac_g)
 
@@ -196,7 +196,7 @@ def ipopt_run(projectx, x0=None,xb_low=None, xb_up=None, its=100,accu=1e-10,grad
    
     # scale accuracy
     obj = project.config['OPT_OBJECTIVE']
-    obj_scale = obj[obj.keys()[0]]['SCALE']
+    obj_scale = obj[list(obj)[0]]['SCALE']
     accu = accu*obj_scale
 
     # scale accuracy

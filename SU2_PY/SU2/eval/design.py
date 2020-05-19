@@ -457,7 +457,6 @@ def con_dceq(dvs,config,state=None):
     def_cons = config['OPT_CONSTRAINT']['EQUALITY']
     constraints = def_cons.keys()
     
-    push  = def_cons[this_con]['SCALE']
     dv_scales = config['DEFINITION_DV']['SCALE']
     dv_size   = config['DEFINITION_DV']['SIZE']
 
@@ -466,6 +465,7 @@ def con_dceq(dvs,config,state=None):
     for i_obj,this_con in enumerate(constraints):
         global_factor = float(config['OPT_GRADIENT_FACTOR'])
         value = def_cons[this_con]['VALUE']
+        push  = def_cons[this_con]['SCALE']
         
         # Evaluate Constraint Gradient
         grad = su2grad(this_con,grad_method,config,state)
