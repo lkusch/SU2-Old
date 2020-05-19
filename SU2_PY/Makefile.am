@@ -76,6 +76,7 @@ nobase_dist_mypkg_DATA= \
     SU2/mesh/__init__.py \
     SU2/opt/project.py \
     SU2/opt/scipy_tools.py \
+    SU2/opt/ipopt_tools.py \
     SU2/opt/server.py \
     SU2/opt/__init__.py \
     SU2/run/adaptation.py \
