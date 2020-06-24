@@ -3849,6 +3849,14 @@ public:
    * \param[in] solver_container - The solver container holding all solutions.
    * \param[in] config - The particular config.
    */
+  inline virtual void ExtractAdjoint_SolutionSecondOrder(CGeometry *geometry, CConfig *config){}
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] solver_container - The solver container holding all solutions.
+   * \param[in] config - The particular config.
+   */
   inline virtual void ExtractAdjoint_Geometry(CGeometry *geometry, CConfig *config) {}
 
   /*!
@@ -3886,6 +3894,13 @@ public:
    * \param[in] config - The particular config.
    */
   inline virtual void SetForwardDirection(CConfig *config, unsigned short iPointDir, unsigned short iVarDir){ }
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  inline virtual void SetForwardDirectionMesh(CGeometry *geometry, CConfig *config, unsigned short iPointDir, unsigned short iDimDir){ }
 
   /*!
    * \brief A virtual member. Extract and set the derivative of objective function.
@@ -4059,7 +4074,7 @@ public:
    * \brief A virtual member.
    * \param[in] kind_recording - Kind of AD recording.
    */
-  inline virtual void SetRecording(CGeometry *geometry, CConfig *config){}
+  inline virtual void SetRecording(CGeometry *geometry, CConfig *config, bool reset){}
 
   /*!
    * \brief A virtual member.
@@ -4085,6 +4100,13 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   inline virtual void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config) { }
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  inline virtual void ExtractAdjoint_VariablesSecondOrder(CGeometry *geometry, CConfig *config) { }
 
   /*!
    * \brief A virtual member.

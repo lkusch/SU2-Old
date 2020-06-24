@@ -754,6 +754,15 @@ public:
   }
 
   /*!
+   * \brief Set the second-order adjoint values of the coordinates.
+   * \param[in] adj_sol - The adjoint values of the coordinates.
+   */
+  inline void SetAdjointCoordForward(const su2double *adj_coor){
+    for (unsigned short iDim = 0; iDim < nDim; iDim++)
+      SU2_TYPE::SetForwardDerivative(Coord[iDim], SU2_TYPE::GetValue(adj_coor[iDim]));
+  }
+
+  /*!
    * \brief Set the adjoint values of the coordinates.
    * \param[in] adj_sol - The adjoint values of the coordinates.
    */

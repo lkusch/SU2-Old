@@ -93,7 +93,7 @@ public:
    * \brief Record one iteration of a flow iteration in within multiple zones.
    * \param[in] kind_recording - Type of recording (full list in ENUM_RECORDING, option_structure.hpp)
    */
-  void SetRecording(unsigned short kind_recording);
+  void SetRecording(unsigned short kind_recording, bool secondorder);
 
   /*!
    * \brief Run one iteration of the solver.
@@ -126,6 +126,11 @@ public:
    * \brief Record the secondary computational path.
    */
   void SecondaryRecording(void);
+  
+  /*!
+   * \brief Record the second-order computational path.
+   */
+  void SecondOrderRecording(void);
 
   /*!
    * \brief gets Convergence on physical time scale, (deactivated in adjoint case)

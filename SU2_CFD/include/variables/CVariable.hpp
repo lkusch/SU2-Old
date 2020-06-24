@@ -2614,6 +2614,16 @@ public:
     for (unsigned long iVar = 0; iVar < nVar; iVar++)
       adj_sol[iVar] = SU2_TYPE::GetDerivative(Solution(iPoint,iVar));
   }
+  
+  /*!
+   * \brief Get the second-order adjoint values of the solution.
+   * \param[out] adj_sol - The adjoint values of the solution.
+   */
+  inline void GetMixedAdjointSolution(unsigned long iPoint, su2double *adj_sol) const {
+    for (unsigned long iVar = 0; iVar < nVar; iVar++)
+      adj_sol[iVar] = SU2_TYPE::GetMixedDerivative(Solution(iPoint,iVar));
+  }
+
 
   /*!
    * \brief Get the adjoint values of the solution.

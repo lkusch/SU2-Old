@@ -204,7 +204,11 @@ void CDiscAdjSinglezoneDriver::Postprocess() {
     case DISC_ADJ_INC_EULER : case DISC_ADJ_INC_NAVIER_STOKES : case DISC_ADJ_INC_RANS :
 
       /*--- Compute the geometrical sensitivities ---*/
-      SecondaryRecording();
+      //SecondaryRecording();
+      
+      /*--- Second-order derivative computation. ---*/
+      SecondOrderRecording();
+
       break;
 
     case DISC_ADJ_FEM :
@@ -220,18 +224,26 @@ void CDiscAdjSinglezoneDriver::Postprocess() {
 
 }
 
-void CDiscAdjSinglezoneDriver::SetRecording(unsigned short kind_recording){
+void CDiscAdjSinglezoneDriver::SetRecording(unsigned short kind_recording, bool secondorder){
 
   AD::Reset();
 
+  bool reset = true;
+  if (secondorder){
+       reset=false;
+       //set the forward direction of the state variable
+       solver[ADJFLOW_SOL]->SetForwardDirection(config, 547, 0); 
+       //set the forward direction of the geometry variable
+       //solver[ADJFLOW_SOL]->SetForwardDirectionMesh(geometry, config, 547, 0);
+  }
+
   /*--- Prepare for recording by resetting the solution to the initial converged solution---*/
 
-  iteration->SetRecording(solver_container, geometry_container, config_container, ZONE_0, INST_0, kind_recording);
+  iteration->SetRecording(solver_container, geometry_container, config_container, ZONE_0, INST_0, kind_recording, reset);
 
   /*---Enable recording and register input of the iteration --- */
 
   if (kind_recording != NONE){
-
     AD::StartRecording();
 
     if (rank == MASTER_NODE && kind_recording == MainVariables) {
@@ -496,11 +508,11 @@ void CDiscAdjSinglezoneDriver::MainRecording(){
   /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
    *    as argument ensures that all information from a previous recording is removed. ---*/
 
-  SetRecording(NONE);
+  SetRecording(NONE, false);
 
   /*--- Store the computational graph of one direct iteration with the conservative variables as input. ---*/
 
-  SetRecording(MainVariables);
+  SetRecording(MainVariables, false);
 
 }
 
@@ -509,11 +521,11 @@ void CDiscAdjSinglezoneDriver::SecondaryRecording(){
   /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
    *    as argument ensures that all information from a previous recording is removed. ---*/
 
-  SetRecording(NONE);
+  SetRecording(NONE, false);
 
   /*--- Store the computational graph of one direct iteration with the secondary variables as input. ---*/
 
-  SetRecording(SecondaryVariables);
+  SetRecording(SecondaryVariables, false);
 
   /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
    *    of the current iteration. The values are passed to the AD tool. ---*/
@@ -544,6 +556,44 @@ void CDiscAdjSinglezoneDriver::SecondaryRecording(){
 
   if(IDX_SOL >= 0)
     solver[IDX_SOL]->SetSensitivity(geometry, solver, config);
+
+  /*--- Clear the stored adjoint information to be ready for a new evaluation. ---*/
+
+  AD::ClearAdjoints();
+
+}
+
+void CDiscAdjSinglezoneDriver::SecondOrderRecording(){
+
+  /*--- SetRecording stores the computational graph on one iteration of the direct problem. Calling it with NONE
+   *    as argument ensures that all information from a previous recording is removed. ---*/
+
+  SetRecording(NONE, false);
+
+  /*--- Store the computational graph of one direct iteration with the solution and mesh as input. ---*/
+
+  SetRecording(SOLUTION_AND_MESH, true);
+
+  /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
+   *    of the current iteration. The values are passed to the AD tool. ---*/
+
+  iteration->InitializeAdjoint(solver_container, geometry_container, config_container, ZONE_0, INST_0);
+
+  /*--- Initialize the adjoint of the objective function with 1.0. ---*/
+
+  SetAdj_ObjFunction();
+
+  /*--- Interpret the stored information by calling the corresponding routine of the AD tool. ---*/
+
+  AD::ComputeAdjoint();
+    
+  iteration->IterateSecondOrder(output_container[ZONE_0], integration_container, geometry_container,
+                         solver_container, numerics_container, config_container,
+                         surface_movement, grid_movement, FFDBox, ZONE_0, INST_0);
+
+  /*--- Extract the computed second-order sensitivity values. ---*/
+
+  solver[ADJFLOW_SOL]->SetMixedSensitivity(geometry, config);
 
   /*--- Clear the stored adjoint information to be ready for a new evaluation. ---*/
 

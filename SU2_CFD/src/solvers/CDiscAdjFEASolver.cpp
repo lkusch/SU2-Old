@@ -280,7 +280,7 @@ CDiscAdjFEASolver::~CDiscAdjFEASolver(void){
   delete nodes;
 }
 
-void CDiscAdjFEASolver::SetRecording(CGeometry* geometry, CConfig *config){
+void CDiscAdjFEASolver::SetRecording(CGeometry* geometry, CConfig *config, bool reset){
 
 
   bool dynamic (config->GetTime_Domain());

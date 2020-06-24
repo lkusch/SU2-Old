@@ -126,7 +126,7 @@ void CDiscAdjMeshSolver::Preprocessing(CGeometry *geometry, CSolver **solver_con
 
 }
 
-void CDiscAdjMeshSolver::SetRecording(CGeometry* geometry, CConfig *config){
+void CDiscAdjMeshSolver::SetRecording(CGeometry* geometry, CConfig *config, bool reset){
 
 
   unsigned long iPoint;

@@ -2053,6 +2053,42 @@ void CDiscAdjFluidIteration::Iterate(COutput *output,
 
 }
 
+void CDiscAdjFluidIteration::IterateSecondOrder(COutput *output,
+                                        CIntegration ****integration,
+                                        CGeometry ****geometry,
+                                        CSolver *****solver,
+                                        CNumerics ******numerics,
+                                        CConfig **config,
+                                        CSurfaceMovement **surface_movement,
+                                        CVolumetricMovement ***volume_grid_movement,
+                                        CFreeFormDefBox*** FFDBox,
+                                        unsigned short iZone,
+                                        unsigned short iInst) {
+
+  bool frozen_visc = config[iZone]->GetFrozen_Visc_Disc();
+  bool heat = config[iZone]->GetWeakly_Coupled_Heat();
+
+  /*--- Extract the adjoints of the conservative input variables and store them for the next iteration ---*/
+
+  if (config[iZone]->GetFluidProblem()) {
+    solver[iZone][iInst][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_SolutionSecondOrder(geometry[iZone][iInst][MESH_0], config[iZone]);
+
+    solver[iZone][iInst][MESH_0][ADJFLOW_SOL]->ExtractAdjoint_VariablesSecondOrder(geometry[iZone][iInst][MESH_0], config[iZone]);
+  }
+  if (turbulent && !frozen_visc) {
+
+    solver[iZone][iInst][MESH_0][ADJTURB_SOL]->ExtractAdjoint_SolutionSecondOrder(geometry[iZone][iInst][MESH_0], config[iZone]);
+  }
+  if (heat) {
+    solver[iZone][iInst][MESH_0][ADJHEAT_SOL]->ExtractAdjoint_SolutionSecondOrder(geometry[iZone][iInst][MESH_0], config[iZone]);
+  }
+  if (config[iZone]->AddRadiation()) {
+    solver[iZone][iInst][MESH_0][ADJRAD_SOL]->ExtractAdjoint_SolutionSecondOrder(geometry[iZone][iInst][MESH_0], config[iZone]);
+
+    solver[iZone][iInst][MESH_0][ADJRAD_SOL]->ExtractAdjoint_VariablesSecondOrder(geometry[iZone][iInst][MESH_0], config[iZone]);
+  }
+
+}
 
 void CDiscAdjFluidIteration::InitializeAdjoint(CSolver *****solver, CGeometry ****geometry, CConfig **config, unsigned short iZone, unsigned short iInst){
 
@@ -2091,7 +2127,6 @@ void CDiscAdjFluidIteration::RegisterInput(CSolver *****solver, CGeometry ****ge
   bool heat = config[iZone]->GetWeakly_Coupled_Heat();
 
   if (kind_recording == SOLUTION_VARIABLES || kind_recording == SOLUTION_AND_MESH) {
-
     /*--- Register flow and turbulent variables as input ---*/
 
     if (config[iZone]->GetFluidProblem()) {
@@ -2113,8 +2148,7 @@ void CDiscAdjFluidIteration::RegisterInput(CSolver *****solver, CGeometry ****ge
     }
   }
 
-  if (kind_recording == MESH_COORDS){
-
+  if (kind_recording == MESH_COORDS || kind_recording == SOLUTION_AND_MESH) {
     /*--- Register node coordinates as input ---*/
 
     geometry[iZone][iInst][MESH_0]->RegisterCoordinates(config[iZone]);
@@ -2139,27 +2173,27 @@ void CDiscAdjFluidIteration::SetRecording(CSolver *****solver,
                                           CConfig **config,
                                           unsigned short iZone,
                                           unsigned short iInst,
-                                          unsigned short kind_recording) {
+                                          unsigned short kind_recording, bool reset) {
 
   bool frozen_visc = config[iZone]->GetFrozen_Visc_Disc();
 
   /*--- Prepare for recording by resetting the solution to the initial converged solution ---*/
 
   if (solver[iZone][iInst][MESH_0][ADJFEA_SOL]) {
-    solver[iZone][iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[iZone][iInst][MESH_0], config[iZone]);
+    solver[iZone][iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[iZone][iInst][MESH_0], config[iZone], reset);
   }
 
   for (auto iMesh = 0u; iMesh <= config[iZone]->GetnMGLevels(); iMesh++){
-    solver[iZone][iInst][iMesh][ADJFLOW_SOL]->SetRecording(geometry[iZone][iInst][iMesh], config[iZone]);
+    solver[iZone][iInst][iMesh][ADJFLOW_SOL]->SetRecording(geometry[iZone][iInst][iMesh], config[iZone], reset);
   }
   if (turbulent && !frozen_visc) {
-    solver[iZone][iInst][MESH_0][ADJTURB_SOL]->SetRecording(geometry[iZone][iInst][MESH_0], config[iZone]);
+    solver[iZone][iInst][MESH_0][ADJTURB_SOL]->SetRecording(geometry[iZone][iInst][MESH_0], config[iZone], reset);
   }
   if (config[iZone]->GetWeakly_Coupled_Heat()) {
-    solver[iZone][iInst][MESH_0][ADJHEAT_SOL]->SetRecording(geometry[iZone][iInst][MESH_0], config[iZone]);
+    solver[iZone][iInst][MESH_0][ADJHEAT_SOL]->SetRecording(geometry[iZone][iInst][MESH_0], config[iZone], reset);
   }
   if (config[iZone]->AddRadiation()) {
-    solver[iZone][INST_0][MESH_0][ADJRAD_SOL]->SetRecording(geometry[iZone][INST_0][MESH_0], config[iZone]);
+    solver[iZone][INST_0][MESH_0][ADJRAD_SOL]->SetRecording(geometry[iZone][INST_0][MESH_0], config[iZone], reset);
   }
 
 }
@@ -2176,7 +2210,6 @@ void CDiscAdjFluidIteration::SetDependencies(CSolver *****solver,
   bool heat = config[iZone]->GetWeakly_Coupled_Heat();
 
   if ((kind_recording == MESH_COORDS) || (kind_recording == NONE) || (kind_recording == SOLUTION_AND_MESH)){
-
     /*--- Update geometry to get the influence on other geometry variables (normals, volume etc) ---*/
 
     geometry[iZone][iInst][MESH_0]->UpdateGeometry(geometry[iZone][iInst], config[iZone]);
@@ -2504,7 +2537,7 @@ void CDiscAdjFEAIteration::SetRecording(COutput *output,
 
   if (CurrentRecording != kind_recording && (CurrentRecording != NONE) ){
 
-    solver[val_iZone][val_iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[val_iZone][val_iInst][MESH_0], config[val_iZone]);
+    solver[val_iZone][val_iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[val_iZone][val_iInst][MESH_0], config[val_iZone], true);
 
     /*--- Clear indices of coupling variables ---*/
 
@@ -2519,7 +2552,7 @@ void CDiscAdjFEAIteration::SetRecording(COutput *output,
 
   /*--- Prepare for recording ---*/
 
-  solver[val_iZone][val_iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[val_iZone][val_iInst][MESH_0], config[val_iZone]);
+  solver[val_iZone][val_iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[val_iZone][val_iInst][MESH_0], config[val_iZone], true);
 
   /*--- Start the recording of all operations ---*/
 
@@ -2570,11 +2603,11 @@ void CDiscAdjFEAIteration::SetRecording(CSolver *****solver,
                                         CConfig **config,
                                         unsigned short val_iZone,
                                         unsigned short val_iInst,
-                                        unsigned short kind_recording) {
+                                        unsigned short kind_recording, bool reset) {
 
   /*--- Prepare for recording by resetting the solution to the initial converged solution ---*/
 
-  solver[val_iZone][val_iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[val_iZone][val_iInst][MESH_0], config[val_iZone]);
+  solver[val_iZone][val_iInst][MESH_0][ADJFEA_SOL]->SetRecording(geometry[val_iZone][val_iInst][MESH_0], config[val_iZone], reset);
 
 }
 

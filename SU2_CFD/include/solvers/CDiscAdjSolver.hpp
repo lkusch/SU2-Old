@@ -133,6 +133,14 @@ public:
   void ExtractAdjoint_Solution(CGeometry *geometry, CConfig *config) override;
 
   /*!
+   * \brief Sets the second-order adjoint values of the input variables of the flow (+turb.) iteration
+   *        after tape has been evaluated.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  void ExtractAdjoint_SolutionSecondOrder(CGeometry *geometry, CConfig *config) override;
+
+  /*!
    * \brief A virtual member.
    * \param[in] geometry - The geometrical definition of the problem.
    * \param[in] solver_container - The solver container holding all solutions.
@@ -238,7 +246,7 @@ public:
    * \brief Prepare the solver for a new recording.
    * \param[in] kind_recording - Kind of AD recording.
    */
-  void SetRecording(CGeometry *geometry, CConfig *config) override;
+  void SetRecording(CGeometry *geometry, CConfig *config, bool reset) override;
 
   /*!
    * \brief Prepare the solver for a new recording.
@@ -264,6 +272,13 @@ public:
    * \param[in] config - Definition of the particular problem.
    */
   void ExtractAdjoint_Variables(CGeometry *geometry, CConfig *config) override;
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] config - Definition of the particular problem.
+   */
+  void ExtractAdjoint_VariablesSecondOrder(CGeometry *geometry, CConfig *config) override;
 
   /*!
    * \brief Update the dual-time derivatives.
@@ -312,4 +327,12 @@ public:
    * \param[in] config - The particular config.
    */
   void SetForwardDirection(CConfig *config, unsigned short iPointDir, unsigned short iVarDir) override;
+  
+  /*!
+   * \brief Sets the direction for the second-order adjoint (mesh) calculation
+   *         before evaluation of the tape.
+   * \param[in] geometry - The geometrical definition of the problem.
+   * \param[in] config - The particular config.
+   */
+  void SetForwardDirectionMesh(CGeometry *geometry, CConfig *config, unsigned short iPointDir, unsigned short iDimDir) override;
 };

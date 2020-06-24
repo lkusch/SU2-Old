@@ -319,7 +319,7 @@ public:
    * \brief Prepare the solver for a new recording.
    * \param[in] kind_recording - Kind of AD recording.
    */
-  void SetRecording(CGeometry *geometry, CConfig *config) override ;
+  void SetRecording(CGeometry *geometry, CConfig *config, bool reset) override ;
 
   /*!
    * \brief A virtual member.
