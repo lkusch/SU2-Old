@@ -262,6 +262,8 @@ void CGridAdaptation::GetAdjResidual(CGeometry *geometry, CConfig *config) {
     if (config->GetKind_ObjFunc() == TOTAL_HEATFLUX)          SPRINTF (buffer, "_totheat.dat");
     if (config->GetKind_ObjFunc() == MAXIMUM_HEATFLUX)        SPRINTF (buffer, "_maxheat.dat");
     if (config->GetKind_ObjFunc() == SURFACE_TOTAL_PRESSURE)  SPRINTF (buffer, "_pt.dat");
+    if (config->GetKind_ObjFunc() == UNIFORMITY_INDEX)        SPRINTF (buffer, "_ui.dat");
+    if (config->GetKind_ObjFunc() == SURFACE_PRESSURE_DROP)   SPRINTF (buffer, "_dp.dat");
     if (config->GetKind_ObjFunc() == SURFACE_STATIC_PRESSURE) SPRINTF (buffer, "_pe.dat");
     if (config->GetKind_ObjFunc() == SURFACE_MASSFLOW)        SPRINTF (buffer, "_mfr.dat");
     if (config->GetKind_ObjFunc() == SURFACE_MACH)            SPRINTF (buffer, "_mach.dat");
@@ -3547,6 +3549,8 @@ void CGridAdaptation::SetRestart_AdjSolution(CConfig *config, CPhysicalGeometry 
     if (config->GetKind_ObjFunc() == TOTAL_HEATFLUX)          SPRINTF (buffer, "_totheat.dat");
     if (config->GetKind_ObjFunc() == MAXIMUM_HEATFLUX)        SPRINTF (buffer, "_maxheat.dat");
     if (config->GetKind_ObjFunc() == SURFACE_TOTAL_PRESSURE)  SPRINTF (buffer, "_pt.dat");
+    if (config->GetKind_ObjFunc() == UNIFORMITY_INDEX)        SPRINTF (buffer, "_ui.dat");
+    if (config->GetKind_ObjFunc() == SURFACE_PRESSURE_DROP)   SPRINTF (buffer, "_dp.dat");
     if (config->GetKind_ObjFunc() == SURFACE_STATIC_PRESSURE) SPRINTF (buffer, "_pe.dat");
     if (config->GetKind_ObjFunc() == SURFACE_MASSFLOW)        SPRINTF (buffer, "_mfr.dat");
     if (config->GetKind_ObjFunc() == SURFACE_MACH)            SPRINTF (buffer, "_mach.dat");

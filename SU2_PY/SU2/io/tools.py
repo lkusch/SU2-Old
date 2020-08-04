@@ -365,6 +365,7 @@ def get_objectiveSign( ObjFun_name ):
             SURFACE_MASSFLOW
             SURFACE_MACH
             TOTAL_STATIC_EFFICIENCY
+            UNIFORMITY_INDEX
         returns +1 otherwise
     """
     
@@ -373,7 +374,9 @@ def get_objectiveSign( ObjFun_name ):
     if ObjFun_name == "EFFICIENCY"      : return -1.0
     if ObjFun_name == "THRUST"          : return -1.0
     if ObjFun_name == "FIGURE_OF_MERIT" : return -1.0
-    if ObjFun_name == "SURFACE_TOTAL_PRESSURE"  : return -1.0
+    #if ObjFun_name == "SURFACE_TOTAL_PRESSURE"  : return -1.0
+    if ObjFun_name == "UNIFORMITY_INDEX"  : return -1.0
+    if ObjFun_name == "SURFACE_PRESSURE_DROP"  : return -1.0
     if ObjFun_name == "SURFACE_STATIC_PRESSURE" : return -1.0
     if ObjFun_name == "SURFACE_MASSFLOW"        : return -1.0
     if ObjFun_name == "SURFACE_MACH"            : return -1.0
@@ -431,6 +434,7 @@ def get_adjointSuffix(objective_function=None):
                  "FIGURE_OF_MERIT"             : "merit"     ,
                  "BUFFET"                      : "buffet"    ,
                  "SURFACE_TOTAL_PRESSURE"      : "pt"        ,
+                 "UNIFORMITY_INDEX"            : "ui"        ,
                  "SURFACE_STATIC_PRESSURE"     : "pe"        ,
                  "SURFACE_MASSFLOW"            : "mfr"       ,
                  "SURFACE_MACH"                : "mach"      ,

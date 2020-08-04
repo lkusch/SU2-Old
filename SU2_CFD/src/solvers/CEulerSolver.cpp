@@ -6664,6 +6664,9 @@ void CEulerSolver::Evaluate_ObjFunc(CConfig *config) {
     case TOTAL_AVG_TEMPERATURE:
       Total_ComboObj+=Weight_ObjFunc*config->GetSurface_Temperature(0);
       break;
+    case UNIFORMITY_INDEX:
+      Total_ComboObj+=Weight_ObjFunc*config->GetSurface_UniformityIndex(1);
+      break;
     case CUSTOM_OBJFUNC:
       Total_ComboObj+=Weight_ObjFunc*Total_Custom_ObjFunc;
       break;

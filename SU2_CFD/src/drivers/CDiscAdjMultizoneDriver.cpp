@@ -733,6 +733,7 @@ void CDiscAdjMultizoneDriver::SetObjFunction(unsigned short kind_recording) {
           case SURFACE_SECOND_OVER_UNIFORM: FieldName = "SECONDARY_OVER_UNIFORMITY"; break;
           case TOTAL_AVG_TEMPERATURE:       FieldName = "AVG_TOTALTEMP";             break;
           case SURFACE_TOTAL_PRESSURE:      FieldName = "AVG_TOTALPRESS";            break;
+          case UNIFORMITY_INDEX:            FieldName = "UNIFORMITY_INDEX";          break;
 
           // Not yet covered by new output structure. Be careful these use MARKER_MONITORING.
 

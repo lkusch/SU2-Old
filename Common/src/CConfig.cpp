@@ -893,7 +893,7 @@ void CConfig::SetPointersNull(void) {
   ActDisk_ReverseMassFlow = nullptr;    Surface_MassFlow        = nullptr;   Surface_Mach             = nullptr;
   Surface_Temperature      = nullptr;   Surface_Pressure         = nullptr;  Surface_Density          = nullptr;   Surface_Enthalpy          = nullptr;
   Surface_NormalVelocity   = nullptr;   Surface_TotalTemperature = nullptr;  Surface_TotalPressure    = nullptr;   Surface_PressureDrop    = nullptr;
-  Surface_DC60             = nullptr;    Surface_IDC = nullptr;
+  Surface_DC60             = nullptr;    Surface_IDC = nullptr;              Surface_UniformityIndex  = nullptr;
 
   Outlet_MassFlow      = nullptr;       Outlet_Density      = nullptr;      Outlet_Area     = nullptr;
 
@@ -3358,6 +3358,7 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
         case SURFACE_MOM_DISTORTION:
         case SURFACE_SECOND_OVER_UNIFORM:
         case SURFACE_PRESSURE_DROP:
+        case UNIFORMITY_INDEX:
         case CUSTOM_OBJFUNC:
           if (Kind_ObjFunc[iObj] != Obj_0) {
             SU2_MPI::Error(string("The following objectives can only be used for the first surface in a multi-objective \n")+
@@ -3365,7 +3366,7 @@ void CConfig::SetPostprocessing(unsigned short val_software, unsigned short val_
                            string("INVERSE_DESIGN_PRESSURE, INVERSE_DESIGN_HEATFLUX, THRUST_COEFFICIENT, TORQUE_COEFFICIENT\n")+
                            string("FIGURE_OF_MERIT, SURFACE_TOTAL_PRESSURE, SURFACE_STATIC_PRESSURE, SURFACE_MASSFLOW\n")+
                            string("SURFACE_UNIFORMITY, SURFACE_SECONDARY, SURFACE_MOM_DISTORTION, SURFACE_SECOND_OVER_UNIFORM\n")+
-                           string("SURFACE_PRESSURE_DROP, CUSTOM_OBJFUNC.\n"), CURRENT_FUNCTION);
+                           string("SURFACE_PRESSURE_DROP, UNIFORMITY_INDEX, CUSTOM_OBJFUNC.\n"), CURRENT_FUNCTION);
           }
           break;
         default:
@@ -4997,6 +4998,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
   Surface_MomentumDistortion = new su2double[nMarker_Analyze] ();
   Surface_TotalTemperature = new su2double[nMarker_Analyze] ();
   Surface_TotalPressure = new su2double[nMarker_Analyze] ();
+  Surface_UniformityIndex = new su2double[nMarker_Analyze] ();
   Surface_PressureDrop = new su2double[nMarker_Analyze] ();
   Surface_DC60 = new su2double[nMarker_Analyze] ();
   Surface_IDC = new su2double[nMarker_Analyze] ();
@@ -5908,6 +5910,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
         case FIGURE_OF_MERIT:            cout << "Rotor Figure of Merit objective function." << endl; break;
         case BUFFET_SENSOR:              cout << "Buffet sensor objective function." << endl; break;
         case SURFACE_TOTAL_PRESSURE:     cout << "Average total pressure objective function." << endl; break;
+        case UNIFORMITY_INDEX:           cout << "Flow uniformity index objective function." << endl; break;
         case SURFACE_STATIC_PRESSURE:    cout << "Average static pressure objective function." << endl; break;
         case SURFACE_MASSFLOW:           cout << "Mass flow rate objective function." << endl; break;
         case SURFACE_MACH:               cout << "Mach number objective function." << endl; break;
@@ -7490,6 +7493,7 @@ CConfig::~CConfig(void) {
      delete[]  Surface_MomentumDistortion;
      delete[]  Surface_TotalTemperature;
      delete[]  Surface_TotalPressure;
+     delete[]  Surface_UniformityIndex;
      delete[]  Surface_PressureDrop;
      delete[]  Surface_DC60;
      delete[]  Surface_IDC;
@@ -7806,6 +7810,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) {
         case FIGURE_OF_MERIT:             AdjExt = "_merit";    break;
         case BUFFET_SENSOR:               AdjExt = "_buffet";    break;
         case SURFACE_TOTAL_PRESSURE:      AdjExt = "_pt";       break;
+        case UNIFORMITY_INDEX:    AdjExt = "_ui";       break;
         case SURFACE_STATIC_PRESSURE:     AdjExt = "_pe";       break;
         case SURFACE_MASSFLOW:            AdjExt = "_mfr";      break;
         case SURFACE_UNIFORMITY:          AdjExt = "_uniform";  break;
