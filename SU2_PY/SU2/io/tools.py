@@ -60,6 +60,39 @@ def read_gradients( Grad_filename , scale = 1.0):
 
 #: def read_gradients()
 
+def read_surface_gradients( Grad_filename , scale = 1.0):
+    """ reads the raw gradients from the gradient file
+        returns a list of floats
+    """
+        
+    # open file and skip first three lines
+    gradfile = open(Grad_filename)
+    gradfile.readline()
+    gradfile.readline()
+    header = gradfile.readline()
+    header = header.split("=") 
+    nNodes = int(header[1].split(",")[0])
+    
+    # read values
+    grad_vals = {}
+    Node = 0
+    for line in gradfile:
+        line = line.split()
+
+        if Node == nNodes:
+            break
+       
+        if len(line) == 8:
+            grad_vals[int(float(line[7]))] = [float(line[3]), float(line[4]), float(line[5])];
+        else:
+            grad_vals[int(float(line[5]))] = [float(line[2]), float(line[3])];
+
+        Node = Node+1    
+    #: for each line
+    
+    return grad_vals
+
+#: def read_gradients()
 
 # -------------------------------------------------------------------
 #  Read All Data from a Plot File

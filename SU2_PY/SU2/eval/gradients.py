@@ -257,6 +257,9 @@ def adjoint( func_name, config, state=None ):
     
     if 'FLOW_META' in files:
         pull.append(files['FLOW_META'])
+
+    if config['DV_KIND'][0] == 'SURFACE_FILE':
+        link.append(config['DV_FILENAME'])
         
     # files: adjoint solution
     if ADJ_NAME in files:
