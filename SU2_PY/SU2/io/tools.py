@@ -185,11 +185,9 @@ def read_history( History_filename, nZones = 1):
 
     # map header names
     for key in plot_data.keys():
-        var = key
         for field in historyOutFields:
             if key == historyOutFields[field]['HEADER']:
-                var = field
-        history_data[var] = plot_data[key]
+                history_data[field] = plot_data[key]
     
     return history_data
     
