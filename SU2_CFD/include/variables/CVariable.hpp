@@ -94,6 +94,8 @@ protected:
 
   MatrixType Solution_BGS_k;     /*!< \brief Old solution container for BGS iterations. */
 
+  MatrixType Adjoint_Str; /*< \brief Vector for Kratos interfacing. */
+
   su2matrix<int> AD_InputIndex;    /*!< \brief Indices of Solution variables in the adjoint vector. */
   su2matrix<int> AD_OutputIndex;   /*!< \brief Indices of Solution variables in the adjoint vector after having been updated. */
 
@@ -2740,5 +2742,23 @@ public:
    * \return value of the source term
    */
   virtual su2double GetSourceTerm_DispAdjoint(unsigned long iPoint, unsigned long iDim) const { return 0.0; }
+  
+  /*!
+   * \brief Get the value of Adjoint_Str
+   * \param[in] iPoint - Point index.
+   * \param[in] iVar - Index of the variable.
+   * \return Pointer to the value of Adjoint_Str.
+   */
+  inline su2double GetAdjoint_Str(unsigned long iPoint, unsigned long iDim) const { return Adjoint_Str(iPoint,iDim); }
+
+  /*!
+   * \brief Set the value of Adjoint_Str.
+   * \param[in] iPoint - Point index.
+   * \param[in] val_Adjoint_Str - Pointer to the vector.
+   */
+  inline void SetAdjoint_Str(unsigned long iPoint, const su2double *val_Adjoint_Str) {
+    for (unsigned long iDim = 0; iDim < nDim; iDim++)
+      Adjoint_Str(iPoint,iDim) = val_Adjoint_Str[iDim];
+  }
 
 };
