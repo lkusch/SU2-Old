@@ -165,6 +165,8 @@ class CFVMFlowSolverBase : public CSolver {
   su2double Gamma;           /*!< \brief Fluid's Gamma constant (ratio of specific heats). */
   su2double Gamma_Minus_One; /*!< \brief Fluids's Gamma - 1.0  . */
 
+  su2double ***Nodal_Force = nullptr; /*!< \brief Nodal force (pressure and viscous) for each boundary and vertex. */
+
   /*--- Sliding meshes variables ---*/
 
   su2double**** SlidingState = nullptr;
@@ -1586,4 +1588,23 @@ class CFVMFlowSolverBase : public CSolver {
   inline su2double GetYPlus(unsigned short val_marker, unsigned long val_vertex) const final {
     return YPlus[val_marker][val_vertex];
   }
+
+  /*!
+  * \param[in] val_marker - Surface marker where the flow direction is set.
+  * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the flow direction is set.
+  * \param[in] val_dim - The component of the nodal force to be set
+  * \param[in] val_nodalforce - The component of the nodal force.
+  */
+  inline void SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce) {
+    for (unsigned short iDim = 0; iDim < nDim; iDim++){
+      Nodal_Force[val_marker][val_vertex][iDim] = val_nodalforce[iDim];
+    }
+  }
+
+  /*!
+  * \param[in] val_marker - Surface marker where the force is computed.
+  * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the force is evaluated.
+  * \return Value of the nodel forces (pressure + viscous).
+  */
+  inline su2double GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim) { return Nodal_Force[val_marker][val_vertex][val_dim]; }
 };

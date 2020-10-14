@@ -326,6 +326,11 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
   AddVolumeOutput("MACH",        "Mach",                    "PRIMITIVE", "Mach number");
   AddVolumeOutput("PRESSURE_COEFF", "Pressure_Coefficient", "PRIMITIVE", "Pressure coefficient");
 
+  AddVolumeOutput("NODAL_FORCE_X", "Nodal_Force_X",         "PRIMITIVE", "x-component of nodal force vector");
+  AddVolumeOutput("NODAL_FORCE_Y", "Nodal_Force_Y",         "PRIMITIVE", "y-component of nodal force vector");
+  if (nDim == 3)
+    AddVolumeOutput("NODAL_FORCE_Z", "Nodal_Force_Z",       "PRIMITIVE", "z-component of nodal force vector");
+
   if (config->GetKind_Solver() == RANS || config->GetKind_Solver() == NAVIER_STOKES){
     AddVolumeOutput("LAMINAR_VISCOSITY", "Laminar_Viscosity", "PRIMITIVE", "Laminar viscosity");
 
@@ -561,6 +566,11 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
 
 void CFlowCompOutput::LoadSurfaceData(CConfig *config, CGeometry *geometry, CSolver **solver, unsigned long iPoint, unsigned short iMarker, unsigned long iVertex){
 
+  SetVolumeOutputValue("NODAL_FORCE_X", iPoint, solver[FLOW_SOL]->GetNodalForce(iMarker, iVertex, 0));
+  SetVolumeOutputValue("NODAL_FORCE_Y", iPoint, solver[FLOW_SOL]->GetNodalForce(iMarker, iVertex, 1));
+  if (nDim == 3)
+    SetVolumeOutputValue("NODAL_FORCE_Z", iPoint, solver[FLOW_SOL]->GetNodalForce(iMarker, iVertex, 2));
+  
   if ((config->GetKind_Solver() == NAVIER_STOKES) || (config->GetKind_Solver()  == RANS)) {
     SetVolumeOutputValue("SKIN_FRICTION-X", iPoint, solver[FLOW_SOL]->GetCSkinFriction(iMarker, iVertex, 0));
     SetVolumeOutputValue("SKIN_FRICTION-Y", iPoint, solver[FLOW_SOL]->GetCSkinFriction(iMarker, iVertex, 1));
@@ -675,7 +685,7 @@ void CFlowCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
 
   /*--- Set the analyse surface history values --- */
 
-  SetAnalyzeSurface(flow_solver, geometry, config, false);
+ SetAnalyzeSurface(flow_solver, geometry, config, false);
 
   /*--- Set aeroydnamic coefficients --- */
 

@@ -206,6 +206,10 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
       CSkinFriction[iMarker][iDim] = new su2double[nVertex[iMarker]]();
     }
   }
+  
+  /*--- Allocate nodal forces ---*/
+   
+  Alloc3D(nMarker, nVertex, nDim, Nodal_Force);
 
   /*--- Store the values of the temperature and the heat flux density at the boundaries,
    used for coupling with a solid donor cell ---*/
@@ -475,6 +479,15 @@ CFVMFlowSolverBase<V, R>::~CFVMFlowSolverBase() {
       delete[] HeatConjugateVar[iMarker];
     }
     delete[] HeatConjugateVar;
+  }
+
+  if (Nodal_Force !=nullptr) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
+        delete [] Nodal_Force[iMarker][iVertex];
+      delete [] Nodal_Force[iMarker];
+    }
+    delete [] Nodal_Force;
   }
 
   delete nodes;
