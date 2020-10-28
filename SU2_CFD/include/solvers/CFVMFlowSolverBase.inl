@@ -206,6 +206,10 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
       CSkinFriction[iMarker][iDim] = new su2double[nVertex[iMarker]]();
     }
   }
+  
+  /*--- Allocate nodal forces ---*/
+   
+  Alloc3D(nMarker, nVertex, nDim, Nodal_Force);
 
   /*--- Store the values of the temperature and the heat flux density at the boundaries,
    used for coupling with a solid donor cell ---*/
@@ -475,6 +479,15 @@ CFVMFlowSolverBase<V, R>::~CFVMFlowSolverBase() {
       delete[] HeatConjugateVar[iMarker];
     }
     delete[] HeatConjugateVar;
+  }
+
+  if (Nodal_Force !=nullptr) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
+        delete [] Nodal_Force[iMarker][iVertex];
+      delete [] Nodal_Force[iMarker];
+    }
+    delete [] Nodal_Force;
   }
 
   delete nodes;
@@ -1348,7 +1361,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
 
   SurfaceInvCoeff.setZero();
   SurfaceCoeff.setZero();
-
+  
   /*--- Loop over the Euler and Navier-Stokes markers ---*/
 
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
@@ -1385,6 +1398,8 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
         iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
 
         Pressure = nodes->GetPressure(iPoint);
+        su2double *Adjoint_Str = new su2double[nDim];
+        for (iDim = 0; iDim < nDim; iDim++) Adjoint_Str[iDim] = nodes->GetAdjoint_Str(iPoint,iDim);
 
         CPressure[iMarker][iVertex] = (Pressure - RefPressure) * factor * RefArea;
 
@@ -1418,7 +1433,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
           su2double Force[MAXNDIM] = {0.0};
           for (iDim = 0; iDim < nDim; iDim++) {
             Force[iDim] = -(Pressure - Pressure_Inf) * Normal[iDim] * factor * AxiFactor;
-            ForceInviscid[iDim] += Force[iDim];
+            ForceInviscid[iDim] += Force[iDim] * Adjoint_Str[iDim];
           }
 
           /*--- Moment with respect to the reference axis ---*/
@@ -1436,6 +1451,8 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
           MomentZ_Force[0] += (-Force[0] * Coord[1]);
           MomentZ_Force[1] += (Force[1] * Coord[0]);
         }
+       
+        delete [] Adjoint_Str;
       }
 
       /*--- Project forces and store the non-dimensional coefficients ---*/

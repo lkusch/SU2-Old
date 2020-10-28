@@ -120,6 +120,8 @@ protected:
   su2double Global_Delta_Time = 0.0, /*!< \brief Time-step for TIME_STEPPING time marching strategy. */
   Global_Delta_UnstTimeND = 0.0;     /*!< \brief Unsteady time step for the dual time strategy. */
 
+  su2double ***Nodal_Force = nullptr; /*!< \brief Nodal force (pressure and viscous) for each boundary and vertex. */
+
   /*--- Turbomachinery Solver Variables ---*/
 
   su2double ***AverageFlux = nullptr,
@@ -1657,5 +1659,24 @@ public:
    * \brief The Euler and NS solvers support MPI+OpenMP (except the BC bits).
    */
   inline bool GetHasHybridParallel() const final { return true; }
+
+  /*!
+  * \param[in] val_marker - Surface marker where the flow direction is set.
+  * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the flow direction is set.
+  * \param[in] val_dim - The component of the nodal force to be set
+  * \param[in] val_nodalforce - The component of the nodal force.
+  */
+  inline void SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce) {
+    for (unsigned short iDim = 0; iDim < nDim; iDim++){
+      Nodal_Force[val_marker][val_vertex][iDim] = val_nodalforce[iDim];
+    }
+  }
+
+  /*!
+  * \param[in] val_marker - Surface marker where the force is computed.
+  * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the force is evaluated.
+  * \return Value of the nodel forces (pressure + viscous).
+  */
+  inline su2double GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim) { return Nodal_Force[val_marker][val_vertex][val_dim]; }
 
 };

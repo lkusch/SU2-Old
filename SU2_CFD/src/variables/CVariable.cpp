@@ -59,6 +59,8 @@ CVariable::CVariable(unsigned long npoint, unsigned long ndim, unsigned long nva
 
   Solution_Old.resize(nPoint,nVar) = su2double(0.0);
 
+  Adjoint_Str.resize(nPoint,nDim) = su2double(0.0);
+
   if (config->GetTime_Marching() != NO) {
     Solution_time_n.resize(nPoint,nVar);
     Solution_time_n1.resize(nPoint,nVar);

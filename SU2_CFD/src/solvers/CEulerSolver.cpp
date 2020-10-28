@@ -226,6 +226,10 @@ CEulerSolver::CEulerSolver(CGeometry *geometry, CConfig *config,
 
   Alloc2D(nMarker, nVertex, ActDisk_DeltaT);
 
+  /*--- Allocate nodal forces ---*/
+   
+  Alloc3D(nMarker, nVertex, nDim, Nodal_Force);
+ 
   /*--- Supersonic coefficients ---*/
 
   CEquivArea_Inv = new su2double[nMarker];
@@ -665,6 +669,14 @@ CEulerSolver::~CEulerSolver(void) {
     delete [] CkOutflow2;
   }
 
+  if (Nodal_Force !=nullptr) {
+    for (iMarker = 0; iMarker < nMarker; iMarker++) {
+      for (iVertex = 0; iVertex < nVertex[iMarker]; iVertex++)
+        delete [] Nodal_Force[iMarker][iVertex];
+      delete [] Nodal_Force[iMarker];
+    }
+    delete [] Nodal_Force;
+  }
 }
 
 void CEulerSolver::InitTurboContainers(CGeometry *geometry, CConfig *config){

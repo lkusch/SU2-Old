@@ -421,6 +421,10 @@ void CAdjFlowIncOutput::SetVolumeOutputFields(CConfig *config){
     AddVolumeOutput("SENSITIVITY-Z", "Sensitivity_z", "SENSITIVITY", "z-component of the sensitivity vector");
   /// DESCRIPTION: Sensitivity in normal direction.
   AddVolumeOutput("SENSITIVITY", "Surface_Sensitivity", "SENSITIVITY", "sensitivity in normal direction");
+  /// DESCRIPTION: Adjoint_Str is needed KRATOS fsi interface
+  AddVolumeOutput("ADJOINT_STR-X", "Adjoint_Str_x", "SENSITIVITY", "x-component of Adjoint_Str");
+  AddVolumeOutput("ADJOINT_STR-Y", "Adjoint_Str_y", "SENSITIVITY", "y-component of Adjoint_Str");
+  if (nDim == 3) AddVolumeOutput("ADJOINT_STR-Z", "Adjoint_Str_z", "SENSITIVITY", "z-component of Adjoint_Str");
   /// END_GROUP
 
 }
@@ -514,6 +518,11 @@ void CAdjFlowIncOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSo
   SetVolumeOutputValue("SENSITIVITY-Y", iPoint, Node_AdjFlow->GetSensitivity(iPoint, 1));
   if (nDim == 3)
     SetVolumeOutputValue("SENSITIVITY-Z", iPoint, Node_AdjFlow->GetSensitivity(iPoint, 2));
+
+  SetVolumeOutputValue("ADJOINT_STR-X", iPoint, Node_AdjFlow->GetAdjoint_Str(iPoint, 0));
+  SetVolumeOutputValue("ADJOINT_STR-Y", iPoint, Node_AdjFlow->GetAdjoint_Str(iPoint, 1));
+  if (nDim == 3)
+    SetVolumeOutputValue("ADJOINT_STR-Z", iPoint, Node_AdjFlow->GetAdjoint_Str(iPoint, 2));
 
 }
 

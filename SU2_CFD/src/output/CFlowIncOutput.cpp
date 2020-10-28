@@ -392,6 +392,12 @@ void CFlowIncOutput::SetVolumeOutputFields(CConfig *config){
 
   // Primitive variables
   AddVolumeOutput("PRESSURE_COEFF", "Pressure_Coefficient", "PRIMITIVE", "Pressure coefficient");
+  
+  AddVolumeOutput("NODAL_FORCE_X", "Nodal_Force_X",         "PRIMITIVE", "x-component of nodal force vector");
+  AddVolumeOutput("NODAL_FORCE_Y", "Nodal_Force_Y",         "PRIMITIVE", "y-component of nodal force vector");
+  if (nDim == 3)
+    AddVolumeOutput("NODAL_FORCE_Z", "Nodal_Force_Z",       "PRIMITIVE", "z-component of nodal force vector");
+  
   AddVolumeOutput("DENSITY",        "Density",              "PRIMITIVE", "Density");
 
   if (config->GetKind_Solver() == INC_RANS || config->GetKind_Solver() == INC_NAVIER_STOKES){
@@ -626,6 +632,11 @@ void CFlowIncOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolve
 }
 
 void CFlowIncOutput::LoadSurfaceData(CConfig *config, CGeometry *geometry, CSolver **solver, unsigned long iPoint, unsigned short iMarker, unsigned long iVertex){
+  
+  SetVolumeOutputValue("NODAL_FORCE_X", iPoint, solver[FLOW_SOL]->GetNodalForce(iMarker, iVertex, 0));
+  SetVolumeOutputValue("NODAL_FORCE_Y", iPoint, solver[FLOW_SOL]->GetNodalForce(iMarker, iVertex, 1));
+  if (nDim == 3)
+    SetVolumeOutputValue("NODAL_FORCE_Z", iPoint, solver[FLOW_SOL]->GetNodalForce(iMarker, iVertex, 2));
 
   if ((config->GetKind_Solver() == INC_NAVIER_STOKES) || (config->GetKind_Solver()  == INC_RANS)) {
     SetVolumeOutputValue("SKIN_FRICTION-X", iPoint, solver[FLOW_SOL]->GetCSkinFriction(iMarker, iVertex, 0));

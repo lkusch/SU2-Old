@@ -4537,6 +4537,21 @@ public:
    */
   inline virtual bool GetHasHybridParallel() const { return false; }
 
+  /*!
+  * \param[in] val_marker - Surface marker where the flow direction is set.
+  * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the flow direction is set.
+  * \param[in] val_dim - The component of the nodal force to be set
+  * \param[in] val_nodalforce - The component of the nodal force.
+  */
+  inline virtual void SetNodalForce(unsigned short val_marker, unsigned long val_vertex, su2double* val_nodalforce) {}
+
+  /*!
+  * \param[in] val_marker - Surface marker where the force is computed.
+  * \param[in] val_vertex - Vertex of the marker <i>val_marker</i> where the force is evaluated.
+  * \return Value of the nodel forces (pressure + viscous).
+  */
+  inline virtual su2double GetNodalForce(unsigned short val_marker, unsigned long val_vertex, unsigned short val_dim) { return 0.0; }
+
 protected:
   /*!
    * \brief Allocate the memory for the verification solution, if necessary.
