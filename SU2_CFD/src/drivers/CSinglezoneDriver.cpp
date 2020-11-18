@@ -160,14 +160,13 @@ void CSinglezoneDriver::Run() {
   iteration_container[ZONE_0][INST_0]->Solve(output_container[ZONE_0], integration_container, geometry_container, solver_container,
         numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, INST_0);
 
-  /*--- Compute nodal forces and set them in the solver ---*/
   for (iMarker_Monitoring = 0; iMarker_Monitoring < config_container[ZONE_0]->GetnMarker_Monitoring(); iMarker_Monitoring++) {
     for (iMarker = 0; iMarker < config_container[ZONE_0]->GetnMarker_All(); iMarker++) {
        Monitoring_Tag = config_container[ZONE_0]->GetMarker_Monitoring_TagBound(iMarker_Monitoring);
        Marker_Tag = config_container[ZONE_0]->GetMarker_All_TagBound(iMarker);
        if (Marker_Tag == Monitoring_Tag) {
-         for (iVertex = 0; iVertex < geometry_container[ZONE_0][INST_0][MESH_0]->nVertex[iMarker_Monitoring]; iVertex++) {
-           ComputeVertexForces(iMarker_Monitoring, iVertex);
+         for (iVertex = 0; iVertex < geometry_container[ZONE_0][INST_0][MESH_0]->nVertex[iMarker]; iVertex++) {
+           ComputeVertexForces(iMarker, iVertex);
            solver_container[ZONE_0][INST_0][MESH_0][FLOW_SOL]->SetNodalForce(iMarker, iVertex, PyWrapNodalForce);
          }
        }
