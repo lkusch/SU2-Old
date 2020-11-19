@@ -2089,6 +2089,9 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
         iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
         iPointNormal = geometry->vertex[iMarker][iVertex]->GetNormal_Neighbor();
 
+        su2double *Adjoint_Str = new su2double[nDim];
+        for (iDim = 0; iDim < nDim; iDim++) Adjoint_Str[iDim] = nodes->GetAdjoint_Str(iPoint,iDim);        
+
         Coord = geometry->nodes->GetCoord(iPoint);
         Coord_Normal = geometry->nodes->GetCoord(iPointNormal);
 
@@ -2239,7 +2242,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
           su2double Force[MAXNDIM] = {0.0}, MomentDist[MAXNDIM] = {0.0};
           for (iDim = 0; iDim < nDim; iDim++) {
             Force[iDim] = TauElem[iDim] * Area * factor * AxiFactor;
-            ForceViscous[iDim] += Force[iDim];
+            ForceViscous[iDim] += Force[iDim] * Adjoint_Str[iDim];
             MomentDist[iDim] = Coord[iDim] - Origin[iDim];
           }
 
@@ -2261,6 +2264,8 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
           HF_Visc[iMarker] += HeatFlux[iMarker][iVertex] * Area;
           MaxHF_Visc[iMarker] += pow(HeatFlux[iMarker][iVertex], MaxNorm);
         }
+
+        delete [] Adjoint_Str;        
       }
 
       /*--- Project forces and store the non-dimensional coefficients ---*/
