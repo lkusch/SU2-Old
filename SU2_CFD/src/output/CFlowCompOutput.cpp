@@ -422,6 +422,11 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
   if (config->GetTime_Domain()){
     SetTimeAveragedFields();
   }
+
+  /// DESCRIPTION: Adjoint_Str is needed KRATOS fsi interface
+  AddVolumeOutput("ADJOINT_STR-X", "Adjoint_Str_x", "SENSITIVITY", "x-component of Adjoint_Str");
+  AddVolumeOutput("ADJOINT_STR-Y", "Adjoint_Str_y", "SENSITIVITY", "y-component of Adjoint_Str");
+  if (nDim == 3) AddVolumeOutput("ADJOINT_STR-Z", "Adjoint_Str_z", "SENSITIVITY", "z-component of Adjoint_Str");  
 }
 
 void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolver **solver, unsigned long iPoint){
@@ -562,6 +567,11 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
   if (config->GetTime_Domain()){
     LoadTimeAveragedData(iPoint, Node_Flow);
   }
+
+  SetVolumeOutputValue("ADJOINT_STR-X", iPoint, Node_Flow->GetAdjoint_Str(iPoint, 0));
+  SetVolumeOutputValue("ADJOINT_STR-Y", iPoint, Node_Flow->GetAdjoint_Str(iPoint, 1));
+  if (nDim == 3)
+    SetVolumeOutputValue("ADJOINT_STR-Z", iPoint, Node_Flow->GetAdjoint_Str(iPoint, 2));
 }
 
 void CFlowCompOutput::LoadSurfaceData(CConfig *config, CGeometry *geometry, CSolver **solver, unsigned long iPoint, unsigned short iMarker, unsigned long iVertex){
