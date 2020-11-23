@@ -1432,7 +1432,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
 
           su2double Force[MAXNDIM] = {0.0};
           for (iDim = 0; iDim < nDim; iDim++) {
-            Force[iDim] = -(Pressure - Pressure_Inf) * Normal[iDim] * factor * AxiFactor;
+            Force[iDim] = -(Pressure - Pressure_Inf) * Normal[iDim];
             ForceInviscid[iDim] += Force[iDim] * Adjoint_Str[iDim];
           }
 
@@ -1460,7 +1460,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
       if (Monitoring == YES) {
         if (Boundary != NEARFIELD_BOUNDARY) {
           if (nDim == 2) {
-            InvCoeff.CD[iMarker] = ForceInviscid[0] * cos(Alpha) + ForceInviscid[1] * sin(Alpha);
+            InvCoeff.CD[iMarker] = ForceInviscid[0]  + ForceInviscid[1];
             InvCoeff.CL[iMarker] = -ForceInviscid[0] * sin(Alpha) + ForceInviscid[1] * cos(Alpha);
             InvCoeff.CEff[iMarker] = InvCoeff.CL[iMarker] / (InvCoeff.CD[iMarker] + EPS);
             InvCoeff.CMz[iMarker] = MomentInviscid[2];
@@ -2241,7 +2241,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
 
           su2double Force[MAXNDIM] = {0.0}, MomentDist[MAXNDIM] = {0.0};
           for (iDim = 0; iDim < nDim; iDim++) {
-            Force[iDim] = TauElem[iDim] * Area * factor * AxiFactor;
+            Force[iDim] = TauElem[iDim] * Area;
             ForceViscous[iDim] += Force[iDim] * Adjoint_Str[iDim];
             MomentDist[iDim] = Coord[iDim] - Origin[iDim];
           }
@@ -2272,7 +2272,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
 
       if (Monitoring == YES) {
         if (nDim == 2) {
-          ViscCoeff.CD[iMarker] = ForceViscous[0] * cos(Alpha) + ForceViscous[1] * sin(Alpha);
+          ViscCoeff.CD[iMarker] = ForceViscous[0] + ForceViscous[1];
           ViscCoeff.CL[iMarker] = -ForceViscous[0] * sin(Alpha) + ForceViscous[1] * cos(Alpha);
           ViscCoeff.CEff[iMarker] = ViscCoeff.CL[iMarker] / (ViscCoeff.CD[iMarker] + EPS);
           ViscCoeff.CFx[iMarker] = ForceViscous[0];
