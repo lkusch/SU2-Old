@@ -3629,6 +3629,15 @@ void CIncEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConf
       index = counter*Restart_Vars[1] + skipVars;
       for (iVar = 0; iVar < nVar_Restart; iVar++) Solution[iVar] = Restart_Data[index+iVar];
       nodes->SetSolution(iPoint_Local,Solution);
+      
+      /*--- Read Adjoint_Str (KRATOS) from restart file. ---*/ 
+
+      su2double *Adjoint_Str = new su2double[nDim];
+      index = counter*Restart_Vars[1] + Restart_Vars[1] - nDim;
+      for (iDim = 0; iDim < nDim; iDim++) Adjoint_Str[iDim] = Restart_Data[index+iDim];
+      nodes->SetAdjoint_Str(iPoint_Local, Adjoint_Str);
+      delete [] Adjoint_Str;
+
       iPoint_Global_Local++;
 
       /*--- For dynamic meshes, read in and store the

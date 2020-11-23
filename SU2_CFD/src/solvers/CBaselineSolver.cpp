@@ -413,13 +413,6 @@ void CBaselineSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConf
       for (iVar = 0; iVar < nVar; iVar++) Solution[iVar] = Restart_Data[index+iVar];
       nodes->SetSolution(iPoint_Local,Solution);
 
-      /*--- Read Adjoint_Str (KRATOS) from restart file. ---*/ 
-
-      su2double *Adjoint_Str = new su2double[nDim];
-      for (iDim = 0; iDim < nDim; iDim++) Adjoint_Str[iDim] = Restart_Data[index+nVar+iDim];
-      nodes->SetAdjoint_Str(iPoint_Local, Adjoint_Str);
-      delete [] Adjoint_Str;
-
       /*--- For dynamic meshes, read in and store the
        grid coordinates and grid velocities for each node. ---*/
 

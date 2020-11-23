@@ -10153,6 +10153,14 @@ void CEulerSolver::LoadRestart(CGeometry **geometry, CSolver ***solver, CConfig 
       index = counter*Restart_Vars[1] + skipVars;
       for (iVar = 0; iVar < nVar; ++iVar)
         nodes->SetSolution(iPoint_Local, iVar, Restart_Data[index+iVar]);
+      
+      /*--- Read Adjoint_Str (KRATOS) from restart file. ---*/ 
+
+      su2double *Adjoint_Str = new su2double[nDim];
+      index = counter*Restart_Vars[1] + Restart_Vars[1] - nDim;
+      for (iDim = 0; iDim < nDim; iDim++) Adjoint_Str[iDim] = Restart_Data[index+iDim];
+      nodes->SetAdjoint_Str(iPoint_Local, Adjoint_Str);
+      delete [] Adjoint_Str;
 
       /*--- For dynamic meshes, read in and store the
        grid coordinates and grid velocities for each node. ---*/
