@@ -219,7 +219,7 @@ def f (dvs, function_list, update_design, config, state=None):
     config.OPT_OBJECTIVE = {}
 
     for function in function_list:
-        config.OPT_OBJECTIVE[function] =  {'SCALE' : 1.0, 'OBJTYPE' : 'DEFAULT', 'VALUE' : 0.0, 'MARKER' : 'airfoil'}
+        config.OPT_OBJECTIVE[function] =  {'SCALE' : 1.0, 'OBJTYPE' : 'DEFAULT', 'VALUE' : 0.0, 'MARKER' : config["MARKER_MONITORING"][0]}
 
 
     if update_design:
@@ -231,20 +231,16 @@ def f (dvs, function_list, update_design, config, state=None):
         config['DV_VALUE_NEW'] = dvs
         config['DV_VALUE_OLD'] = 0.0
 
-    # unpack config and state 
+    # unpack config and state
     config.unpack_dvs(dvs)
     state = su2io.State(state)
-    
-    def_objs = config['OPT_OBJECTIVE']
-    objectives = def_objs.keys()
-    vals_out = []
-    for i_obj,this_obj in enumerate(objectives):
-        scale = def_objs[this_obj]['SCALE']
 
-        func = su2func(this_obj,config,state)*scale
+    vals_out = []
+    # Loop over function to maintain list order
+    for function in function_list:
+        func = su2func(function,config,state)*config['OPT_OBJECTIVE'][function]['SCALE']
         vals_out.append(func)
 
-         
     return vals_out
 
 def df(dvs, function_list, update_design, config, state=None):
