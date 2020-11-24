@@ -193,6 +193,11 @@ class Project(object):
 
             # start design
             design = self.new_design(konfig)
+
+            # Update configs if changed
+            design.config["WRT_SOL_FREQ"] = self.config["WRT_SOL_FREQ"]
+            design.config["RESTART_SOL"] = self.config["RESTART_SOL"]            
+            design.config["CONV_RESIDUAL_MINVAL"] = self.config["CONV_RESIDUAL_MINVAL"]            
             
             if config.get('CONSOLE','VERBOSE') == 'VERBOSE':
                 print(os.path.join(self.folder,design.folder))
