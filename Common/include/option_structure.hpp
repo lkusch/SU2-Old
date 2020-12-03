@@ -1471,7 +1471,8 @@ enum ENUM_OBJECTIVE {
   REFERENCE_NODE = 61,          /*!< \brief Objective function defined as the difference of a particular node respect to a reference position. */
   VOLUME_FRACTION = 62,         /*!< \brief Volume average physical density, for material-based topology optimization applications. */
   TOPOL_DISCRETENESS = 63,      /*!< \brief Measure of the discreteness of the current topology. */
-  TOPOL_COMPLIANCE = 64         /*!< \brief Measure of the discreteness of the current topology. */
+  TOPOL_COMPLIANCE = 64,         /*!< \brief Measure of the discreteness of the current topology. */
+  UNIFORMITY_INDEX = 65/*!< \brief Unifomity index objective function definition. */
 };
 static const MapType<string, ENUM_OBJECTIVE> Objective_Map = {
   MakePair("DRAG", DRAG_COEFFICIENT)
@@ -1522,6 +1523,7 @@ static const MapType<string, ENUM_OBJECTIVE> Objective_Map = {
   MakePair("VOLUME_FRACTION", VOLUME_FRACTION)
   MakePair("TOPOL_DISCRETENESS", TOPOL_DISCRETENESS)
   MakePair("TOPOL_COMPLIANCE", TOPOL_COMPLIANCE)
+  MakePair("UNIFORMITY_INDEX", UNIFORMITY_INDEX)
 };
 
 /*!

@@ -2213,6 +2213,9 @@ void CIncEulerSolver::Evaluate_ObjFunc(CConfig *config) {
     case SURFACE_PRESSURE_DROP:
       Total_ComboObj+=Weight_ObjFunc*config->GetSurface_PressureDrop(0);
       break;
+    case UNIFORMITY_INDEX:
+      Total_ComboObj+=Weight_ObjFunc*config->GetSurface_UniformityIndex(1);
+      break;
     default:
       break;
   }

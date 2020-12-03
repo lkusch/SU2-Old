@@ -367,6 +367,7 @@ private:
   su2double *Surface_MomentumDistortion;     /*!< \brief Integral measure of the streamwise uniformity (relative to plug flow) at the boundaries (non-dim). */
   su2double *Surface_TotalTemperature;       /*!< \brief Total temperature at the boundaries. */
   su2double *Surface_TotalPressure;          /*!< \brief Total pressure at the boundaries. */
+  su2double *Surface_UniformityIndex;        /*!< \brief Flow uniformity index in surface. */
   su2double *Surface_PressureDrop;           /*!< \brief Pressure drop between boundaries. */
   su2double *Surface_DC60;                   /*!< \brief Specified surface DC60 for nacelle boundaries. */
   su2double *Surface_IDC;                    /*!< \brief Specified IDC for nacelle boundaries. */
@@ -7524,6 +7525,13 @@ public:
   void SetSurface_TotalPressure(unsigned short val_marker, su2double val_surface_totalpressure) { Surface_TotalPressure[val_marker] = val_surface_totalpressure; }
 
   /*!
+   * \brief Set the flow uniformity index at the surface.
+   * \param[in] val_marker - Index corresponding to the outlet boundary.
+   * \param[in] val_surface_uniformityindex - Value of the total pressure.
+   */
+  void SetSurface_UniformityIndex(unsigned short val_marker, su2double val_surface_uniformityindex) { Surface_UniformityIndex[val_marker] = val_surface_uniformityindex; }
+
+  /*!
    * \brief Set the pressure drop between two surfaces.
    * \param[in] val_marker - Index corresponding to the outlet boundary.
    * \param[in] val_surface_pressuredrop - Value of the pressure drop.
@@ -7788,6 +7796,13 @@ public:
    * \return The total pressure.
    */
   su2double GetSurface_TotalPressure(unsigned short val_marker) const { return Surface_TotalPressure[val_marker]; }
+
+  /*!
+   * \brief Get the uniformity index at a given surface.
+   * \param[in] val_index - Index corresponding to the outlet boundary.
+   * \return The total pressure.
+   */
+  su2double GetSurface_UniformityIndex(unsigned short val_marker) const { return Surface_UniformityIndex[val_marker]; }
 
   /*!
    * \brief Get the pressure drop between two surfaces.

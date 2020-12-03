@@ -66,7 +66,9 @@ void CFlowOutput::AddAnalyzeSurfaceOutput(CConfig *config){
   /// DESCRIPTION: Average total pressure
   AddHistoryOutput("AVG_TOTALPRESS",           "Avg_TotalPress",            ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Total average total pressure on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
   /// DESCRIPTION: Pressure drop
-  AddHistoryOutput("PRESSURE_DROP",            "Pressure_Drop",             ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Total pressure drop on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
+  AddHistoryOutput("SURFACE_PRESSURE_DROP",            "Pressure_Drop",             ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Total pressure drop on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
+  /// DESCRIPTION: Uniformity Index
+  AddHistoryOutput("UNIFORMITY_INDEX",         "Uniformity_Index",          ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Uniformity Index on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
   /// END_GROUP
 
 
@@ -103,7 +105,9 @@ void CFlowOutput::AddAnalyzeSurfaceOutput(CConfig *config){
   /// DESCRIPTION: Average total pressure
   AddHistoryOutputPerSurface("AVG_TOTALPRESS",           "Avg_TotalPress",            ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
   /// DESCRIPTION: Pressure drop
-  AddHistoryOutputPerSurface("PRESSURE_DROP",            "Pressure_Drop",             ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
+  AddHistoryOutputPerSurface("SURFACE_PRESSURE_DROP",            "Pressure_Drop",             ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
+  /// DESCRIPTION: Uniformity index
+  AddHistoryOutputPerSurface("UNIFORMITY_INDEX",         "Uniformity_Index",          ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
   /// END_GROUP
 
 }
@@ -145,6 +149,8 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   su2double  *Surface_VelocityIdeal     = new su2double[nMarker];
   su2double  *Surface_Area              = new su2double[nMarker];
   su2double  *Surface_MassFlow_Abs      = new su2double[nMarker];
+  su2double  *Surface_UniformityIndex   = new su2double[nMarker];
+  su2double  *Surface_AreaAvVelocity    = new su2double[nMarker];
 
   su2double  Tot_Surface_MassFlow          = 0.0;
   su2double  Tot_Surface_Mach              = 0.0;
@@ -160,6 +166,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   su2double  Tot_Momentum_Distortion       = 0.0;
   su2double  Tot_SecondOverUniformity      = 0.0;
   su2double  Tot_Surface_PressureDrop      = 0.0;
+  su2double  Tot_Surface_UniformityIndex   = 0.0;
 
   /*--- Compute the numerical fan face Mach number, and the total area of the inflow ---*/
 
@@ -179,6 +186,8 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
     Surface_VelocityIdeal[iMarker]     = 0.0;
     Surface_Area[iMarker]              = 0.0;
     Surface_MassFlow_Abs[iMarker]      = 0.0;
+    Surface_UniformityIndex[iMarker]   = 0.0;
+    Surface_AreaAvVelocity[iMarker] = 0.0;
 
     if (config->GetMarker_All_Analyze(iMarker) == YES) {
 
@@ -269,16 +278,61 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
           Surface_Pressure[iMarker]         += Pressure*Weight;
           Surface_TotalTemperature[iMarker] += TotalTemperature*Weight;
           Surface_TotalPressure[iMarker]    += TotalPressure*Weight;
-
           /*--- For now, always used the area to weight the uniformities. ---*/
 
           Weight = abs(Area);
 
           Surface_StreamVelocity2[iMarker]   += Vn2*Weight;
           Surface_TransvVelocity2[iMarker]   += Vtang2*Weight;
+          Surface_AreaAvVelocity[iMarker]    += Vn*Weight;
 
         }
       }
+      
+      Surface_AreaAvVelocity[iMarker] = Surface_AreaAvVelocity[iMarker]/fabs(Surface_Area[iMarker]);
+
+      for (iVertex = 0; iVertex < geometry->nVertex[iMarker]; iVertex++) {
+        iPoint = geometry->vertex[iMarker][iVertex]->GetNode();
+
+        if (geometry->nodes->GetDomain(iPoint)) {
+
+          geometry->vertex[iMarker][iVertex]->GetNormal(Vector);
+          
+          if (axisymmetric) {
+            if (geometry->nodes->GetCoord(iPoint, 1) != 0.0)
+              AxiFactor = 2.0*PI_NUMBER*geometry->nodes->GetCoord(iPoint, 1);
+            else {
+              /*--- Find the point "above" by finding the neighbor of iPoint that is also a vertex of iMarker. ---*/
+              AxiFactor = 0.0;
+              for (unsigned short iNeigh = 0; iNeigh < geometry->nodes->GetnPoint(iPoint); ++iNeigh) {
+                auto jPoint = geometry->nodes->GetPoint(iPoint, iNeigh);
+                if (geometry->nodes->GetVertex(jPoint, iMarker) >= 0) {
+                  /*--- Not multiplied by two since we need to half the y coordinate. ---*/
+                  AxiFactor = PI_NUMBER * geometry->nodes->GetCoord(jPoint, 1);
+                  break;
+                }
+              }
+            }
+          } else {
+            AxiFactor = 1.0;
+          }
+
+          Velocity2 = 0.0; Area = 0.0; MassFlow = 0.0; Vn = 0.0; 
+
+          for (iDim = 0; iDim < nDim; iDim++) {
+            Area += (Vector[iDim] * AxiFactor) * (Vector[iDim] * AxiFactor);
+            Velocity[iDim] = solver->GetNodes()->GetVelocity(iPoint,iDim);
+            Vn += Velocity[iDim] * Vector[iDim] * AxiFactor;
+          }
+
+          Area       = sqrt (Area);
+          if (AxiFactor == 0.0) Vn = 0.0; else Vn /= Area;
+	  
+	  Surface_UniformityIndex[iMarker] += fabs(Vn-Surface_AreaAvVelocity[iMarker])*fabs(Area);
+        }
+      }
+   
+      Surface_UniformityIndex[iMarker] = 1-Surface_UniformityIndex[iMarker]/(2*fabs(Surface_AreaAvVelocity[iMarker])*fabs(Surface_Area[iMarker]));
     }
   }
 
@@ -297,6 +351,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   su2double *Surface_TotalPressure_Local     = new su2double [nMarker_Analyze];
   su2double *Surface_Area_Local              = new su2double [nMarker_Analyze];
   su2double *Surface_MassFlow_Abs_Local      = new su2double [nMarker_Analyze];
+  su2double *Surface_UniformityIndex_Local   = new su2double [nMarker_Analyze];
 
   su2double *Surface_MassFlow_Total          = new su2double [nMarker_Analyze];
   su2double *Surface_Mach_Total              = new su2double [nMarker_Analyze];
@@ -311,6 +366,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   su2double *Surface_TotalPressure_Total     = new su2double [nMarker_Analyze];
   su2double *Surface_Area_Total              = new su2double [nMarker_Analyze];
   su2double *Surface_MassFlow_Abs_Total      = new su2double [nMarker_Analyze];
+  su2double *Surface_UniformityIndex_Total   = new su2double [nMarker_Analyze];
 
   su2double *Surface_MomentumDistortion_Total = new su2double [nMarker_Analyze];
 
@@ -328,6 +384,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
     Surface_TotalPressure_Local[iMarker_Analyze]     = 0.0;
     Surface_Area_Local[iMarker_Analyze]              = 0.0;
     Surface_MassFlow_Abs_Local[iMarker_Analyze]      = 0.0;
+    Surface_UniformityIndex_Local[iMarker_Analyze]   = 0.0;
 
     Surface_MassFlow_Total[iMarker_Analyze]          = 0.0;
     Surface_Mach_Total[iMarker_Analyze]              = 0.0;
@@ -342,6 +399,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
     Surface_TotalPressure_Total[iMarker_Analyze]     = 0.0;
     Surface_Area_Total[iMarker_Analyze]              = 0.0;
     Surface_MassFlow_Abs_Total[iMarker_Analyze]      = 0.0;
+    Surface_UniformityIndex_Total[iMarker_Analyze]    = 0.0;
 
     Surface_MomentumDistortion_Total[iMarker_Analyze] = 0.0;
 
@@ -371,6 +429,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
           Surface_TotalPressure_Local[iMarker_Analyze]     += Surface_TotalPressure[iMarker];
           Surface_Area_Local[iMarker_Analyze]              += Surface_Area[iMarker];
           Surface_MassFlow_Abs_Local[iMarker_Analyze]      += Surface_MassFlow_Abs[iMarker];
+          Surface_UniformityIndex_Local[iMarker_Analyze]   += Surface_UniformityIndex[iMarker];
         }
 
       }
@@ -394,6 +453,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   SU2_MPI::Allreduce(Surface_TotalPressure_Local, Surface_TotalPressure_Total, nMarker_Analyze, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(Surface_Area_Local, Surface_Area_Total, nMarker_Analyze, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   SU2_MPI::Allreduce(Surface_MassFlow_Abs_Local, Surface_MassFlow_Abs_Total, nMarker_Analyze, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  SU2_MPI::Allreduce(Surface_UniformityIndex_Local, Surface_UniformityIndex_Total, nMarker_Analyze, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
 #else
 
@@ -411,6 +471,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
     Surface_TotalPressure_Total[iMarker_Analyze]     = Surface_TotalPressure_Local[iMarker_Analyze];
     Surface_Area_Total[iMarker_Analyze]              = Surface_Area_Local[iMarker_Analyze];
     Surface_MassFlow_Abs_Total[iMarker_Analyze]      = Surface_MassFlow_Abs_Local[iMarker_Analyze];
+    Surface_UniformityIndex_Total[iMarker_Analyze]   = Surface_UniformityIndex_Local[iMarker_Analyze];
   }
 
 #endif
@@ -530,8 +591,13 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
 
     su2double TotalPressure = Surface_TotalPressure_Total[iMarker_Analyze] * config->GetPressure_Ref();
     SetHistoryOutputPerSurfaceValue("AVG_TOTALPRESS", TotalPressure, iMarker_Analyze);
-    Tot_Surface_TotalPressure += TotalPressure;
+    if(iMarker_Analyze == 0) Tot_Surface_TotalPressure = TotalPressure;
     config->SetSurface_TotalPressure(iMarker_Analyze, TotalPressure);
+
+    su2double TotalUniformityIndex = Surface_UniformityIndex_Total[iMarker_Analyze];
+    SetHistoryOutputPerSurfaceValue("UNIFORMITY_INDEX", TotalUniformityIndex, iMarker_Analyze);
+    if(iMarker_Analyze == 1) Tot_Surface_UniformityIndex = TotalUniformityIndex;
+    config->SetSurface_UniformityIndex(iMarker_Analyze, TotalUniformityIndex);
 
   }
 
@@ -548,7 +614,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
       Pressure_Drop = (Surface_Pressure_Total[1]-Surface_Pressure_Total[0]) * config->GetPressure_Ref();
       config->SetSurface_PressureDrop(iMarker_Analyze, Pressure_Drop);
     }
-    SetHistoryOutputPerSurfaceValue("PRESSURE_DROP",  Pressure_Drop, iMarker_Analyze);
+    SetHistoryOutputPerSurfaceValue("SURFACE_PRESSURE_DROP",  Pressure_Drop, iMarker_Analyze);
     Tot_Surface_PressureDrop += Pressure_Drop;
   }
 
@@ -565,7 +631,8 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   SetHistoryOutputValue("SECONDARY_OVER_UNIFORMITY", Tot_SecondOverUniformity);
   SetHistoryOutputValue("AVG_TOTALTEMP", Tot_Surface_TotalTemperature);
   SetHistoryOutputValue("AVG_TOTALPRESS", Tot_Surface_TotalPressure);
-  SetHistoryOutputValue("PRESSURE_DROP",  Tot_Surface_PressureDrop);
+  SetHistoryOutputValue("SURFACE_PRESSURE_DROP",  Tot_Surface_PressureDrop);
+  SetHistoryOutputValue("UNIFORMITY_INDEX",  Tot_Surface_UniformityIndex);
 
   if ((rank == MASTER_NODE) && !config->GetDiscrete_Adjoint() && output) {
 
@@ -620,6 +687,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
       if (config->GetSystemMeasurements() == SI)      cout << setw(20) << "PT (Pa): " << setw(15) <<TotalPressure;
       else if (config->GetSystemMeasurements() == US) cout << setw(20) << "PT (psf): " << setw(15) <<TotalPressure;
 
+      cout << setw(20) << "UI : " << setw(15) << config->GetSurface_UniformityIndex(iMarker_Analyze);
       cout << endl;
 
       su2double Mach = config->GetSurface_Mach(iMarker_Analyze);
@@ -661,6 +729,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   delete [] Surface_TotalPressure_Local;
   delete [] Surface_Area_Local;
   delete [] Surface_MassFlow_Abs_Local;
+  delete [] Surface_UniformityIndex_Local;
 
   delete [] Surface_MassFlow_Total;
   delete [] Surface_Mach_Total;
@@ -676,6 +745,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   delete [] Surface_Area_Total;
   delete [] Surface_MassFlow_Abs_Total;
   delete [] Surface_MomentumDistortion_Total;
+  delete [] Surface_UniformityIndex_Total;
 
   delete [] Surface_MassFlow;
   delete [] Surface_Mach;
@@ -692,6 +762,8 @@ void CFlowOutput::SetAnalyzeSurface(CSolver *solver, CGeometry *geometry, CConfi
   delete [] Vector;
   delete [] Surface_VelocityIdeal;
   delete [] Surface_MassFlow_Abs;
+  delete [] Surface_AreaAvVelocity;
+  delete [] Surface_UniformityIndex;
 
   std::cout << std::resetiosflags(std::cout.flags());
 }
