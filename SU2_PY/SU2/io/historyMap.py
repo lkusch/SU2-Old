@@ -404,7 +404,7 @@ history_header_map = {'ADJOINT_DISP_X': {'DESCRIPTION': 'Root-mean square residu
                     'GROUP': 'D_EQUIVALENT_AREA',
                     'HEADER': 'd[CNearFieldOF]',
                     'TYPE': 'D_COEFFICIENT'},
- 'D_PRESSURE_DROP': {'DESCRIPTION': 'Derivative value',
+ 'D_SURFACE_PRESSURE_DROP': {'DESCRIPTION': 'Derivative value',
                      'GROUP': 'D_FLOW_COEFF',
                      'HEADER': 'd[Pressure_Drop]',
                      'TYPE': 'D_COEFFICIENT'},
@@ -683,7 +683,7 @@ history_header_map = {'ADJOINT_DISP_X': {'DESCRIPTION': 'Root-mean square residu
                   'GROUP': 'EQUIVALENT_AREA',
                   'HEADER': 'CNearFieldOF',
                   'TYPE': 'COEFFICIENT'},
- 'PRESSURE_DROP': {'DESCRIPTION': 'Total pressure drop on all markers set in '
+ 'SURFACE_PRESSURE_DROP': {'DESCRIPTION': 'Total pressure drop on all markers set in '
                                   'MARKER_ANALYZE',
                    'GROUP': 'FLOW_COEFF',
                    'HEADER': 'Pressure_Drop',
@@ -693,7 +693,7 @@ history_header_map = {'ADJOINT_DISP_X': {'DESCRIPTION': 'Root-mean square residu
               'GROUP': 'FIXED_CL',
               'HEADER': 'Previous_AOA',
               'TYPE': 'DEFAULT'},
- 'RADIAL_DISTORTION': {'DESCRIPTION': 'Radial distortion',
+ 'RADIAL_SURFACE_DISTORTION': {'DESCRIPTION': 'Radial distortion',
                        'GROUP': 'ENGINE_OUTPUT',
                        'HEADER': 'Radial_Distortion',
                        'TYPE': 'COEFFICIENT'},
@@ -1120,7 +1120,7 @@ history_header_map = {'ADJOINT_DISP_X': {'DESCRIPTION': 'Root-mean square residu
                          'GROUP': 'TAVG_D_EQUIVALENT_AREA',
                          'HEADER': 'dtavg[CNearFieldOF]',
                          'TYPE': 'TAVG_D_COEFFICIENT'},
- 'TAVG_D_PRESSURE_DROP': {'DESCRIPTION': 'weighted time average derivative '
+ 'TAVG_D_SURFACE_PRESSURE_DROP': {'DESCRIPTION': 'weighted time average derivative '
                                          'value',
                           'GROUP': 'TAVG_D_FLOW_COEFF',
                           'HEADER': 'dtavg[Pressure_Drop]',
@@ -1246,7 +1246,7 @@ history_header_map = {'ADJOINT_DISP_X': {'DESCRIPTION': 'Root-mean square residu
                        'GROUP': 'TAVG_EQUIVALENT_AREA',
                        'HEADER': 'tavg[CNearFieldOF]',
                        'TYPE': 'TAVG_COEFFICIENT'},
- 'TAVG_PRESSURE_DROP': {'DESCRIPTION': 'weighted time average value',
+ 'TAVG_SURFACE_PRESSURE_DROP': {'DESCRIPTION': 'weighted time average value',
                         'GROUP': 'TAVG_FLOW_COEFF',
                         'HEADER': 'tavg[Pressure_Drop]',
                         'TYPE': 'TAVG_COEFFICIENT'},
