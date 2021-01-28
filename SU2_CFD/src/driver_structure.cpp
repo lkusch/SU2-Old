@@ -8001,8 +8001,9 @@ void COneShotFluidDriver::Run(){
 
 void COneShotFluidDriver::RunBFGS(){
   su2double stepsize = config_container[ZONE_0]->GetStepSize();
+  unsigned short maxcounter = config_container[ZONE_0]->GetOneShotMaxCounter();
   unsigned short whilecounter = 0;
-  unsigned short nConvIter = 500; //Achtung vorher 500 // dann 2000
+  unsigned short nConvIter = 300; //Achtung vorher 500 // dann 2000
   unsigned short iterCount;
 
   if(ExtIter>config_container[ZONE_0]->GetOneShotStart()){
@@ -8025,6 +8026,9 @@ void COneShotFluidDriver::RunBFGS(){
         solver_container[iZone][MESH_0][ADJFLOW_SOL]->LoadMeshPoints(config_container[iZone], geometry_container[iZone][MESH_0]);
       }
     }
+    else{
+      if(config_container[ZONE_0]->GetnConstr()>0) UpdateMultiplier(1.0);
+    }
     if(ExtIter>config_container[ZONE_0]->GetOneShotStart()){
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
       ComputeDesignVarUpdate(stepsize);
@@ -8043,11 +8047,12 @@ void COneShotFluidDriver::RunBFGS(){
     stepsize=stepsize*0.5;
     whilecounter++;
   }
-  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe()));
+  while(ExtIter>config_container[ZONE_0]->GetOneShotStart()&&(!CheckFirstWolfe())&&whilecounter<maxcounter+1);
 
   if(ExtIter>=config_container[ZONE_0]->GetOneShotStart()){
       /*--- Update design variable ---*/
       UpdateDesignVariable();
+      if(config_container[ZONE_0]->GetnConstr()>0) StoreConstrFunction();
 
       /*---N_u---*/
       /*--- Projection of the gradient ---*/
@@ -9027,7 +9032,7 @@ void COneShotFluidDriver::ComputePreconditioner(){
     BCheck[iConstr][iConstr]=config_container[ZONE_0]->GetBCheckEpsilon();
     for (jConstr = 0; jConstr  < nConstr; jConstr++){
       for (iZone = 0; iZone < nZone; iZone++) {
-        BCheck[iConstr][jConstr]+=config_container[ZONE_0]->GetOneShotBeta()*solver_container[iZone][MESH_0][ADJFLOW_SOL]->MultiplyConstrDerivative(iConstr,jConstr);
+        BCheck[iConstr][jConstr]+=(1./config_container[ZONE_0]->GetMultiplierFactor(iConstr))*config_container[ZONE_0]->GetOneShotBeta()*solver_container[iZone][MESH_0][ADJFLOW_SOL]->MultiplyConstrDerivative(iConstr,jConstr);
       }
     }
   }
@@ -9150,8 +9155,9 @@ void COneShotFluidDriver::SetConstrFunction(){
 #endif
   unsigned short Kind_ConstrFunc;
   su2double FunctionValue = 0.0;
-  std::cout<<"Function Value: ";
+
   for (unsigned short iConstr = 0; iConstr < config_container[ZONE_0]->GetnConstr(); iConstr++){
+    if(iConstr==0) std::cout<<"Function Value: ";
     ConstrFunc[iConstr] = 0.0;
 
     Kind_ConstrFunc = config_container[ZONE_0]->GetKind_ConstrFunc(iConstr);
@@ -9215,8 +9221,8 @@ void COneShotFluidDriver::SetConstrFunction(){
     if (rank == MASTER_NODE){
       AD::RegisterOutput(ConstrFunc[iConstr]);
     }
+    if(iConstr==0) std::cout<<std::endl;
   }
-  std::cout<<std::endl;
 }
 
 void COneShotFluidDriver::UpdateMultiplier(su2double stepsize){
