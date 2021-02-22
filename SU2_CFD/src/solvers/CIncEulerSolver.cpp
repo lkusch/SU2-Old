@@ -286,7 +286,7 @@ void CIncEulerSolver::SetNondimensionalization(CConfig *config, unsigned short i
 
   /*--- Depending on the density model chosen, select a fluid model. ---*/
 
-  su2double *dummy_scalar;
+  su2double *dummy_scalar = nullptr;
   unsigned short n_scalars;
 
   switch (config->GetKind_FluidModel()) {
@@ -496,7 +496,9 @@ void CIncEulerSolver::SetNondimensionalization(CConfig *config, unsigned short i
       break;
   }
 
-  delete[] dummy_scalar;
+  if (dummy_scalar != nullptr){
+    delete[] dummy_scalar;
+  }
 
   Energy_FreeStreamND = FluidModel->GetStaticEnergy() + 0.5*ModVel_FreeStreamND*ModVel_FreeStreamND;
 

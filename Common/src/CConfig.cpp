@@ -1319,21 +1319,22 @@ void CConfig::SetConfig_Options() {
  
   addDoubleListOption("SCALAR_CLIPPING_MIN", nScalar_Clipping_Min, Scalar_Clipping_Min);
 
-  su2double default_ffd_bounds[] = {0.0, 0.0, 0.0,    1.0, 1.0, 1.0};
+  default_ffd_bounds[0] = 0.0, default_ffd_bounds[1] = 0.0, default_ffd_bounds[2] = 0.0;
+  default_ffd_bounds[3] = 1.0, default_ffd_bounds[4] = 1.0, default_ffd_bounds[5] = 1.0;
   addDoubleArrayOption("FFD_BOUNDS", 6, ffd_bounds, default_ffd_bounds);
 
   /*!\brief FLAMELET__THERMO_SYSTEM \n DESCRIPTION: Thermodynamic system for flamelet model */
   addEnumOption("FLAMELET_THERMO_SYSTEM", kind_flamelet_thermo_system, flamelet_thermo_system_map, ADIABATIC);
 
   /*!\brief FLAME_OFFSET \n DESCRIPTION: Offset for flame initialization using the flamelet model \ingroup Config*/
-  su2double default_flame_offset[]={0.0,0.0,0.0};
+  default_flame_offset[0] = 0.0, default_flame_offset[1] = 0.0, default_flame_offset[2] = 0.0;
   addDoubleArrayOption("FLAME_OFFSET", 3,flame_offset, default_flame_offset);
 
   /*!\brief FLAME_THICKNESS \n DESCRIPTION: Thickness for flame initialization using the flamelet model \ingroup Config*/
   addDoubleOption("FLAME_THICKNESS", flame_thickness, 0.5e-3);
   
   /*!\brief FLAME_NORMAL \n DESCRIPTION: Normal for flame initialization using the flamelet model \ingroup Config*/
-  su2double default_flame_normal[]={1.0, 0.0, 0.0};
+  default_flame_normal[0] = 1.0, default_flame_normal[1] = 0.0, default_flame_normal[2] = 0.0;
   addDoubleArrayOption("FLAME_NORMAL", 3, flame_normal, default_flame_normal);
   
   addDoubleOption("BURNT_THICKNESS", burnt_thickness, 1);

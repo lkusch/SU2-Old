@@ -1131,7 +1131,10 @@ private:
   default_nacelle_location[5],   /*!< \brief Location of the nacelle. */
   default_hs_axes[3],            /*!< \brief Default principal axes (x, y, z) of the ellipsoid containing the heat source. */
   default_hs_center[3],          /*!< \brief Default position of the center of the heat source. */
-  default_roughness[1];
+  default_roughness[1],
+  default_ffd_bounds[6],
+  default_flame_offset[3],
+  default_flame_normal[3];
 
   unsigned short Riemann_Solver_FEM;         /*!< \brief Riemann solver chosen for the DG method. */
   su2double Quadrature_Factor_Straight;      /*!< \brief Factor applied during quadrature of elements with a constant Jacobian. */
