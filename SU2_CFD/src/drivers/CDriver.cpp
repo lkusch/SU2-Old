@@ -1114,16 +1114,16 @@ void CDriver::Inlet_Preprocessing(CSolver ***solver, CGeometry **geometry,
   switch (config->GetKind_Solver()) {
     case TEMPLATE_SOLVER : template_solver = true; break;
     case EULER : case INC_EULER: euler = true; break;
-    case NAVIER_STOKES: case INC_NAVIER_STOKES: ns = true; scalar = (config->GetKind_Scalar_Model() != NONE); break;
-    case RANS : case INC_RANS: ns = true; turbulent = true; scalar = (config->GetKind_Scalar_Model() != NONE); break;
+    case NAVIER_STOKES: case INC_NAVIER_STOKES: ns = true; scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
+    case RANS : case INC_RANS: ns = true; turbulent = true; scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
     case HEAT_EQUATION : heat = true; break;
     case FEM_ELASTICITY: fem = true; break;
     case ADJ_EULER : euler = true; adj_euler = true; break;
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
     case ADJ_RANS : ns = true; turbulent = true; adj_ns = true; adj_turb = (!config->GetFrozen_Visc_Cont()); break;
     case DISC_ADJ_EULER : case DISC_ADJ_INC_EULER: euler = true; disc_adj = true; break;
-    case DISC_ADJ_NAVIER_STOKES : case DISC_ADJ_INC_NAVIER_STOKES: ns = true; disc_adj = true; scalar = (config->GetKind_Scalar_Model() != NONE); break;
-    case DISC_ADJ_RANS : case DISC_ADJ_INC_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); scalar = (config->GetKind_Scalar_Model() != NONE); break;
+    case DISC_ADJ_NAVIER_STOKES : case DISC_ADJ_INC_NAVIER_STOKES: ns = true; disc_adj = true; scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
+    case DISC_ADJ_RANS : case DISC_ADJ_INC_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
     case DISC_ADJ_FEM : fem = true; disc_adj_fem = true; break;
   }
 
@@ -1255,9 +1255,9 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
     case TEMPLATE_SOLVER: template_solver = true; break;
     case EULER : case INC_EULER: euler = true; break;
     case NEMO_EULER : NEMO_euler = true; break;
-    case NAVIER_STOKES: case INC_NAVIER_STOKES: ns = true; scalar = (config->GetKind_Scalar_Model() != NONE); heat = config->GetWeakly_Coupled_Heat(); break;
+    case NAVIER_STOKES: case INC_NAVIER_STOKES: ns = true; scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); heat = config->GetWeakly_Coupled_Heat(); break;
     case NEMO_NAVIER_STOKES: NEMO_ns = true; break;
-    case RANS : case INC_RANS: ns = true; turbulent = true; scalar = (config->GetKind_Scalar_Model() != NONE); heat = config->GetWeakly_Coupled_Heat(); break;
+    case RANS : case INC_RANS: ns = true; turbulent = true; scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); heat = config->GetWeakly_Coupled_Heat(); break;
     case FEM_EULER : fem_euler = true; break;
     case FEM_NAVIER_STOKES: fem_ns = true; break;
     case FEM_RANS : fem_ns = true; break;
@@ -1268,8 +1268,8 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
     case ADJ_NAVIER_STOKES : ns = true; turbulent = (config->GetKind_Turb_Model() != NONE); adj_ns = true; break;
     case ADJ_RANS : ns = true; turbulent = true; adj_ns = true; adj_turb = (!config->GetFrozen_Visc_Cont()); break;
     case DISC_ADJ_EULER: case DISC_ADJ_INC_EULER: euler = true; disc_adj = true; break;
-    case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_INC_NAVIER_STOKES: ns = true; disc_adj = true; scalar = (config->GetKind_Scalar_Model() != NONE); heat = config->GetWeakly_Coupled_Heat(); break;
-    case DISC_ADJ_RANS: case DISC_ADJ_INC_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); scalar = (config->GetKind_Scalar_Model() != NONE); heat = config->GetWeakly_Coupled_Heat(); break;
+    case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_INC_NAVIER_STOKES: ns = true; disc_adj = true; scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); heat = config->GetWeakly_Coupled_Heat(); break;
+    case DISC_ADJ_RANS: case DISC_ADJ_INC_RANS: ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); heat = config->GetWeakly_Coupled_Heat(); break;
     case DISC_ADJ_FEM_EULER: fem_euler = true; disc_adj = true; break;
     case DISC_ADJ_FEM_NS: fem_ns = true; disc_adj = true; break;
     case DISC_ADJ_FEM_RANS: fem_ns = true; turbulent = true; disc_adj = true; disc_adj_turb = (!config->GetFrozen_Visc_Disc()); break;
@@ -1460,7 +1460,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CGeometry **geometry, CSol
     case NAVIER_STOKES:
     case DISC_ADJ_NAVIER_STOKES:
       ns = compressible = true; 
-      scalar = (config->GetKind_Scalar_Model() != NONE); break;
+      scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
 
     case NEMO_EULER:
       NEMO_euler = compressible = true; break;
@@ -1472,7 +1472,7 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CGeometry **geometry, CSol
     case DISC_ADJ_RANS:
       ns = compressible = turbulent = true;
       transition = (config->GetKind_Trans_Model() == LM);
-      scalar = (config->GetKind_Scalar_Model() != NONE); break;
+      scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
 
     case INC_EULER:
     case DISC_ADJ_INC_EULER:
@@ -1482,14 +1482,14 @@ void CDriver::Numerics_Preprocessing(CConfig *config, CGeometry **geometry, CSol
     case DISC_ADJ_INC_NAVIER_STOKES:
       ns = incompressible = true;
       heat = config->GetWeakly_Coupled_Heat();
-      scalar = (config->GetKind_Scalar_Model() != NONE); break;
+      scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
 
     case INC_RANS:
     case DISC_ADJ_INC_RANS:
       ns = incompressible = turbulent = true;
       heat = config->GetWeakly_Coupled_Heat();
       transition = (config->GetKind_Trans_Model() == LM);
-      scalar = (config->GetKind_Scalar_Model() != NONE); break;
+      scalar = (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL); break;
 
     case FEM_EULER:
     case DISC_ADJ_FEM_EULER:

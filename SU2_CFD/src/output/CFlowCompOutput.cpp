@@ -479,7 +479,7 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
     Node_Turb = solver[TURB_SOL]->GetNodes();
   }
   
-  if (config->GetKind_Scalar_Model() != NONE){
+  if (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL){
     Node_Scalar = solver[SCALAR_SOL]->GetNodes();
   }
   

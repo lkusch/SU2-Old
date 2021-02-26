@@ -499,7 +499,6 @@ void CIncEulerSolver::SetNondimensionalization(CConfig *config, unsigned short i
   if (dummy_scalar != nullptr){
     delete[] dummy_scalar;
   }
-
   Energy_FreeStreamND = FluidModel->GetStaticEnergy() + 0.5*ModVel_FreeStreamND*ModVel_FreeStreamND;
 
   if (viscous) {
