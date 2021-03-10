@@ -258,7 +258,7 @@ class State(ordered_bunch):
         targetea_name = 'TargetEA.dat'
         targetcp_name = 'TargetCp.dat'
         targetheatflux_name = 'TargetHeatFlux.dat'
-        lookuptable_name = config.FILENAME_LUT
+#        lookuptable_name = config.FILENAME_LUT
 
         adj_map = get_adjointSuffix()
         restart = config.RESTART_SOL == 'YES'
@@ -368,8 +368,8 @@ class State(ordered_bunch):
             register_file('TARGET_HEATFLUX',targetheatflux_name)
 
         # look up table
-        if 'FLAMELET_FLUID_MODEL' in special_cases:
-            register_file('LOOK_UP_TABLE',lookuptable_name)
+#        if 'FLAMELET_FLUID_MODEL' in special_cases:
+#            register_file('LOOK_UP_TABLE',lookuptable_name)
           
         return
     
