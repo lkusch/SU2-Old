@@ -1562,6 +1562,7 @@ enum ENUM_OBJECTIVE {
   SURFACE_CO = 80,
   SURFACE_NOX = 81,
   SURFACE_TEMP = 82,
+  SURFACE_PASSIVE_SCALAR = 83,
 };
 
 static const MapType<string, ENUM_OBJECTIVE> Objective_Map = {
@@ -1616,6 +1617,7 @@ static const MapType<string, ENUM_OBJECTIVE> Objective_Map = {
   MakePair("STRESS_PENALTY", STRESS_PENALTY)
   MakePair("AVG_CO", SURFACE_CO)
   MakePair("AVG_NOX", SURFACE_NOX)
+  MakePair("SURFACE_PASSIVE_SCALAR", SURFACE_PASSIVE_SCALAR)
   MakePair("AVG_TEMP", SURFACE_TEMP)
 };
 

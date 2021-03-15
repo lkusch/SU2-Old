@@ -441,6 +441,7 @@ def get_adjointSuffix(objective_function=None):
                  "SURFACE_PRESSURE_DROP"       : "dp"        ,
                  "AVG_CO"                      : "yco"       ,
                  "AVG_NOX"                     : "ynox"      ,
+                 "SURFACE_PASSIVE_SCALAR"      : "pass"      ,
                  "AVG_TEMP"                    : "avgtemp"   ,
                  "CUSTOM_OBJFUNC"              : "custom"    ,
                  "KINETIC_ENERGY_LOSS"         : "ke"        ,

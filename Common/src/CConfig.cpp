@@ -909,7 +909,7 @@ void CConfig::SetPointersNull(void) {
   Surface_Temperature     = nullptr;    Surface_Pressure         = nullptr;    Surface_Density          = nullptr;    Surface_Enthalpy        = nullptr;
   Surface_NormalVelocity  = nullptr;    Surface_TotalTemperature = nullptr;    Surface_TotalPressure    = nullptr;    Surface_PressureDrop    = nullptr;
   Surface_DC60            = nullptr;    Surface_IDC              = nullptr;
-  Surface_CO              = nullptr;    Surface_NOx               = nullptr;
+  Surface_CO              = nullptr;    Surface_NOx               = nullptr;   Surface_PassiveScalar    = nullptr;
   //Surface_Scalar          = nullptr;
 
   Outlet_MassFlow      = nullptr;       Outlet_Density      = nullptr;      Outlet_Area     = nullptr;
@@ -5170,6 +5170,7 @@ void CConfig::SetMarkers(unsigned short val_software) {
   Surface_IDR                = new su2double [nMarker_Analyze] ();
   Surface_CO                 = new su2double [nMarker_Analyze] ();
   Surface_NOx                = new su2double [nMarker_Analyze] ();
+  Surface_PassiveScalar      = new su2double [nMarker_Analyze] ();
 
   //Surface_Scalar = new su2double*[nMarker_Analyze] ();
   //for (int i_scalar=0; i_scalar < nMarker_Analyze; ++i_scalar)
@@ -6106,6 +6107,7 @@ void CConfig::SetOutput(unsigned short val_software, unsigned short val_izone) {
         case SURFACE_CO:                 cout << "Y_CO objective function." << endl; break;
         case SURFACE_NOX:                cout << "Y_NOx objective function." << endl; break;
         case SURFACE_TEMP:               cout << "Temperature objective function." << endl; break;
+        case SURFACE_PASSIVE_SCALAR:     cout << "Passive scalar objective function." << endl; break;
       }
     }
     else {
@@ -7682,6 +7684,7 @@ CConfig::~CConfig(void) {
      delete[]  Surface_IDR;
      delete[]  Surface_CO;
      delete[]  Surface_NOx;
+     delete[]  Surface_PassiveScalar;
      //delete[]  Surface_Scalar;
 
   delete[]  Inlet_Ttotal;
@@ -8034,6 +8037,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) const {
         case SURFACE_CO:                  AdjExt = "_yco";      break;
         case SURFACE_NOX:                 AdjExt = "_ynox";     break;
         case SURFACE_TEMP:                AdjExt = "_avgtemp";  break;
+        case SURFACE_PASSIVE_SCALAR:      AdjExt = "_pass";     break;
       }
     }
     else{

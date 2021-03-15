@@ -2937,6 +2937,9 @@ su2double CFVMFlowSolverBase<V,R>::EvaluateCommonObjFunc(const CConfig& config) 
     case SURFACE_PRESSURE_DROP:
       objFun += weight * config.GetSurface_PressureDrop(0);
       break;
+    case SURFACE_PASSIVE_SCALAR:
+      objFun += weight * config.GetSurface_PassiveScalar(0);
+      break;
     case CUSTOM_OBJFUNC:
       objFun += weight * Total_Custom_ObjFunc;
       break;

@@ -373,6 +373,7 @@ private:
   su2double *Surface_TotalPressure;          /*!< \brief Total pressure at the boundaries. */
   su2double *Surface_CO;                     /*!< \brief Mass fraction of CO at the boundaries. */
   su2double *Surface_NOx;                    /*!< \brief Mass fraction of NO at the boundaries. */
+  su2double *Surface_PassiveScalar;          /*!< \brief Mass fraction of Passive scalar at the boundaries. */
   //su2double **Surface_Scalar;
   su2double *Surface_PressureDrop;           /*!< \brief Pressure drop between boundaries. */
   su2double *Surface_DC60;                   /*!< \brief Specified surface DC60 for nacelle boundaries. */
@@ -7560,6 +7561,13 @@ public:
   //void SetSurface_Scalar(unsigned short val_imarker, su2double val_surface_scalar, unsigned short val_i_scalar){ Surface_Scalar[val_imarker][val_i_scalar] = val_surface_scalar; };
 
   /*!
+   * \brief Set the passive scalar mass fraction at the surface.
+   * \param[in] val_imarker - Index corresponding to the outlet boundary.
+   * \param[in] val_surface_no - Value of the passive scalar mass fraction.
+   */
+  void SetSurface_PassiveScalar(unsigned short val_imarker, su2double val_surface_scalar){ Surface_PassiveScalar[val_imarker] = val_surface_scalar; };
+
+  /*!
    * \brief Set the NO mass fraction at the surface.
    * \param[in] val_imarker - Index corresponding to the outlet boundary.
    * \param[in] val_surface_no - Value of the NO mass fraction.
@@ -7845,6 +7853,13 @@ public:
    * \return The scalar mass fraction.
    */
   //su2double GetSurface_Scalar(unsigned short val_imarker, unsigned short val_i_scalar) const { return Surface_Scalar[val_imarker][val_i_scalar]; }
+ 
+  /*!
+   * \brief Get the passive scalar mass fraction at an outlet boundary.
+   * \param[in] val_index - Index corresponding to the outlet boundary.
+   * \return The passive scalar mass fraction.
+   */
+  su2double GetSurface_PassiveScalar(unsigned short val_imarker) const { return Surface_PassiveScalar[val_imarker]; }
  
   /*!
    * \brief Get the NOx mass fraction at an outlet boundary.
