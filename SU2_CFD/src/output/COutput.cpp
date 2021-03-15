@@ -2,7 +2,7 @@
  * \file output_structure.cpp
  * \brief Main subroutines for output solver information
  * \author F. Palacios, T. Economon
- * \version 7.1.0 "Blackbird"
+ * \version 7.1.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -224,19 +224,21 @@ void COutput::SetHistory_Output(CGeometry *geometry,
   if (rank == MASTER_NODE && !noWriting) {
 
     /*--- Write the history file ---------------------------------------------------------------------------*/
+
     write_history = WriteHistoryFile_Output(config);
     if (write_history) SetHistoryFile_Output(config);
 
     /*--- Write the screen header---------------------------------------------------------------------------*/
+
     write_header = WriteScreen_Header(config);
     if (write_header) SetScreen_Header(config);
 
     /*--- Write the screen output---------------------------------------------------------------------------*/
+
     write_screen = WriteScreen_Output(config);
     if (write_screen) SetScreen_Output(config);
 
   }
-
 }
 
 void COutput::SetHistory_Output(CGeometry *geometry,
@@ -1248,7 +1250,7 @@ void COutput::PrepareHistoryFile(CConfig *config){
   historyFileTable->SetAlign(PrintingToolbox::CTablePrinter::CENTER);
   historyFileTable->SetPrintHeaderTopLine(false);
   historyFileTable->SetPrintHeaderBottomLine(false);
-  historyFileTable->SetPrecision(10);
+  historyFileTable->SetPrecision(config->GetOutput_Precision());
 
   /*--- Add the header to the history file. ---*/
 

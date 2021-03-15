@@ -3,7 +3,7 @@
 ## \file design.py
 #  \brief python package for designs
 #  \author T. Lukaczyk, F. Palacios
-#  \version 7.1.0 "Blackbird"
+#  \version 7.1.1 "Blackbird"
 #
 # SU2 Project Website: https://su2code.github.io
 # 
@@ -30,7 +30,6 @@
 # ----------------------------------------------------------------------
 
 import os, copy
-import sys
 from .. import io   as su2io
 from .  import func as su2func
 from .  import grad as su2grad
