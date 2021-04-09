@@ -376,6 +376,7 @@ def get_objectiveSign( ObjFun_name ):
             SURFACE_MASSFLOW
             SURFACE_MACH
             TOTAL_STATIC_EFFICIENCY
+	    SURFACE_PASSIVE_SCALAR
         returns +1 otherwise
     """
     
@@ -389,6 +390,7 @@ def get_objectiveSign( ObjFun_name ):
     if ObjFun_name == "SURFACE_MASSFLOW"        : return -1.0
     if ObjFun_name == "SURFACE_MACH"            : return -1.0
     if ObjFun_name == "TOTAL_STATIC_EFFICIENCY" :return -1.0
+    if ObjFun_name == "SURFACE_PASSIVE_SCALAR"  : return -1.0
     
     # otherwise
     return 1.0
