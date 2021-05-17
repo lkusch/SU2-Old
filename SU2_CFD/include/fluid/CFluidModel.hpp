@@ -9,7 +9,7 @@
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -128,7 +128,13 @@ class CFluidModel {
   /*!
    * \brief Get the source term of the transported scalar
    */
-  virtual inline su2double GetSourceScalar(int){ return 37; }
+  virtual inline su2double* GetScalarSources(){ return nullptr; }
+
+    /*!
+   * \brief Get the source term of the transported scalar
+   * \param[in] val_ix - Index of the scalar.
+   */
+  virtual inline su2double GetScalarSources(int val_ix){ return 37; }
   
   /*!
   * \brief Get the number of transported scalars
@@ -138,7 +144,7 @@ class CFluidModel {
   /*!
    * \brief Get the looked up scalar field for combustion
    */
-  virtual inline su2double GetLookupScalar(int){ return 37; }
+  virtual inline su2double GetScalarLookups(int){ return 37; }
 
 
   virtual CLookUpTable* GetLookUpTable() {return look_up_table; }
@@ -177,6 +183,7 @@ class CFluidModel {
     dktdT_rho = ThermalConductivity->GetdktdT_rho();
     return Kt;
   }
+
 /*!
    * \brief Get fluid mass diffusivity.
    */
@@ -188,6 +195,7 @@ class CFluidModel {
     //dktdT_rho = ThermalConductivity->GetdktdT_rho();
     return mass_diffusivity;
   }
+  
   /*!
    * \brief Get fluid pressure partial derivative.
    */
@@ -356,6 +364,8 @@ class CFluidModel {
   virtual unsigned long SetTDState_T(su2double val_Temperature, su2double *val_scalars = nullptr) {return 0;}
 
   virtual unsigned long SetScalarSources(su2double *val_scalars) {return 0;}
+
+  virtual unsigned long SetScalarLookups(su2double *val_scalars) {return 0;}
 
   /*!
    * \brief Set fluid eddy viscosity provided by a turbulence model needed for computing effective thermal conductivity.

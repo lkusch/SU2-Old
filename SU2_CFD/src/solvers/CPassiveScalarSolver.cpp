@@ -38,11 +38,11 @@ CPassiveScalarSolver::CPassiveScalarSolver(CGeometry *geometry,
                                            unsigned short iMesh)
 : CScalarSolver(geometry, config) {
   unsigned short nLineLets;
-   unsigned long iPoint; 
-  bool turbulent = ((config->GetKind_Solver() == RANS) ||
-                    (config->GetKind_Solver() == DISC_ADJ_RANS));
-  bool turb_SST  = ((turbulent) && (config->GetKind_Turb_Model() == SST));
-  bool turb_SA   = ((turbulent) && (config->GetKind_Turb_Model() == SA));
+
+  const bool turbulent = ((config->GetKind_Solver() == RANS) ||
+                         (config->GetKind_Solver() == DISC_ADJ_RANS));
+  const bool turb_SST  = ((turbulent) && (config->GetKind_Turb_Model() == SST));
+  const bool turb_SA   = ((turbulent) && (config->GetKind_Turb_Model() == SA));
   bool multizone = config->GetMultizone_Problem();
 
   /*--- Dimension of the problem --> passive scalar will only ever
@@ -86,7 +86,7 @@ CPassiveScalarSolver::CPassiveScalarSolver(CGeometry *geometry,
 
     /*--- Initialization of the structure of the whole Jacobian ---*/
 
-    if (rank == MASTER_NODE) cout << "Initialize Jacobian structure (SST model)." << endl;
+    if (rank == MASTER_NODE) cout << "Initialize Jacobian structure (passive scalar model)." << endl;
     Jacobian.Initialize(nPoint, nPointDomain, nVar, nVar, true, geometry, config, ReducerStrategy);
 
     if (config->GetKind_Linear_Solver_Prec() == LINELET) {
@@ -216,7 +216,7 @@ CPassiveScalarSolver::CPassiveScalarSolver(CGeometry *geometry,
   /*--- Store the initial CFL number for all grid points. ---*/
  
   const su2double CFL = config->GetCFL(MGLevel)*config->GetCFLRedCoeff_Scalar();
-  for (iPoint = 0; iPoint < nPoint; iPoint++) {
+  for (auto iPoint = 0u; iPoint < nPoint; iPoint++) {
     nodes->SetLocalCFL(iPoint, CFL);
   }
   Min_CFL_Local = CFL;
@@ -233,7 +233,7 @@ CPassiveScalarSolver::~CPassiveScalarSolver(void) {
   unsigned long iMarker, iVertex;
   unsigned short iVar;
   
-  if (FluidModel != NULL) delete FluidModel;
+  if (FluidModel != nullptr) delete FluidModel;
 
 }
 
@@ -248,7 +248,6 @@ void CPassiveScalarSolver::Preprocessing(CGeometry *geometry, CSolver **solver_c
 
   /*--- Clear residual and system matrix, not needed for
    * reducer strategy as we write over the entire matrix. ---*/
-  // nijso: this makes the residuals unavailable for output
   if (!ReducerStrategy && !Output) {
     LinSysRes.SetValZero();
     if (implicit) Jacobian.SetValZero();
@@ -342,7 +341,7 @@ void CPassiveScalarSolver::SetPreconditioner(CGeometry *geometry, CSolver **solv
   
   su2double  BetaInc2, Density, dRhodT, dRhodC, Temperature, Cp, Delta;
   
-  bool variable_density = (config->GetKind_DensityModel() == VARIABLE);
+  bool variable_density = (config->GetKind_DensityModel() == INC_DENSITYMODEL::VARIABLE);
   bool implicit         = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
   
   for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
@@ -394,7 +393,7 @@ void CPassiveScalarSolver::SetPreconditioner(CGeometry *geometry, CSolver **solv
         
         total_index = iPoint*nVar+iVar;
         
-        su2double c = nodes->GetSolution(iPoint,0);
+        su2double c = nodes->GetSolution(iPoint,iVar);
         
         /*--- Compute the lag terms for the decoupled linear system from
          the mean flow equations and add to the residual for the scalar.
@@ -428,10 +427,15 @@ void CPassiveScalarSolver::Source_Residual(CGeometry *geometry, CSolver **solver
   const bool implicit = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
   bool viscous        = config->GetViscous();
 
+  vector<su2double> zero_sources(nVar,0.);
+
   CVariable* flowNodes = solver_container[FLOW_SOL]->GetNodes();
 
   /*--- Pick one numerics object per thread. ---*/
   CNumerics* numerics = numerics_container[SOURCE_FIRST_TERM + omp_get_thread_num()*MAX_TERMS];
+
+  /*--- Set scalar sources to zero ---*/
+  numerics->SetScalarSources(&zero_sources[0]);
 
   /*--- Loop over all points. ---*/
 
@@ -487,9 +491,9 @@ void CPassiveScalarSolver::BC_Inlet(CGeometry *geometry,
                                     CNumerics *visc_numerics,
                                     CConfig *config,
                                     unsigned short val_marker) {
-  
+
   su2double *inlet_scalar = new su2double[nVar]{};
- 
+
   //bool grid_movement  = config->GetGrid_Movement();
   string Marker_Tag = config->GetMarker_All_TagBound(val_marker);
   //su2double   temp_inlet    = config->GetInlet_Ttotal       (Marker_Tag);
@@ -518,7 +522,7 @@ void CPassiveScalarSolver::BC_Inlet(CGeometry *geometry,
       for (auto iVar = 0u; iVar < nVar; iVar++) {
         auto total_index = iPoint*nVar+iVar;
         Jacobian.DeleteValsRowi(total_index);
-      }      
+      }
     }
   }
 
