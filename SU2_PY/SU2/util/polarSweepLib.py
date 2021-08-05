@@ -2,14 +2,14 @@
 # \file polarSweepLib.py
 #  \brief Functions library for compute_polar.py script.
 #  \author E Arad
-#  \version 7.0.6 "Blackbird"
+#  \version 7.1.1 "Blackbird"
 #
 # SU2 Project Website: https://su2code.github.io
 # 
 # The SU2 Project is maintained by the SU2 Foundation 
 # (http://su2foundation.org)
 #
-# Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+# Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -284,18 +284,19 @@ def setPolaraType(ctrl,nc,verbose):
              if nAalpha > 1 :
                   raise SystemExit('ERROR in control file: >>>>>>>>  nAlpha > 1 in a Mach Ramp session  <<<<<<<<')
 
-             if iListPhi == -1 :
-                 if velDirOption != 1 :
-                     phi = [ ] ; nPhi = 0;
-                 else:
-                     phi = [0.0] ; nPhi = 1;
+         if iListPhi == -1 :
+             if velDirOption != 1 :
+                 phi = [ ] ; nPhi = 0;
              else:
-                 phi,nPhi=readList(ctrl,iListPhi,verbose);
-                 if nPhi > 1 :
-                     raise SystemExit('ERROR in control file:  >>>>>>>> nPhi > 1 in a Mach Ramp session  <<<<<<<<')
-                 if velDirOption == 0 :
-#    if phi is specified, then this is a alpha,phi case, with alpha = 0
-                     velDirOption = 1; alpha = [0.0];  nAalpha =1;
+                 phi = [0.0] ; nPhi = 1;
+         else:
+             phi,nPhi=readList(ctrl,iListPhi,verbose);
+             if nPhi > 1 :
+                 raise SystemExit('ERROR in control file:  >>>>>>>> nPhi > 1 in a Mach Ramp session  <<<<<<<<')
+             if velDirOption == 0 :
+                 #    if phi is specified, then this is a alpha,phi case, with alpha = 0                                                                                                       
+                 velDirOption = 1; alpha = [0.0];  nAalpha =1;
+
                      
 
          if nPhi + nBeta >= 2 :

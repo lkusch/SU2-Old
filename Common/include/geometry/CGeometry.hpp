@@ -3,14 +3,14 @@
  * \brief Headers of the main subroutines for creating the geometrical structure.
  *        The subroutines and functions are in the <i>CGeometry.cpp</i> file.
  * \author F. Palacios, T. Economon
- * \version 7.0.6 "Blackbird"
+ * \version 7.1.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "../mpi_structure.hpp"
+#include "../parallelization/mpi_structure.hpp"
 
 #ifdef HAVE_METIS
 #include "metis.h"
@@ -61,7 +61,7 @@ extern "C" {
 #include "../CConfig.hpp"
 #include "../fem/geometry_structure_fem_part.hpp"
 #include "../toolboxes/graph_toolbox.hpp"
-#include "../adt_structure.hpp"
+#include "../adt/CADTElemClass.hpp"
 
 using namespace std;
 
@@ -84,7 +84,7 @@ protected:
   nPointGhost{0},                 /*!< \brief Number of ghost points of the mesh. */
   nPointNode{0},                  /*!< \brief Size of the node array allocated to hold CPoint objects. */
   Global_nPoint{0},               /*!< \brief Total number of nodes in a simulation across all processors (including halos). */
-  Global_nPointDomain{0},	        /*!< \brief Total number of nodes in a simulation across all processors (excluding halos). */
+  Global_nPointDomain{0},         /*!< \brief Total number of nodes in a simulation across all processors (excluding halos). */
   nElem{0},                       /*!< \brief Number of elements of the mesh. */
   Global_nElem{0},                /*!< \brief Total number of elements in a simulation across all processors (all types). */
   Global_nElemDomain{0},          /*!< \brief Total number of elements in a simulation across all processors (excluding halos). */
@@ -109,7 +109,8 @@ protected:
   nelem_triangle_bound{0},        /*!< \brief Number of triangles on the mesh boundaries. */
   Global_nelem_triangle_bound{0}, /*!< \brief Total number of triangles on the mesh boundaries across all processors. */
   nelem_quad_bound{0},            /*!< \brief Number of quads on the mesh boundaries. */
-  Global_nelem_quad_bound{0};     /*!< \brief Total number of quads on the mesh boundaries across all processors. */
+  Global_nelem_quad_bound{0},     /*!< \brief Total number of quads on the mesh boundaries across all processors. */
+  nNonconvexElements{0};          /*!< \brief Number of nonconvex elements in the mesh. */
 
   unsigned short nDim{0};         /*!< \brief Number of dimension of the problem. */
   unsigned short nZone{0};        /*!< \brief Number of zones in the problem. */
@@ -184,12 +185,14 @@ protected:
   unsigned long edgeColorGroupSize{1};   /*!< \brief Size of the edge groups within each color. */
   unsigned long elemColorGroupSize{1};   /*!< \brief Size of the element groups within each color. */
 
+  ColMajorMatrix<uint8_t> CoarseGridColor_;  /*!< \brief Coarse grid levels, colorized. */
+
 public:
   /*--- Main geometric elements of the grid. ---*/
 
   CPrimalGrid** elem{nullptr};           /*!< \brief Element vector (primal grid information). */
   CPrimalGrid** face{nullptr};           /*!< \brief Face vector (primal grid information). */
-  CPrimalGrid*** bound{nullptr};	       /*!< \brief Boundary vector (primal grid information). */
+  CPrimalGrid*** bound{nullptr};         /*!< \brief Boundary vector (primal grid information). */
   CPoint* nodes{nullptr};                /*!< \brief Node vector (dual grid information). */
   CEdge* edges{nullptr};                 /*!< \brief Edge vector (dual grid information). */
   CVertex*** vertex{nullptr};            /*!< \brief Boundary Vertex vector (dual grid information). */
@@ -256,6 +259,8 @@ public:
   vector<su2double> Orthogonality;       /*!< \brief Measure of dual CV orthogonality angle (0 to 90 deg., 90 being best). */
   vector<su2double> Aspect_Ratio;        /*!< \brief Measure of dual CV aspect ratio (max face area / min face area).  */
   vector<su2double> Volume_Ratio;        /*!< \brief Measure of dual CV volume ratio (max sub-element volume / min sub-element volume). */
+
+  const ColMajorMatrix<uint8_t>& CoarseGridColor = CoarseGridColor_;  /*!< \brief Coarse grid levels, colorized. */
 
   /*!
    * \brief Constructor of the class.
@@ -491,9 +496,21 @@ public:
    * \brief Get the edge index from using the nodes of the edge.
    * \param[in] first_point - First point of the edge.
    * \param[in] second_point - Second point of the edge.
+   * \param[in] error - Throw error if edge does not exist.
    * \return Index of the edge.
    */
-  long FindEdge(unsigned long first_point, unsigned long second_point) const;
+  inline long FindEdge(unsigned long first_point, unsigned long second_point, bool error = true) const {
+    for (unsigned short iNode = 0; iNode < nodes->GetnPoint(first_point); iNode++) {
+      auto iPoint = nodes->GetPoint(first_point, iNode);
+      if (iPoint == second_point) return nodes->GetEdge(first_point, iNode);
+    }
+    if (error) {
+      char buf[100];
+      SPRINTF(buf, "Can't find the edge that connects %lu and %lu.", first_point, second_point);
+      SU2_MPI::Error(buf, CURRENT_FUNCTION);
+    }
+    return -1;
+  }
 
   /*!
    * \brief Get the edge index from using the nodes of the edge.
@@ -501,7 +518,9 @@ public:
    * \param[in] second_point - Second point of the edge.
    * \return Index of the edge.
    */
-  bool CheckEdge(unsigned long first_point, unsigned long second_point) const;
+  inline bool CheckEdge(unsigned long first_point, unsigned long second_point) const {
+    return FindEdge(first_point, second_point, false) >= 0;
+  }
 
   /*!
    * \brief Get the distance between a plane (defined by three point) and a point.
@@ -684,11 +703,6 @@ public:
   inline virtual void GatherInOutAverageValues(CConfig *config, bool allocate) {}
 
   /*!
-   * \brief Sets CG coordinates.
-   */
-  inline virtual void SetCoord_CG(void) {}
-
-  /*!
    * \brief Set max length.
    * \param[in] config - Definition of the particular problem.
    */
@@ -704,9 +718,8 @@ public:
   /*!
    * \brief A virtual member.
    * \param[in] config - Definition of the particular problem.
-   * \param[in] action - Allocate or not the new elements.
    */
-  inline virtual void VisualizeControlVolume(CConfig *config, unsigned short action) {}
+  inline virtual void VisualizeControlVolume(const CConfig *config) const {}
 
   /*!
    * \brief A virtual member.
@@ -731,7 +744,7 @@ public:
    * \param[in] config - Definition of the particular problem.
    * \param[in] action - Allocate or not the new elements.
    */
-  inline virtual void SetBoundControlVolume(CConfig *config, unsigned short action) {}
+  inline virtual void SetBoundControlVolume(const CConfig *config, unsigned short action) {}
 
   /*!
    * \brief A virtual member.
@@ -859,20 +872,6 @@ public:
   /*!
    * \brief A virtual member.
    * \param[in] config - Definition of the particular problem.
-   * \param[in] val_mesh_out_filename - Name of the output file.
-   */
-  inline virtual void SetMeshFile(CConfig *config, string val_mesh_out_filename) {}
-
-  /*!
-   * \brief A virtual member.
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] val_mesh_out_filename - Name of the output file.
-   */
-  inline virtual void SetMeshFile(CGeometry *geometry, CConfig *config, string val_mesh_out_filename) {}
-
-  /*!
-   * \brief A virtual member.
-   * \param[in] config - Definition of the particular problem.
    */
   inline virtual void SetBoundSensitivity(CConfig *config) {}
 
@@ -887,34 +886,40 @@ public:
    * \param[in] config - Definition of the particular problem.
    * \param[in] print - Display information on screen.
    */
-  void SetRotationalVelocity(CConfig *config, bool print = false);
+  void SetRotationalVelocity(const CConfig *config, bool print = false);
 
   /*!
    * \brief Set the rotational velocity of the points on the shroud markers to 0.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetShroudVelocity(CConfig *config);
+  void SetShroudVelocity(const CConfig *config);
 
   /*!
    * \brief Set the translational velocity at each node.
    * \param[in] config - Definition of the particular problem.
    * \param[in] print - Display information on screen.
    */
-  void SetTranslationalVelocity(CConfig *config, bool print = false);
+  void SetTranslationalVelocity(const CConfig *config, bool print = false);
+
+  /*!
+   * \brief Set the translational/rotational velocity for all moving walls.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] print - Display information on screen.
+   */
+  void SetWallVelocity(const CConfig *config, bool print = false);
 
   /*!
    * \brief Set the grid velocity via finite differencing at each node.
    * \param[in] config - Definition of the particular problem.
-   * \param[in] iter - Current physical time step.
    */
-  void SetGridVelocity(CConfig *config, unsigned long iter);
+  void SetGridVelocity(const CConfig *config);
 
   /*!
    * \brief A virtual member.
    * \param[in] geometry - Geometry of the fine mesh.
    * \param[in] config - Definition of the particular problem.
    */
-  inline virtual void SetRestricted_GridVelocity(CGeometry *fine_mesh, CConfig *config) {}
+  inline virtual void SetRestricted_GridVelocity(CGeometry *fine_mesh, const CConfig *config) {}
 
   /*!
    * \brief Check if a boundary is straight(2D) / plane(3D) for EULER_WALL and SYMMETRY_PLANE
@@ -1078,13 +1083,6 @@ public:
   inline virtual long GetGlobal_to_Local_Point(unsigned long val_ipoint) const { return 0; }
 
   /*!
-   * \brief A virtual member.
-   * \param[in] val_ipoint - Global marker.
-   * \return Local marker that correspond with the global index.
-   */
-  inline virtual unsigned short GetGlobal_to_Local_Marker(unsigned short val_imarker) const { return 0; }
-
-  /*!
    * \brief Retrieve total number of elements in a simulation across all processors.
    * \return Total number of elements in a simulation across all processors.
    */
@@ -1181,16 +1179,6 @@ public:
   inline unsigned long GetnElemPyra(void) const { return nelem_pyramid; }
 
   /*!
-   * \brief Indentify geometrical planes in the mesh
-   */
-  void SetGeometryPlanes(CConfig *config);
-
-  /*!
-   * \brief Get geometrical planes in the mesh
-   */
-  inline vector<su2double> GetGeometryPlanes() const {return XCoordList;}
-
-  /*!
    * \brief Get x coords of geometrical planes in the mesh
    */
   inline vector<vector<su2double> > GetXCoord() const {return Xcoord_plane;}
@@ -1211,26 +1199,6 @@ public:
   inline vector<vector<unsigned long> > GetPlanarPoints() const {return Plane_points;}
 
   /*!
-   * \brief Given arrays x[1..n] and y[1..n] containing a tabulated function, i.e., yi = f(xi), with
-              x1 < x2 < . . . < xN , and given values yp1 and ypn for the first derivative of the interpolating
-              function at points 1 and n, respectively, this routine returns an array y2[1..n] that contains
-              the second derivatives of the interpolating function at the tabulated points xi. If yp1 and/or
-              ypn are equal to 1 × 1030 or larger, the routine is signaled to set the corresponding boundary
-              condition for a natural spline, with zero second derivative on that boundary.
-                        Numerical Recipes: The Art of Scientific Computing, Third Edition in C++.
-   */
-  void SetSpline(vector<su2double> &x, vector<su2double> &y, unsigned long n, su2double yp1, su2double ypn, vector<su2double> &y2);
-
-  /*!
-   * \brief Given the arrays xa[1..n] and ya[1..n], which tabulate a function (with the xai’s in order),
-              and given the array y2a[1..n], which is the output from spline above, and given a value of
-              x, this routine returns a cubic-spline interpolated value y.
-              Numerical Recipes: The Art of Scientific Computing, Third Edition in C++.
-   * \return The interpolated value of for x.
-   */
-  su2double GetSpline(vector<su2double> &xa, vector<su2double> &ya, vector<su2double> &y2a, unsigned long n, su2double x);
-
-  /*!
    * \brief Compute the intersection between a segment and a plane.
    * \param[in] Segment_P0 - Definition of the particular problem.
    * \param[in] Segment_P1 - Definition of the particular problem.
@@ -1246,14 +1214,14 @@ public:
    * \brief Ray Intersects Triangle (Moller and Trumbore algorithm)
    */
   bool RayIntersectsTriangle(const su2double orig[3], const su2double dir[3],
-  const su2double vert0[3], const su2double vert1[3], const su2double vert2[3],
-  su2double *intersect);
+                             const su2double vert0[3], const su2double vert1[3], const su2double vert2[3],
+                             su2double *intersect);
 
   /*!
    * \brief Segment Intersects Triangle
    */
   bool SegmentIntersectsTriangle(su2double point0[3], const su2double point1[3],
-  su2double vert0[3], su2double vert1[3], su2double vert2[3]);
+                                 su2double vert0[3], su2double vert1[3], su2double vert2[3]);
 
   /*!
    * \brief Segment Intersects Line (for 2D FFD Intersection)
@@ -1262,22 +1230,15 @@ public:
 
   /*!
    * \brief Register the coordinates of the mesh nodes.
-   * \param[in] config
    */
-  void RegisterCoordinates(CConfig *config) const;
-
-  /*!
-   * \brief Register the coordinates of the mesh nodes as output.
-   * \param[in] config
-   */
-  void RegisterOutput_Coordinates(CConfig *config) const;
+  void RegisterCoordinates() const;
 
   /*!
    * \brief Update the multi-grid structure and the wall-distance.
    * \param geometry_container - Geometrical definition.
    * \param config - Config
    */
-  void UpdateGeometry(CGeometry **geometry_container, CConfig *config);
+  static void UpdateGeometry(CGeometry **geometry_container, CConfig *config);
 
   /*!
    * \brief Update the multi-grid structure for the customized boundary conditions
@@ -1573,7 +1534,8 @@ public:
    * \param[in] search_limit - Max degree of neighborhood considered for neighbor search, avoids excessive work in fine regions.
    * \param[in,out] values - On entry, the "raw" values, on exit, the filtered values.
    */
-  void FilterValuesAtElementCG(const vector<su2double> &filter_radius, const vector<pair<unsigned short,su2double> > &kernels,
+  void FilterValuesAtElementCG(const vector<su2double> &filter_radius,
+                               const vector<pair<ENUM_FILTER_KERNEL,su2double> > &kernels,
                                const unsigned short search_limit, su2double *values) const;
 
   /*!
@@ -1602,10 +1564,9 @@ public:
                               const su2double *cg_elem, vector<long> &neighbours, vector<bool> &is_neighbor) const;
 
   /*!
-   * \brief Compute and store the volume of the elements.
-   * \param[in] config - Problem configuration.
+   * \brief Compute and store the volume of the primal elements.
    */
-  void SetElemVolume(CConfig *config);
+  void SetElemVolume();
 
   /*!
    * \brief Set the multigrid index for the current geometry object.
@@ -1623,7 +1584,14 @@ public:
    * \brief A virtual member.
    * \param config - Config
    */
-  inline virtual void ComputeMeshQualityStatistics(CConfig *config) {}
+  inline virtual void ComputeMeshQualityStatistics(const CConfig *config) {}
+
+  /*!
+   * \brief Color multigrid levels for visualization.
+   * \param nMGLevels - Number of levels
+   * \param geometry - The levels
+   */
+  void ColorMGLevels(unsigned short nMGLevels, const CGeometry* const* geometry);
 
   /*!
    * \brief Get the sparse pattern of "type" with given level of fill.
@@ -1694,11 +1662,14 @@ public:
   virtual std::unique_ptr<CADTElemClass> ComputeViscousWallADT(const CConfig *config) const { return nullptr; }
 
   /*!
-   * \brief Set the wall distance based on an previously constructed ADT
-   * \param[in] config - Definition of the particular problem.
-   * \param[in] WallADT - The ADT to compute the wall distance
+   * \brief Reduce the wall distance based on an previously constructed ADT.
+   * \details The ADT might belong to another zone, giving rise to lower wall distances
+   * than those already stored.
+   * \param[in] WallADT - The ADT to reduce the wall distance
+   * \param[in] config - Config of this geometry (not the ADT zone's geometry)
+   * \param[in] iZone - Zone whose markers made the ADT
    */
-  virtual void SetWallDistance(const CConfig *config, CADTElemClass* WallADT) {}
+  virtual void SetWallDistance(CADTElemClass* WallADT, const CConfig* config, unsigned short iZone = numeric_limits<unsigned short>::max()) {}
 
   /*!
    * \brief Set wall distances a specific value
@@ -1713,5 +1684,28 @@ public:
    */
   static void ComputeWallDistance(const CConfig * const *config_container, CGeometry ****geometry_container);
 
+  /*!
+   * \brief Set the amount of nonconvex elements in the mesh.
+   * \param[in] nonconvex_elems - amount of nonconvex elements in the mesh
+   */
+  void SetnNonconvexElements(unsigned long nonconvex_elems) {nNonconvexElements = nonconvex_elems;}
+
+  /*!
+   * \brief Get the amount of nonconvex elements in the mesh.
+   * \param[out] nNonconvexElements- amount of nonconvex elements in the mesh
+   */
+  unsigned long GetnNonconvexElements() const {return nNonconvexElements;}
+
+  /*!
+   * \brief For streamwise periodicity, find & store a unique reference node on the designated periodic inlet.
+   * \param[in] config - Definition of the particular problem.
+   */
+  inline virtual void FindUniqueNode_PeriodicBound(const CConfig *config) {}
+
+  /*!
+   * \brief Get a pointer to the reference node coordinate vector.
+   * \return A pointer to the reference node coordinate vector.
+   */
+  inline virtual const su2double* GetStreamwise_Periodic_RefNode(void) const { return nullptr; }
 };
 
