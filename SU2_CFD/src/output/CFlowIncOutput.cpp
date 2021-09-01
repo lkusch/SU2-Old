@@ -688,7 +688,7 @@ void CFlowIncOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolve
   if (weakly_coupled_heat){
     Node_Heat = solver[HEAT_SOL]->GetNodes();
   }
-  if (config->GetKind_Scalar_Model() != NONE){
+  if (config->GetKind_Scalar_Model() != NO_SCALAR_MODEL){
     Node_Scalar = solver[SCALAR_SOL]->GetNodes();
   }
 

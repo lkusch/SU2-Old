@@ -263,7 +263,7 @@ void CIncEulerSolver::SetNondimensionalization(CConfig *config, unsigned short i
 
   /*--- Depending on the density model chosen, select a fluid model. ---*/
 
-  su2double *dummy_scalar;
+  su2double *dummy_scalar = nullptr;
   unsigned short n_scalars;
   CFluidModel* auxFluidModel = nullptr;
 
