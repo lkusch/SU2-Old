@@ -3,7 +3,7 @@
 # \file Makefile.am
 # \brief Makefile for SU2_CFD
 # \author M. Colonno, T. Economon, F. Palacios
-# \version 7.1.1 "Blackbird"
+# \version 7.2.0 "Blackbird"
 #
 # SU2 Project Website: https://su2code.github.io
 # 
@@ -145,6 +145,7 @@ libSU2Core_sources = ../src/definition_structure.cpp \
   ../src/output/output_physics.cpp \
   ../src/output/CMeshOutput.cpp \
   ../src/output/CElasticityOutput.cpp \
+  ../src/output/CFVMOutput.cpp \
   ../src/output/CFlowOutput.cpp \
   ../src/output/CFlowCompOutput.cpp \
   ../src/output/CFlowCompFEMOutput.cpp \
@@ -215,7 +216,6 @@ libSU2Core_sources = ../src/definition_structure.cpp \
   ../src/variables/CAdjTurbVariable.cpp \
   ../src/variables/CTransLMVariable.cpp \
   ../src/variables/CDiscAdjFEABoundVariable.cpp \
-  ../src/variables/CDiscAdjFEAVariable.cpp \
   ../src/variables/CIncEulerVariable.cpp \
   ../src/variables/CTurbVariable.cpp \
   ../src/variables/CScalarVariable.cpp \

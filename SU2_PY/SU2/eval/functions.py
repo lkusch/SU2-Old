@@ -3,7 +3,7 @@
 ## \file functions.py
 #  \brief python package for functions
 #  \author T. Lukaczyk, F. Palacios
-#  \version 7.1.1 "Blackbird"
+#  \version 7.2.0 "Blackbird"
 #
 # SU2 Project Website: https://su2code.github.io
 # 
@@ -298,10 +298,6 @@ def aerodynamics( config, state=None ):
             name = su2io.expand_time(name,konfig)
             push.extend(name)
             
-            # equivarea files to push
-            if 'WEIGHT_NF' in info.FILES:
-                push.append(info.FILES['WEIGHT_NF'])
-
             # pressure files to push
             if 'TARGET_CP' in info.FILES:
                 push.append(info.FILES['TARGET_CP'])
@@ -918,7 +914,12 @@ def update_mesh(config,state=None):
     # redundancy check
     deform_set  = config['DV_KIND'] == config['DEFINITION_DV']['KIND']
     deform_todo = not config['DV_VALUE_NEW'] == config['DV_VALUE_OLD']
-    do_remesh   = config['ENABLE_REMESHING'] == 'YES'
+
+    try:
+        do_remesh = config['ENABLE_REMESHING'] == 'YES'
+    except:
+        do_remesh = False
+
     if deform_set and deform_todo:
     
         # files to pull

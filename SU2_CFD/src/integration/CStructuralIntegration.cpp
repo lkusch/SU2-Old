@@ -2,7 +2,7 @@
  * \file CStructuralIntegration.cpp
  * \brief Space and time integration for structural problems.
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -212,8 +212,6 @@ void CStructuralIntegration::SetDualTime_Solver(const CGeometry *geometry, CSolv
   /*--- Store the solution at t+1 as solution at t, both for the local points and for the halo points ---*/
 
   solver->GetNodes()->Set_Solution_time_n();
-  solver->GetNodes()->SetSolution_Vel_time_n();
-  solver->GetNodes()->SetSolution_Accel_time_n();
 
   /*--- If FSI problem, save the last Aitken relaxation parameter of the previous time step ---*/
 

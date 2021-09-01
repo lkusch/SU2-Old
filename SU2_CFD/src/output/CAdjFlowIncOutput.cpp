@@ -1,8 +1,8 @@
 /*!
- * \file output_adj_flow_inc.cpp
+ * \file CAdjFlowIncOutput.cpp
  * \brief Main subroutines for flow discrete adjoint output
  * \author R. Sanchez
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -657,7 +657,7 @@ void CAdjFlowIncOutput::LoadSurfaceData(CConfig *config, CGeometry *geometry, CS
 }
 
 
-bool CAdjFlowIncOutput::SetInit_Residuals(CConfig *config){
+bool CAdjFlowIncOutput::SetInit_Residuals(const CConfig *config){
 
   return (config->GetTime_Marching() != TIME_MARCHING::STEADY && (curInnerIter == 0))||
          (config->GetTime_Marching() == TIME_MARCHING::STEADY && (curTimeIter < 2));

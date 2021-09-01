@@ -3,7 +3,7 @@
  * \brief Headers of the iteration classes used by SU2_CFD.
  *        Each CIteration class represents an available physics package.
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -137,6 +137,18 @@ class CIteration {
                        CNumerics****** numerics, CConfig** config, CSurfaceMovement** surface_movement,
                        CVolumetricMovement*** grid_movement, CFreeFormDefBox*** FFDBox, unsigned short val_iZone,
                        unsigned short val_iInst){}
+
+  /*!
+   * \brief A virtual member.
+   * \param[in] geometry - Geometrical definition of the problem.
+   * \param[in] solver - Container vector with all the solutions.
+   * \param[in] config - Definition of the particular problem.
+   * \param[in] val_iZone - Index of the zone.
+   * \param[in] val_iInst - Index of the instantiation.
+   * \param[in] CrossTerm - Boolean for CrossTerm.
+   */
+  virtual void IterateDiscAdj(CGeometry**** geometry, CSolver***** solver, CConfig** config,
+                              unsigned short val_iZone, unsigned short val_iInst, bool CrossTerm) {}
 
   /*!
    * \brief A virtual member.
@@ -277,7 +289,7 @@ class CIteration {
   virtual void SetDependencies(CSolver***** solver, CGeometry**** geometry, CNumerics****** numerics, CConfig** config,
                                unsigned short iZone, unsigned short iInst, RECORDING kind_recording) {}
 
-  virtual void RegisterOutput(CSolver***** solver, CGeometry**** geometry, CConfig** config, COutput* output,
+  virtual void RegisterOutput(CSolver***** solver, CGeometry**** geometry, CConfig** config,
                               unsigned short iZone, unsigned short iInst) {}
 
   virtual void SetRecording(CSolver***** solver, CGeometry**** geometry, CConfig** config, unsigned short val_iZone,

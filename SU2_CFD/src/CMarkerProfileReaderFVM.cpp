@@ -2,7 +2,7 @@
  * \file CMarkerProfileReaderFVM.cpp
  * \brief Class that handles the reading of marker profile files.
  * \author T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -128,8 +128,6 @@ void CMarkerProfileReaderFVM::ReadMarkerProfile() {
         for (unsigned long iRow = 0; iRow < (numberOfRowsInProfile[iMarker]-skip); iRow++) getline (profile_file, text_line);
 
       }
-    } else {
-      //cout << "inlet profile reader is ignoring line: " << text_line << endl;
     }
   }
 

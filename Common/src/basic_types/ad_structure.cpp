@@ -2,7 +2,7 @@
  * \file ad_structure.cpp
  * \brief Main subroutines for the algorithmic differentiation (AD) structure.
  * \author T. Albring
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -31,19 +31,20 @@ namespace AD {
 #ifdef CODI_REVERSE_TYPE
   /*--- Initialization of the global variables ---*/
 
-  int adjointVectorPosition = 0;
-
-  std::vector<su2double::GradientData> inputValues;
-  std::vector<su2double::GradientData> localInputValues;
-  std::vector<su2double*> localOutputValues;
-
   TapePosition StartPosition, EndPosition;
   std::vector<TapePosition> TapePositions;
 
   bool PreaccActive = false;
+#ifdef HAVE_OPDI
+  SU2_OMP(threadprivate(PreaccActive))
+#endif
+
   bool PreaccEnabled = true;
 
   codi::PreaccumulationHelper<su2double> PreaccHelper;
+#ifdef HAVE_OPDI
+  SU2_OMP(threadprivate(PreaccHelper))
+#endif
 
   ExtFuncHelper* FuncHelper;
 

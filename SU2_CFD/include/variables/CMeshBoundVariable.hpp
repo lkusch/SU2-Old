@@ -3,7 +3,7 @@
  * \brief Declaration and inlines of the class
  *        to define the variables of the mesh movement at the moving boundaries.
  * \author Ruben Sanchez
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -117,9 +117,8 @@ public:
 
   /*!
    * \brief Register the boundary displacements of the mesh.
-   * \param[in] input - Defines whether we are registering the variable as input or as output.
    */
-  void Register_BoundDisp(bool input) override;
+  void Register_BoundDisp() override;
 
   /*!
    * \brief Recover the value of the adjoint of the boundary displacements.

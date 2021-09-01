@@ -3,7 +3,7 @@
 ## \file state.py
 #  \brief python package for state 
 #  \author T. Lukaczyk, F. Palacios
-#  \version 7.1.1 "Blackbird"
+#  \version 7.2.0 "Blackbird"
 #
 # SU2 Project Website: https://su2code.github.io
 # 
@@ -259,9 +259,12 @@ class State(ordered_bunch):
         targetcp_name = 'TargetCp.dat'
         targetheatflux_name = 'TargetHeatFlux.dat'
 
+        special_cases = get_specialCases(config)
+        if 'FLAMELET_FLUID_MODEL' in special_cases:
+            lookuptable_name = config.FILENAME_LUT
+
         adj_map = get_adjointSuffix()
         restart = config.RESTART_SOL == 'YES'
-        special_cases = get_specialCases(config)
 
         if config.get('OPT_OBJECTIVE'):
             def_objs = config['OPT_OBJECTIVE']
@@ -368,7 +371,6 @@ class State(ordered_bunch):
 
         # look up table
         if 'FLAMELET_FLUID_MODEL' in special_cases:
-            lookuptable_name = config.FILENAME_LUT
             register_file('LOOK_UP_TABLE',lookuptable_name)
           
         return

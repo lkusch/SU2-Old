@@ -1,8 +1,8 @@
 /*!
- * \file output_structure.cpp
+ * \file COutput.cpp
  * \brief Main subroutines for output solver information
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -51,15 +51,17 @@
 #include <iomanip>
 
 
-COutput::COutput(CConfig *config, unsigned short nDim, bool fem_output): femOutput(fem_output) {
+COutput::COutput(const CConfig *config, unsigned short ndim, bool fem_output):
+  rank(SU2_MPI::GetRank()),
+  size(SU2_MPI::GetSize()),
+  nDim(ndim),
+  multiZone(config->GetMultizone_Problem()),
+  gridMovement(config->GetGrid_Movement()),
+  femOutput(fem_output),
+  si_units(config->GetSystemMeasurements() == SI),
+  us_units(config->GetSystemMeasurements() == US) {
 
   cauchyTimeConverged = false;
-  this->nDim = nDim;
-
-  rank = SU2_MPI::GetRank();
-  size = SU2_MPI::GetSize();
-
-  fieldWidth = 12;
 
   convergenceTable = new PrintingToolbox::CTablePrinter(&std::cout);
   multiZoneHeaderTable = new PrintingToolbox::CTablePrinter(&std::cout);
@@ -112,10 +114,6 @@ COutput::COutput(CConfig *config, unsigned short nDim, bool fem_output): femOutp
   for (unsigned short iField = 0; iField < nRequestedVolumeFields; iField++){
     requestedVolumeFields.push_back(config->GetVolumeOutput_Field(iField));
   }
-
-  gridMovement = config->GetGrid_Movement();
-
-  multiZone     = config->GetMultizone_Problem();
 
   /*--- Default is to write history to file and screen --- */
 
@@ -186,13 +184,8 @@ COutput::~COutput(void) {
   delete historyFileTable;
 
   delete volumeDataSorter;
-  volumeDataSorter = nullptr;
-
   delete surfaceDataSorter;
-  surfaceDataSorter = nullptr;
 }
-
-
 
 void COutput::SetHistory_Output(CGeometry *geometry,
                                   CSolver **solver_container,
@@ -262,20 +255,13 @@ void COutput::SetMultizoneHistory_Output(COutput **output, CConfig **config, CCo
 
 void COutput::OutputScreenAndHistory(CConfig *config) {
 
-  bool write_header, write_screen, write_history;
   if (rank == MASTER_NODE && !noWriting) {
 
-    /*--- Write the history file ---------------------------------------------------------------------------*/
-    write_history = WriteHistoryFile_Output(config);
-    if (write_history) SetHistoryFile_Output(config);
+    if (WriteHistoryFile_Output(config)) SetHistoryFile_Output(config);
 
-    /*--- Write the screen header---------------------------------------------------------------------------*/
-    write_header = WriteScreen_Header(config);
-    if (write_header) SetScreen_Header(config);
+    if (WriteScreen_Header(config)) SetScreen_Header(config);
 
-    /*--- Write the screen output---------------------------------------------------------------------------*/
-    write_screen = WriteScreen_Output(config);
-    if (write_screen) SetScreen_Output(config);
+    if (WriteScreen_Output(config)) SetScreen_Output(config);
 
   }
 }
@@ -1013,7 +999,7 @@ bool COutput::MonitorTimeConvergence(CConfig *config, unsigned long TimeIteratio
   return TimeConvergence;
 }
 
-void COutput::SetHistoryFile_Header(CConfig *config) {
+void COutput::SetHistoryFile_Header(const CConfig *config) {
 
   unsigned short iField_Output = 0,
       iReqField = 0,
@@ -1057,12 +1043,11 @@ void COutput::SetHistoryFile_Header(CConfig *config) {
 }
 
 
-void COutput::SetHistoryFile_Output(CConfig *config) {
+void COutput::SetHistoryFile_Output(const CConfig *config) {
 
   unsigned short iField_Output = 0,
       iReqField = 0,
       iMarker = 0;
-  stringstream out;
 
   for (iField_Output = 0; iField_Output < historyOutput_List.size(); iField_Output++){
     const string &fieldIdentifier = historyOutput_List[iField_Output];
@@ -1093,53 +1078,57 @@ void COutput::SetHistoryFile_Output(CConfig *config) {
   histFile.flush();
 }
 
-void COutput::SetScreen_Header(CConfig *config) {
+void COutput::SetScreen_Header(const CConfig *config) {
   if (config->GetMultizone_Problem())
     multiZoneHeaderTable->PrintHeader();
   convergenceTable->PrintHeader();
 }
 
 
-void COutput::SetScreen_Output(CConfig *config) {
+void COutput::SetScreen_Output(const CConfig *config) {
 
-  string RequestedField;
-
-  for (unsigned short iReqField = 0; iReqField < nRequestedScreenFields; iReqField++){
-    stringstream out;
-    RequestedField = requestedScreenFields[iReqField];
-    if (historyOutput_Map.count(RequestedField) > 0){
-      switch (historyOutput_Map.at(RequestedField).screenFormat) {
+  for (const auto& RequestedField : requestedScreenFields) {
+    const auto it1 = historyOutput_Map.find(RequestedField);
+    if (it1 != historyOutput_Map.end()) {
+      const auto& field = it1->second;
+      stringstream out;
+      switch (field.screenFormat) {
         case ScreenOutputFormat::INTEGER:
-          PrintingToolbox::PrintScreenInteger(out, SU2_TYPE::Int(historyOutput_Map.at(RequestedField).value), fieldWidth);
+          PrintingToolbox::PrintScreenInteger(out, SU2_TYPE::Int(field.value), fieldWidth);
           break;
         case ScreenOutputFormat::FIXED:
-          PrintingToolbox::PrintScreenFixed(out, historyOutput_Map.at(RequestedField).value, fieldWidth);
+          PrintingToolbox::PrintScreenFixed(out, field.value, fieldWidth);
           break;
         case ScreenOutputFormat::SCIENTIFIC:
-          PrintingToolbox::PrintScreenScientific(out, historyOutput_Map.at(RequestedField).value, fieldWidth);
+          PrintingToolbox::PrintScreenScientific(out, field.value, fieldWidth);
           break;
         case ScreenOutputFormat::PERCENT:
-          PrintingToolbox::PrintScreenPercent(out, historyOutput_Map[RequestedField].value, fieldWidth);
+          PrintingToolbox::PrintScreenPercent(out, field.value, fieldWidth);
           break;
       }
+      (*convergenceTable) << out.str();
     }
-    if (historyOutputPerSurface_Map.count(RequestedField) > 0){
-      switch (historyOutputPerSurface_Map.at(RequestedField)[0].screenFormat) {
-        case ScreenOutputFormat::INTEGER:
-          PrintingToolbox::PrintScreenInteger(out, SU2_TYPE::Int(historyOutputPerSurface_Map.at(RequestedField)[0].value), fieldWidth);
-          break;
-        case ScreenOutputFormat::FIXED:
-          PrintingToolbox::PrintScreenFixed(out, historyOutputPerSurface_Map.at(RequestedField)[0].value, fieldWidth);
-          break;
-        case ScreenOutputFormat::SCIENTIFIC:
-          PrintingToolbox::PrintScreenScientific(out, historyOutputPerSurface_Map.at(RequestedField)[0].value, fieldWidth);
-          break;
-        case ScreenOutputFormat::PERCENT:
-          PrintingToolbox::PrintScreenPercent(out, historyOutputPerSurface_Map[RequestedField][0].value, fieldWidth);
-          break;
+    const auto it2 = historyOutputPerSurface_Map.find(RequestedField);
+    if (it2 != historyOutputPerSurface_Map.end()) {
+      for (const auto& field : it2->second) {
+        stringstream out;
+        switch (field.screenFormat) {
+          case ScreenOutputFormat::INTEGER:
+            PrintingToolbox::PrintScreenInteger(out, SU2_TYPE::Int(field.value), fieldWidth);
+            break;
+          case ScreenOutputFormat::FIXED:
+            PrintingToolbox::PrintScreenFixed(out, field.value, fieldWidth);
+            break;
+          case ScreenOutputFormat::SCIENTIFIC:
+            PrintingToolbox::PrintScreenScientific(out, field.value, fieldWidth);
+            break;
+          case ScreenOutputFormat::PERCENT:
+            PrintingToolbox::PrintScreenPercent(out, field.value, fieldWidth);
+            break;
+        }
+        (*convergenceTable) << out.str();
       }
     }
-    (*convergenceTable) << out.str();
   }
   SetAdditionalScreenOutput(config);
 }
@@ -1242,7 +1231,7 @@ void COutput::PrepareHistoryFile(CConfig *config){
 
   /*--- Open the history file ---*/
 
-  histFile.open(historyFilename.c_str(), ios::out);
+  histFile.open(historyFilename, ios::out);
 
   /*--- Create and format the history file table ---*/
 
@@ -1258,23 +1247,26 @@ void COutput::PrepareHistoryFile(CConfig *config){
 
 }
 
-void COutput::CheckHistoryOutput(){
-
+void COutput::CheckHistoryOutput() {
 
   /*--- Set screen convergence output header and remove unavailable fields ---*/
 
-  string requestedField;
   vector<string> FieldsToRemove;
   vector<bool> FoundField(nRequestedHistoryFields, false);
 
-  for (unsigned short iReqField = 0; iReqField < nRequestedScreenFields; iReqField++){
-    requestedField = requestedScreenFields[iReqField];
-    if (historyOutput_Map.count(requestedField) > 0){
-      convergenceTable->AddColumn(historyOutput_Map.at(requestedField).fieldName, fieldWidth);
+  for (unsigned short iReqField = 0; iReqField < nRequestedScreenFields; iReqField++) {
+    const auto& requestedField = requestedScreenFields[iReqField];
+    const auto it1 = historyOutput_Map.find(requestedField);
+    if (it1 != historyOutput_Map.end()) {
+      convergenceTable->AddColumn(it1->second.fieldName, fieldWidth);
     }
-    else if (historyOutputPerSurface_Map.count(requestedField) > 0){
-      convergenceTable->AddColumn(historyOutputPerSurface_Map.at(requestedField)[0].fieldName, fieldWidth);
-    }else {
+    const auto it2 = historyOutputPerSurface_Map.find(requestedField);
+    if (it2 != historyOutputPerSurface_Map.end()) {
+      for (const auto& field : it2->second) {
+        convergenceTable->AddColumn(field.fieldName, fieldWidth);
+      }
+    }
+    if (it1 == historyOutput_Map.end() && it2 == historyOutputPerSurface_Map.end()) {
       FieldsToRemove.push_back(requestedField);
     }
   }
@@ -1286,8 +1278,9 @@ void COutput::CheckHistoryOutput(){
       if (iReqField == 0){
         cout << "  Info: Ignoring the following screen output fields:" << endl;
         cout << "  ";
-      }        cout << FieldsToRemove[iReqField];
-      if (iReqField != FieldsToRemove.size()-1){
+      }
+      cout << FieldsToRemove[iReqField];
+      if (iReqField != FieldsToRemove.size()-1) {
         cout << ", ";
       } else {
         cout << endl;
@@ -1302,7 +1295,6 @@ void COutput::CheckHistoryOutput(){
   if (rank == MASTER_NODE){
     cout <<"Screen output fields: ";
     for (unsigned short iReqField = 0; iReqField < nRequestedScreenFields; iReqField++){
-      requestedField = requestedScreenFields[iReqField];
       cout << requestedScreenFields[iReqField];
       if (iReqField != nRequestedScreenFields - 1) cout << ", ";
     }
@@ -1319,7 +1311,7 @@ void COutput::CheckHistoryOutput(){
     if (historyOutput_Map.count(fieldReference) > 0){
       const HistoryOutputField &field = historyOutput_Map.at(fieldReference);
       for (unsigned short iReqField = 0; iReqField < nRequestedHistoryFields; iReqField++){
-        requestedField = requestedHistoryFields[iReqField];
+        const auto& requestedField = requestedHistoryFields[iReqField];
         if (requestedField == field.outputGroup){
           FoundField[iReqField] = true;
         }
@@ -1329,11 +1321,10 @@ void COutput::CheckHistoryOutput(){
 
   for (unsigned short iField_Output = 0; iField_Output < historyOutputPerSurface_List.size(); iField_Output++){
     const string &fieldReference = historyOutputPerSurface_List[iField_Output];
-    if (historyOutputPerSurface_Map.count(fieldReference) > 0){
-      for (unsigned short iMarker = 0; iMarker < historyOutputPerSurface_Map.at(fieldReference).size(); iMarker++){
-        const HistoryOutputField &Field = historyOutputPerSurface_Map.at(fieldReference)[iMarker];
+    if (historyOutputPerSurface_Map.count(fieldReference) > 0) {
+      for (const auto &Field : historyOutputPerSurface_Map.at(fieldReference)) {
         for (unsigned short iReqField = 0; iReqField < nRequestedHistoryFields; iReqField++){
-          requestedField = requestedHistoryFields[iReqField];
+          const auto& requestedField = requestedHistoryFields[iReqField];
           if (requestedField == Field.outputGroup){
             FoundField[iReqField] = true;
           }
@@ -1355,7 +1346,8 @@ void COutput::CheckHistoryOutput(){
       if (iReqField == 0){
         cout << "  Info: Ignoring the following history output groups:" << endl;
         cout << "  ";
-      }        cout << FieldsToRemove[iReqField];
+      }
+      cout << FieldsToRemove[iReqField];
       if (iReqField != FieldsToRemove.size()-1){
         cout << ", ";
       } else {
@@ -1371,7 +1363,6 @@ void COutput::CheckHistoryOutput(){
   if (rank == MASTER_NODE){
     cout <<"History output group(s): ";
     for (unsigned short iReqField = 0; iReqField < nRequestedHistoryFields; iReqField++){
-      requestedField = requestedHistoryFields[iReqField];
       cout << requestedHistoryFields[iReqField];
       if (iReqField != nRequestedHistoryFields - 1) cout << ", ";
     }
@@ -1848,7 +1839,7 @@ void COutput::Postprocess_HistoryFields(CConfig *config){
   }
 }
 
-bool COutput::WriteScreen_Header(CConfig *config) {
+bool COutput::WriteScreen_Header(const CConfig *config) {
 
   unsigned long RestartIter = 0;
 
@@ -1900,7 +1891,7 @@ bool COutput::WriteScreen_Header(CConfig *config) {
   return false;
 }
 
-bool COutput::WriteScreen_Output(CConfig *config) {
+bool COutput::WriteScreen_Output(const CConfig *config) {
 
   unsigned long ScreenWrt_Freq_Inner = config->GetScreen_Wrt_Freq(2);
   unsigned long ScreenWrt_Freq_Outer = config->GetScreen_Wrt_Freq(1);
@@ -1941,7 +1932,7 @@ bool COutput::WriteScreen_Output(CConfig *config) {
 
 }
 
-bool COutput::WriteHistoryFile_Output(CConfig *config) {
+bool COutput::WriteHistoryFile_Output(const CConfig *config) {
 
   unsigned long HistoryWrt_Freq_Inner = config->GetHistory_Wrt_Freq(2);
   unsigned long HistoryWrt_Freq_Outer = config->GetHistory_Wrt_Freq(1);

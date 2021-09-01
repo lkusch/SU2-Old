@@ -2,7 +2,7 @@
  * \file CIncEulerSolver.hpp
  * \brief Headers of the CIncEulerSolver class
  * \author F. Palacios, T. Economon, T. Albring
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -40,6 +40,7 @@ class CIncEulerSolver : public CFVMFlowSolverBase<CIncEulerVariable, ENUM_REGIME
 protected:
   vector<CFluidModel*> FluidModel;   /*!< \brief fluid model used in the solver. */
   StreamwisePeriodicValues SPvals;
+  su2double Total_CEquivArea = 0.0;     /*!< \brief Total Equivalent Area coefficient for all the boundaries. */
 
   /*!
    * \brief Preprocessing actions common to the Euler and NS solvers.
@@ -118,6 +119,11 @@ protected:
    */
   template<ENUM_TIME_INT IntegrationType>
   void Explicit_Iteration(CGeometry *geometry, CSolver **solver_container, CConfig *config, unsigned short iRKStep);
+
+  /*!
+   * \brief Set reference values for pressure, forces, etc.
+   */
+  void SetReferenceValues(const CConfig& config) final;
 
 public:
   /*!
@@ -239,9 +245,7 @@ public:
    * \brief Compute weighted-sum "combo" objective output
    * \param[in] config - Definition of the particular problem.
    */
-  inline void Evaluate_ObjFunc(const CConfig *config) final {
-    Total_ComboObj = EvaluateCommonObjFunc(*config);
-  }
+  void Evaluate_ObjFunc(const CConfig *config) override;
 
   /*!
    * \brief Impose the far-field boundary condition using characteristics.
