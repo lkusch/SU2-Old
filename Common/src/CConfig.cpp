@@ -909,7 +909,7 @@ void CConfig::SetPointersNull(void) {
   Surface_Temperature     = nullptr;    Surface_Pressure         = nullptr;    Surface_Density          = nullptr;    Surface_Enthalpy        = nullptr;
   Surface_NormalVelocity  = nullptr;    Surface_TotalTemperature = nullptr;    Surface_TotalPressure    = nullptr;    Surface_PressureDrop    = nullptr;
   Surface_DC60            = nullptr;    Surface_IDC              = nullptr;
-  Surface_CO              = nullptr;    Surface_NOx               = nullptr;   Surface_PassiveScalar    = nullptr;
+  Surface_CO              = nullptr;    Surface_NOx               = nullptr;   Surface_PassiveScalar    = nullptr;    Surface_ProgressVariable = nullptr;
   //Surface_Scalar          = nullptr;
 
   Outlet_MassFlow      = nullptr;       Outlet_Density      = nullptr;      Outlet_Area     = nullptr;
@@ -3532,6 +3532,7 @@ void CConfig::SetPostprocessing(SU2_COMPONENT val_software, unsigned short val_i
         case SURFACE_PRESSURE_DROP:
 //        case SURFACE_CO:
 //        case SURFACE_NOX:
+        case SURFACE_PROG_VAR:
         case CUSTOM_OBJFUNC:
           if (Kind_ObjFunc[iObj] != Obj_0) {
             SU2_MPI::Error(string("The following objectives can only be used for the first surface in a multi-objective \n")+
@@ -5268,6 +5269,7 @@ void CConfig::SetMarkers(SU2_COMPONENT val_software) {
   Surface_CO                 = new su2double [nMarker_Analyze] ();
   Surface_NOx                = new su2double [nMarker_Analyze] ();
   Surface_PassiveScalar      = new su2double [nMarker_Analyze] ();
+  Surface_ProgressVariable   = new su2double [nMarker_Analyze] ();
 
   //Surface_Scalar = new su2double*[nMarker_Analyze] ();
   //for (int i_scalar=0; i_scalar < nMarker_Analyze; ++i_scalar)
@@ -6207,6 +6209,7 @@ void CConfig::SetOutput(SU2_COMPONENT val_software, unsigned short val_izone) {
         case SURFACE_NOX:                cout << "Y_NOx objective function." << endl; break;
         case SURFACE_TEMP:               cout << "Temperature objective function." << endl; break;
         case SURFACE_PASSIVE_SCALAR:     cout << "Passive scalar objective function." << endl; break;
+        case SURFACE_PROG_VAR:           cout << "Progress variable objective function." << endl; break;
       }
     }
     else {
@@ -7790,6 +7793,7 @@ CConfig::~CConfig(void) {
      delete[]  Surface_CO;
      delete[]  Surface_NOx;
      delete[]  Surface_PassiveScalar;
+     delete[]  Surface_ProgressVariable;
      //delete[]  Surface_Scalar;
 
   delete[]  Inlet_Ttotal;
@@ -8144,6 +8148,7 @@ string CConfig::GetObjFunc_Extension(string val_filename) const {
         case SURFACE_NOX:                 AdjExt = "_ynox";     break;
         case SURFACE_TEMP:                AdjExt = "_avgtemp";  break;
         case SURFACE_PASSIVE_SCALAR:      AdjExt = "_pass";     break;
+        case SURFACE_PROG_VAR:            AdjExt = "_prog";     break;
       }
     }
     else{

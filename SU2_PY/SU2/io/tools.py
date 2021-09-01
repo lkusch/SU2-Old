@@ -455,6 +455,7 @@ def get_adjointSuffix(objective_function=None):
                  "AVG_CO"                      : "yco"       ,
                  "AVG_NOX"                     : "ynox"      ,
                  "SURFACE_PASSIVE_SCALAR"      : "pass"      ,
+                 "SURFACE_PROG_VAR"            : "prog"      ,
                  "AVG_TEMP"                    : "avgtemp"   ,
                  "CUSTOM_OBJFUNC"              : "custom"    ,
                  "KINETIC_ENERGY_LOSS"         : "ke"        ,
@@ -732,8 +733,8 @@ def get_optFileFormat(plot_format,special_cases=None, nZones = 1):
     else: raise Exception('output plot format not recognized')
 
     # start header
-    header_list.extend(["Iteration","CL","CD","CSF","CMx","CMy","CMz","CFx","CFy","CFz","CL/CD","Custom_ObjFunc","Surface_CO","Surface_NOx","Surface_Temperature","HeatFlux_Total","HeatFlux_Maximum","Temperature_Total"])
-    write_format.append(r'%4d, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f')
+    header_list.extend(["Iteration","CL","CD","CSF","CMx","CMy","CMz","CFx","CFy","CFz","CL/CD","Custom_ObjFunc","Surface_CO","Surface_NOx","Surface_Temperature","HeatFlux_Total","HeatFlux_Maximum","Temperature_Total", "Surface_PassiveScalar", "Surface_ProgressVariable"])
+    write_format.append(r'%4d, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f, %.10f')
         
     # special cases
     for key in special_cases: 

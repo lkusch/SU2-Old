@@ -68,7 +68,7 @@ CDiscAdjMultizoneDriver::CDiscAdjMultizoneDriver(char* confFile,
         case DISC_ADJ_EULER: case DISC_ADJ_NAVIER_STOKES: case DISC_ADJ_RANS:
           direct_iteration[iZone][iInst] = CIterationFactory::CreateIteration(EULER, config_container[iZone]);
           break;
-        case DISC_ADJ_INC_EULER: case DISC_ADJ_INC_NAVIER_STOKES: case DISC_ADJ_INC_RANS:
+        case DISC_ADJ_INC_EULER: case DISC_ADJ_INC_NAVIER_STOKES: case DISC_ADJ_INC_RANS: 
           direct_iteration[iZone][iInst] = CIterationFactory::CreateIteration(INC_EULER, config_container[iZone]);
           break;
         case DISC_ADJ_HEAT:
@@ -702,6 +702,14 @@ void CDiscAdjMultizoneDriver::DirectIteration(unsigned short iZone, RECORDING ki
           cout << " Zone " << iZone << " (radiation)  - log10[Rad(0)]  : "
                << log10(solvers[RAD_SOL]->GetRes_RMS(0)) << endl;
         }
+        if (config_container[iZone]->GetKind_Scalar_Model() != NONE) {
+
+          cout << "Zone "  << iZone << " (scalar) - log10[Scalar(0)]   : "
+               <<  log10(solvers[SCALAR_SOL]->GetRes_RMS(0));
+          
+          if (solvers[SCALAR_SOL]->GetnVar() > 1) cout << ", log10[Scalar(1)]   : " << log10(solvers[SCALAR_SOL]->GetRes_RMS(1));
+          cout << "." << endl;
+      }
         break;
 
       case DISC_ADJ_HEAT:

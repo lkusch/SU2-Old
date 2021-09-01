@@ -375,6 +375,7 @@ private:
   su2double *Surface_CO;                     /*!< \brief Mass fraction of CO at the boundaries. */
   su2double *Surface_NOx;                    /*!< \brief Mass fraction of NO at the boundaries. */
   su2double *Surface_PassiveScalar;          /*!< \brief Mass fraction of Passive scalar at the boundaries. */
+  su2double *Surface_ProgressVariable;       /*!< \brief Mass fraction of progress variable at the boundaries. */
   //su2double **Surface_Scalar;
   su2double *Surface_PressureDrop;           /*!< \brief Pressure drop between boundaries. */
   su2double *Surface_DC60;                   /*!< \brief Specified surface DC60 for nacelle boundaries. */
@@ -7616,9 +7617,16 @@ public:
   /*!
    * \brief Set the passive scalar mass fraction at the surface.
    * \param[in] val_imarker - Index corresponding to the outlet boundary.
-   * \param[in] val_surface_no - Value of the passive scalar mass fraction.
+   * \param[in] val_surface_scalar - Value of the passive scalar mass fraction.
    */
   void SetSurface_PassiveScalar(unsigned short val_imarker, su2double val_surface_scalar){ Surface_PassiveScalar[val_imarker] = val_surface_scalar; };
+  
+  /*!
+   * \brief Set the mass fraction of the progress variable at the surface.
+   * \param[in] val_imarker - Index corresponding to the outlet boundary.
+   * \param[in] val_surface_progvar - Value of the progress variable mass fraction.
+   */
+  void SetSurface_ProgressVariable(unsigned short val_imarker, su2double val_surface_progvar){ Surface_ProgressVariable[val_imarker] = val_surface_progvar; };
 
   /*!
    * \brief Set the NO mass fraction at the surface.
@@ -7908,11 +7916,18 @@ public:
   //su2double GetSurface_Scalar(unsigned short val_imarker, unsigned short val_i_scalar) const { return Surface_Scalar[val_imarker][val_i_scalar]; }
  
   /*!
-   * \brief Get the passive scalar mass fraction at an outlet boundary.
-   * \param[in] val_index - Index corresponding to the outlet boundary.
+   * \brief Get the passive scalar mass fraction at a boundary.
+   * \param[in] val_imarker - Marker corresponding to the boundary.
    * \return The passive scalar mass fraction.
    */
   su2double GetSurface_PassiveScalar(unsigned short val_imarker) const { return Surface_PassiveScalar[val_imarker]; }
+  
+  /*!
+   * \brief Get the progress variable mass fraction at a boundary.
+   * \param[in] val_imarker - Marker corresponding to the boundary.
+   * \return The progress variable mass fraction.
+   */
+  su2double GetSurface_ProgressVariable(unsigned short val_imarker) const { return Surface_ProgressVariable[val_imarker]; }
  
   /*!
    * \brief Get the NOx mass fraction at an outlet boundary.

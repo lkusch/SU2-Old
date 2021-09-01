@@ -74,6 +74,8 @@ void CFlowOutput::AddAnalyzeSurfaceOutput(CConfig *config){
   AddHistoryOutput("AVG_NOX",                  "Avg_NOx",                   ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Total average mass fraction of NO on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
   /// DESCRIPTION: Passive Scalar
   AddHistoryOutput("SURFACE_PASSIVE_SCALAR",    "Avg_PassiveScalar",        ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Total average passive scalar on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
+  /// DESCRIPTION: Progress variable (fraction)
+  AddHistoryOutput("SURFACE_PROG_VAR",    	"Avg_ProgVar",        	    ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF", "Total average of progress variable on all markers set in MARKER_ANALYZE", HistoryFieldType::COEFFICIENT);
   /// END_GROUP
 
 
@@ -117,6 +119,8 @@ void CFlowOutput::AddAnalyzeSurfaceOutput(CConfig *config){
   AddHistoryOutputPerSurface("AVG_NOX",                  "Avg_NOx",                   ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
   /// DESCRIPTION: Average passive scalar
   AddHistoryOutputPerSurface("SURFACE_PASSIVE_SCALAR",   "Avg_PassiveScalar",         ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
+  /// DESCRIPTION: Average progress variable (fraction)
+  AddHistoryOutputPerSurface("SURFACE_PROG_VAR",   	"Avg_ProgVar",         	      ScreenOutputFormat::SCIENTIFIC, "FLOW_COEFF_SURF", Marker_Analyze, HistoryFieldType::COEFFICIENT);
   /// END_GROUP
 
 }
@@ -165,6 +169,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
   vector<su2double> Surface_CO                (nMarker,0.0);
   vector<su2double> Surface_NOx               (nMarker,0.0);
   vector<su2double> Surface_PassiveScalar     (nMarker,0.0);
+  vector<su2double> Surface_ProgressVariable  (nMarker,0.0);
 
   su2double  Tot_Surface_MassFlow          = 0.0;
   su2double  Tot_Surface_Mach              = 0.0;
@@ -183,6 +188,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
   su2double  Tot_Surface_CO                = 0.0;
   su2double  Tot_Surface_NOx               = 0.0;
   su2double  Tot_Surface_PassiveScalar     = 0.0;
+  su2double  Tot_Surface_ProgressVariable  = 0.0;
   //su2double  Tot_Surface_Scalar[n_scalars];
   //for (int i_scalar = 0; i_scalar < n_scalars; ++i_scalar)
   //  Tot_Surface_Scalar[i_scalar] = 0.0;
@@ -289,6 +295,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
           if (flamelet_model){
             Surface_CO[iMarker]  += scalar_solver->GetNodes()->GetSolution(iPoint, I_CO) * Weight;
             Surface_NOx[iMarker] += scalar_solver->GetNodes()->GetSolution(iPoint, I_NOX) * Weight;
+            Surface_ProgressVariable[iMarker] += scalar_solver->GetNodes()->GetSolution(iPoint, I_PROG_VAR) * Weight;
           }
 
           /*--- For now, always used the area to weight the uniformities. ---*/
@@ -321,6 +328,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
   vector<su2double> Surface_CO_Local               (nMarker_Analyze,0.0);
   vector<su2double> Surface_NOx_Local               (nMarker_Analyze,0.0);
   vector<su2double> Surface_PassiveScalar_Local     (nMarker_Analyze,0.0);
+  vector<su2double> Surface_ProgressVariable_Local  (nMarker_Analyze,0.0);
   
   vector<su2double> Surface_MassFlow_Total          (nMarker_Analyze,0.0);
   vector<su2double> Surface_Mach_Total              (nMarker_Analyze,0.0);
@@ -338,6 +346,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
   vector<su2double> Surface_CO_Total                (nMarker_Analyze,0.0);
   vector<su2double> Surface_NOx_Total               (nMarker_Analyze,0.0);
   vector<su2double> Surface_PassiveScalar_Total     (nMarker_Analyze,0.0);
+  vector<su2double> Surface_ProgressVariable_Total  (nMarker_Analyze,0.0);
 
   vector<su2double> Surface_MomentumDistortion_Total (nMarker_Analyze,0.0);
 
@@ -368,6 +377,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
           Surface_CO_Local[iMarker_Analyze]                += Surface_CO[iMarker];
           Surface_NOx_Local[iMarker_Analyze]               += Surface_NOx[iMarker];
           Surface_PassiveScalar_Local[iMarker_Analyze]     += Surface_PassiveScalar[iMarker];
+          Surface_ProgressVariable_Local[iMarker_Analyze]  += Surface_ProgressVariable[iMarker];
         }
 
       }
@@ -396,6 +406,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
   Allreduce(Surface_CO_Local, Surface_CO_Total);
   Allreduce(Surface_NOx_Local,Surface_NOx_Total);
   Allreduce(Surface_PassiveScalar_Local,Surface_PassiveScalar_Total);
+  Allreduce(Surface_ProgressVariable_Local,Surface_ProgressVariable_Total);
   /*--- Compute the value of Surface_Area_Total, and Surface_Pressure_Total, and
    set the value in the config structure for future use ---*/
 
@@ -417,6 +428,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
       Surface_CO_Total[iMarker_Analyze]               /= Weight;
       Surface_NOx_Total[iMarker_Analyze]              /= Weight;
       Surface_PassiveScalar_Total[iMarker_Analyze]    /= Weight;
+      Surface_ProgressVariable_Total[iMarker_Analyze]    /= Weight;
     }
     else {
       Surface_Mach_Total[iMarker_Analyze]             = 0.0;
@@ -430,6 +442,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
       Surface_CO_Total[iMarker_Analyze]               = 0.0;
       Surface_NOx_Total[iMarker_Analyze]              = 0.0;
       Surface_PassiveScalar_Total[iMarker_Analyze]    = 0.0;
+      Surface_ProgressVariable_Total[iMarker_Analyze]    = 0.0;
     }
 
     /*--- Compute flow uniformity parameters separately (always area for now). ---*/
@@ -534,6 +547,11 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
     SetHistoryOutputPerSurfaceValue("SURFACE_PASSIVE_SCALAR", TotalPassiveScalar, iMarker_Analyze);
     Tot_Surface_PassiveScalar += TotalPassiveScalar;
     config->SetSurface_PassiveScalar(iMarker_Analyze, TotalPassiveScalar);
+    
+    su2double TotalProgVar = Surface_ProgressVariable_Total[iMarker_Analyze];
+    SetHistoryOutputPerSurfaceValue("SURFACE_PROG_VAR", TotalProgVar, iMarker_Analyze);
+    Tot_Surface_ProgressVariable += TotalProgVar;
+    config->SetSurface_ProgressVariable(iMarker_Analyze, TotalProgVar);
   }
 
   /*--- Compute the average static pressure drop between two surfaces. Note
@@ -570,6 +588,7 @@ void CFlowOutput::SetAnalyzeSurface(CSolver **solver, CGeometry *geometry, CConf
   SetHistoryOutputValue("AVG_CO",  Tot_Surface_CO);
   SetHistoryOutputValue("AVG_NOX",  Tot_Surface_NOx);
   SetHistoryOutputValue("SURFACE_PASSIVE_SCALAR",  Tot_Surface_PassiveScalar);
+  SetHistoryOutputValue("SURFACE_PROG_VAR",  Tot_Surface_ProgressVariable);
 
   if ((rank == MASTER_NODE) && !config->GetDiscrete_Adjoint() && output) {
 

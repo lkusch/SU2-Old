@@ -1,7 +1,7 @@
-## \file scipy_tools.py
-#  \brief tools for interfacing with scipy
-#  \author T. Lukaczyk, F. Palacios
-#  \version 3.2.9 "eagle"
+## \file ipopt_tools.py
+#  \brief tools for interfacing with ipopt
+#  \author L.Kusch
+#  \version 
 #
 # SU2 Lead Developers: Dr. Francisco Palacios (fpalacios@stanford.edu).
 #                      Dr. Thomas D. Economon (economon@stanford.edu).
@@ -46,7 +46,6 @@ global project,ncon
 
 #TODO project als globale Variable / Klassenvariable?    
 def eval_f(x,user_data=None):
-    print x
     """ obj = eval_f(x)
         
         Objective Function
@@ -60,7 +59,7 @@ def eval_f(x,user_data=None):
     obj = project.obj_f(x)
     
     obj = obj[0]
-    print obj
+
     return obj
 
 def eval_grad_f(x,user_data=None):
@@ -77,7 +76,7 @@ def eval_grad_f(x,user_data=None):
     dobj = project.obj_df(x)
     
     dobj = array( dobj[0], float_)
-    print dobj
+
     return dobj
 
 def eval_g(x,user_data=None):
@@ -94,7 +93,7 @@ def eval_g(x,user_data=None):
     econs = project.con_ceq(x)
     iecons = project.con_cieq(x)
     cons = array(econs+iecons, float_)   
-    print cons
+
     return cons
 
 def eval_jac_g(x,flag, user_data=None):
@@ -107,26 +106,25 @@ def eval_jac_g(x,flag, user_data=None):
         ipopt: 	     dcons(x), ndarray[nceq*dim]
     """
     if flag:
-	iRow=[]
-	jCol=[]
-  	for i in range(0, ncon):
-	    for j in range(0, project.n_dv):
-		iRow.append(i);
-		jCol.append(j);
-	return (array(iRow), array(jCol))
+        iRow=[]
+        jCol=[]
+        for i in range(0, ncon):
+            for j in range(0, project.n_dv):
+                iRow.append(i);
+                jCol.append(j);
+        return (array(iRow), array(jCol))
     else:
-	assert len(x)==project.n_dv
+        assert len(x)==project.n_dv
 
-    	decons = project.con_dceq(x)
-    	diecons = project.con_dcieq(x)
+        decons = project.con_dceq(x)
+        diecons = project.con_dcieq(x)
 
-    	dcons= array(decons+diecons, float_)
-	values=[]
-	for j in range(0, ncon):
-	    for k in range(0, project.n_dv):
- 		values.append(dcons[j][k]);
-        print values
-    	return array(values)
+        dcons= array(decons+diecons, float_)
+        values=[]
+        for j in range(0, ncon):
+            for k in range(0, project.n_dv):
+                values.append(dcons[j][k]);
+        return array(values)
 
 def eval_h(x, lagrange, obj_factor, flag, user_data = None):
     if flag:
@@ -174,11 +172,11 @@ def ipopt_run(projectx, x0=None,xb_low=None, xb_up=None, its=100,accu=1e-10):
     con_low=[]
     con_up=[]
     for i in range(0,ncieq):
-	con_low.append(-2.0*pow(10.0,19))
-	con_up.append(0.0)
+        con_low.append(-2.0*pow(10.0,19))
+        con_up.append(0.0)
     for i in range(0,nceq):
-	con_low.append(0.0)
-	con_up.append(0.0)
+        con_low.append(0.0)
+        con_up.append(0.0)
     g_L=array(con_low)
     g_U=array(con_up)
 
@@ -186,7 +184,7 @@ def ipopt_run(projectx, x0=None,xb_low=None, xb_up=None, its=100,accu=1e-10):
 	
     nnzh= 0;
     for i in range(1,ncon+1):
-  	nnzh = nnzh+i;
+        nnzh = nnzh+i;
     
     nlp = pyipopt.create(n_dv, x_L, x_U, ncon, g_L, g_U, nnzj, nnzh, eval_f, eval_grad_f, eval_g, eval_jac_g)
 
@@ -228,16 +226,16 @@ def ipopt_run(projectx, x0=None,xb_low=None, xb_up=None, its=100,accu=1e-10):
     sys.stdout.write('Initial guess for the independent variable(s): ' + str(x0) + '\n')
     sys.stdout.write('Lower bound for each independent variable: ' + str(xb_low) + '\n')
     sys.stdout.write('Upper bound for each independent variable: ' + str(xb_up) + '\n')
-    print dv_scales, 1E-12
+
     # Run Optimizer
     x, zl, zu, constraint_multipliers, objfun, status = nlp.solve(x0P)
     nlp.close()
     
     #constr=eval_g(x)
 
-    def print_variable(variable_name, value):
-  	for i in xrange(len(value)):
-            print variable_name + "["+str(i)+"] =", value[i]
+    #def print_variable(variable_name, value):
+    #	for i in xrange(len(value)):
+    #        print variable_name + "["+str(i)+"] =", value[i]
 		
     #print
     #print "Solution of the primal variables, x"

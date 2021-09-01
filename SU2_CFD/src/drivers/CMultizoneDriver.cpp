@@ -262,7 +262,7 @@ void CMultizoneDriver::Preprocess(unsigned long TimeIter) {
                                                                              config_container[iZone], TimeIter);
     }
 
-    if (config_container[iZone]->GetKind_Scalar_Model() != NO_SCALAR_MODEL)
+    if (!config_container[iZone]->GetDiscrete_Adjoint() && config_container[iZone]->GetKind_Scalar_Model() != NO_SCALAR_MODEL)
       solver_container[iZone][INST_0][MESH_0][SCALAR_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],
                                                                                 solver_container[ZONE_0][INST_0],
                                                                                 config_container[ZONE_0], TimeIter);

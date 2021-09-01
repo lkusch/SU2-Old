@@ -577,10 +577,12 @@ unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
       *val_vars.at(i_var) = 0.0; 
     } else {
 
-//    if (exit_code == 0)
+    if (exit_code == 0)
       *val_vars.at(i_var) = Interpolate(GetData(val_names_var.at(i_var)), (triangles.at(id_triangle)), interp_coeffs);
-//    else
-//      *val_vars.at(i_var) = GetData(val_names_var.at(i_var)).at(nearest_neighbor);
+    else
+      //lisa: use this to keep derivative information for values outside of domain (!does not agree with finite differences)
+      //*val_vars.at(i_var) = Interpolate(GetData(val_names_var.at(i_var)).at(nearest_neighbor), (triangles.at(id_triangle)), interp_coeffs); 
+      *val_vars.at(i_var) = GetData(val_names_var.at(i_var)).at(nearest_neighbor);
 
     }
   }
