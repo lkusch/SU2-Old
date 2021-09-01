@@ -2,14 +2,14 @@
  * \file CFluidModel.hpp
  * \brief Defines the main fluid model class for thermophysical properties.
  * \author S. Vitale, G. Gori, M. Pini, A. Guardone, P. Colonna, T. Economon
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,7 +69,6 @@ class CFluidModel {
   su2double Kt{0.0};           /*!< \brief Thermal conductivity. */
   su2double dktdrho_T{0.0};    /*!< \brief Partial derivative of conductivity w.r.t. density. */
   su2double dktdT_rho{0.0};    /*!< \brief Partial derivative of conductivity w.r.t. temperature. */
-  su2double source_energy{0.0};
   su2double mass_diffusivity{0.0};
 
   unique_ptr<CViscosityModel> LaminarViscosity;        /*!< \brief Laminar Viscosity Model */
@@ -126,14 +125,16 @@ class CFluidModel {
    */
   su2double GetCv() const { return Cv; }
 
-  virtual su2double GetSourceEnergy() { return 37; }
-
-  //virtual su2double GetMassDiffusivity() { return 37; }
+  /*!
+   * \brief Get the source term of the transported scalar
+   */
+  virtual inline su2double* GetScalarSources(){ return nullptr; }
 
     /*!
    * \brief Get the source term of the transported scalar
+   * \param[in] val_ix - Index of the scalar.
    */
-  virtual inline su2double GetSourceScalar(int){ return 37; }
+  virtual inline su2double GetScalarSources(int val_ix){ return 37; }
   
   /*!
   * \brief Get the number of transported scalars
@@ -143,7 +144,7 @@ class CFluidModel {
   /*!
    * \brief Get the looked up scalar field for combustion
    */
-  virtual inline su2double GetLookupScalar(int){ return 37; }
+  virtual inline su2double GetScalarLookups(int){ return 37; }
 
 
   virtual CLookUpTable* GetLookUpTable() {return look_up_table; }
@@ -182,6 +183,7 @@ class CFluidModel {
     dktdT_rho = ThermalConductivity->GetdktdT_rho();
     return Kt;
   }
+
 /*!
    * \brief Get fluid mass diffusivity.
    */
@@ -193,6 +195,7 @@ class CFluidModel {
     //dktdT_rho = ThermalConductivity->GetdktdT_rho();
     return mass_diffusivity;
   }
+  
   /*!
    * \brief Get fluid pressure partial derivative.
    */
@@ -361,6 +364,8 @@ class CFluidModel {
   virtual unsigned long SetTDState_T(su2double val_Temperature, su2double *val_scalars = nullptr) {return 0;}
 
   virtual unsigned long SetScalarSources(su2double *val_scalars) {return 0;}
+
+  virtual unsigned long SetScalarLookups(su2double *val_scalars) {return 0;}
 
   /*!
    * \brief Set fluid eddy viscosity provided by a turbulence model needed for computing effective thermal conductivity.

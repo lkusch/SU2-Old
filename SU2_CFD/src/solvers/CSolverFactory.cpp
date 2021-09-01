@@ -2,7 +2,7 @@
  * \file CSolverFactory.cpp
  * \brief Main subroutines for CSolverFactoryclass.
  * \author T. Albring
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -75,11 +75,11 @@ CSolver** CSolverFactory::CreateSolverContainer(ENUM_MAIN_SOLVER kindMainSolver,
       break;
     case NEMO_EULER:
       solver[FLOW_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::NEMO_EULER, solver, geometry, config, iMGLevel);
-      break;    
+      break;
     case INC_NAVIER_STOKES:
-      solver[FLOW_SOL]   = CreateSubSolver(SUB_SOLVER_TYPE::INC_NAVIER_STOKES, solver, geometry, config, iMGLevel);
-      solver[HEAT_SOL]   = CreateSubSolver(SUB_SOLVER_TYPE::HEAT, solver, geometry, config, iMGLevel);
-      solver[RAD_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::RADIATION, solver, geometry, config, iMGLevel);
+      solver[FLOW_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::INC_NAVIER_STOKES, solver, geometry, config, iMGLevel);
+      solver[HEAT_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::HEAT, solver, geometry, config, iMGLevel);
+      solver[RAD_SOL]  = CreateSubSolver(SUB_SOLVER_TYPE::RADIATION, solver, geometry, config, iMGLevel);
       solver[SCALAR_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::SCALAR, solver, geometry, config, iMGLevel);
       break;
     case NAVIER_STOKES:
@@ -139,12 +139,12 @@ CSolver** CSolverFactory::CreateSolverContainer(ENUM_MAIN_SOLVER kindMainSolver,
       solver[ADJRAD_SOL]  = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_RADIATION, solver, geometry, config, iMGLevel);
       break;
     case DISC_ADJ_INC_NAVIER_STOKES:
-      solver[FLOW_SOL]      = CreateSubSolver(SUB_SOLVER_TYPE::INC_NAVIER_STOKES, solver, geometry, config, iMGLevel);
-      solver[ADJFLOW_SOL]   = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_FLOW, solver, geometry, config, iMGLevel);
-      solver[HEAT_SOL]      = CreateSubSolver(SUB_SOLVER_TYPE::HEAT, solver, geometry, config, iMGLevel);
-      solver[ADJHEAT_SOL]   = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_HEAT, solver, geometry, config, iMGLevel);
-      solver[RAD_SOL]       = CreateSubSolver(SUB_SOLVER_TYPE::RADIATION, solver, geometry, config, iMGLevel);
-      solver[ADJRAD_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_RADIATION, solver, geometry, config, iMGLevel);
+      solver[FLOW_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::INC_NAVIER_STOKES, solver, geometry, config, iMGLevel);
+      solver[ADJFLOW_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_FLOW, solver, geometry, config, iMGLevel);
+      solver[HEAT_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::HEAT, solver, geometry, config, iMGLevel);
+      solver[ADJHEAT_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_HEAT, solver, geometry, config, iMGLevel);
+      solver[RAD_SOL]     = CreateSubSolver(SUB_SOLVER_TYPE::RADIATION, solver, geometry, config, iMGLevel);
+      solver[ADJRAD_SOL]  = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_RADIATION, solver, geometry, config, iMGLevel);
       solver[SCALAR_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::SCALAR, solver, geometry, config, iMGLevel);
       solver[ADJSCALAR_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_SCALAR, solver, geometry, config, iMGLevel);
       break;
@@ -153,6 +153,8 @@ CSolver** CSolverFactory::CreateSolverContainer(ENUM_MAIN_SOLVER kindMainSolver,
       solver[ADJFLOW_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_FLOW, solver, geometry, config, iMGLevel);
       solver[HEAT_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::HEAT, solver, geometry, config, iMGLevel);
       solver[ADJHEAT_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_HEAT, solver, geometry, config, iMGLevel);
+      solver[SCALAR_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::SCALAR, solver, geometry, config, iMGLevel);
+      solver[ADJSCALAR_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_SCALAR, solver, geometry, config, iMGLevel); 
       solver[TURB_SOL]    = CreateSubSolver(SUB_SOLVER_TYPE::TURB, solver, geometry, config, iMGLevel);
       solver[ADJTURB_SOL] = CreateSubSolver(SUB_SOLVER_TYPE::DISC_ADJ_TURB, solver, geometry, config, iMGLevel);
       solver[RAD_SOL]     = CreateSubSolver(SUB_SOLVER_TYPE::RADIATION, solver, geometry, config, iMGLevel);
@@ -205,7 +207,7 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
   CSolver *genericSolver = nullptr;
 
   ENUM_TURB_MODEL kindTurbModel = static_cast<ENUM_TURB_MODEL>(config->GetKind_Turb_Model());
-  
+
   SolverMetaData metaData;
 
   metaData.solverType = kindSolver;
@@ -248,28 +250,16 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
       metaData.integrationType = INTEGRATION_TYPE::DEFAULT;
       break;
     case SUB_SOLVER_TYPE::EULER:
-      genericSolver = CreateFlowSolver(SUB_SOLVER_TYPE::EULER, solver, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
-      break;
-    case SUB_SOLVER_TYPE::NEMO_EULER:
-      genericSolver = CreateNEMOSolver(SUB_SOLVER_TYPE::NEMO_EULER, solver, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
-      break;    
-    case SUB_SOLVER_TYPE::NAVIER_STOKES:
-      genericSolver = CreateFlowSolver(SUB_SOLVER_TYPE::NAVIER_STOKES, solver, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
-      break;
-    case SUB_SOLVER_TYPE::NEMO_NAVIER_STOKES:
-      genericSolver = CreateNEMOSolver(SUB_SOLVER_TYPE::NEMO_NAVIER_STOKES, solver, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
-      break;    
     case SUB_SOLVER_TYPE::INC_EULER:
-      genericSolver = CreateFlowSolver(SUB_SOLVER_TYPE::INC_EULER, solver, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
-      break;
+    case SUB_SOLVER_TYPE::NEMO_EULER:
+    case SUB_SOLVER_TYPE::NAVIER_STOKES:
     case SUB_SOLVER_TYPE::INC_NAVIER_STOKES:
-      genericSolver = CreateFlowSolver(SUB_SOLVER_TYPE::INC_NAVIER_STOKES, solver, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
+    case SUB_SOLVER_TYPE::NEMO_NAVIER_STOKES:
+      genericSolver = CreateFlowSolver(kindSolver, solver, geometry, config, iMGLevel);
+      if (!config->GetNewtonKrylov() || config->GetDiscrete_Adjoint() || config->GetContinuous_Adjoint())
+        metaData.integrationType = INTEGRATION_TYPE::MULTIGRID;
+      else
+        metaData.integrationType = INTEGRATION_TYPE::NEWTON;
       break;
     case SUB_SOLVER_TYPE::FEA:
       genericSolver = new CFEASolver(geometry, config);
@@ -280,11 +270,8 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
       metaData.integrationType = INTEGRATION_TYPE::NONE;
       break;
     case SUB_SOLVER_TYPE::DG_EULER:
-      genericSolver = CreateDGSolver(SUB_SOLVER_TYPE::DG_EULER, geometry, config, iMGLevel);
-      metaData.integrationType = INTEGRATION_TYPE::FEM_DG;
-      break;
     case SUB_SOLVER_TYPE::DG_NAVIER_STOKES:
-      genericSolver = CreateDGSolver(SUB_SOLVER_TYPE::DG_NAVIER_STOKES, geometry, config, iMGLevel);
+      genericSolver = CreateDGSolver(kindSolver, geometry, config, iMGLevel);
       metaData.integrationType = INTEGRATION_TYPE::FEM_DG;
       break;
     case SUB_SOLVER_TYPE::HEAT:
@@ -307,7 +294,9 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
       genericSolver = new CTransLMSolver(geometry, config, iMGLevel);
       metaData.integrationType = INTEGRATION_TYPE::SINGLEGRID;
       break;
-    case SUB_SOLVER_TYPE::TURB: case SUB_SOLVER_TYPE::TURB_SA: case SUB_SOLVER_TYPE::TURB_SST:
+    case SUB_SOLVER_TYPE::TURB:
+    case SUB_SOLVER_TYPE::TURB_SA:
+    case SUB_SOLVER_TYPE::TURB_SST:
       genericSolver = CreateTurbSolver(kindTurbModel, solver, geometry, config, iMGLevel, false);
       metaData.integrationType = INTEGRATION_TYPE::SINGLEGRID;
       break;
@@ -331,7 +320,7 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
       SU2_MPI::Error("No proper allocation found for requested sub solver", CURRENT_FUNCTION);
       break;
   }
-  
+
   if (genericSolver != nullptr)
     allocatedSolvers[genericSolver] = metaData;
 
@@ -378,20 +367,19 @@ CSolver* CSolverFactory::CreateHeatSolver(CSolver **solver, CGeometry *geometry,
 
   CSolver *heatSolver = nullptr;
 
-  bool standalone = (config->GetKind_Solver() == HEAT_EQUATION) ||
-                    (config->GetKind_Solver() == DISC_ADJ_HEAT);
-
   /*--- Only allocate a heat solver if it should run standalone
    * or if the weakly coupled heat solver is enabled and no energy equation is included ---*/
 
-  if ((config->GetWeakly_Coupled_Heat() && !config->GetEnergy_Equation()) || standalone){
+  if ((config->GetWeakly_Coupled_Heat() && !config->GetEnergy_Equation()) || config->GetHeatProblem()){
     if (adjoint){
       if (config->GetDiscrete_Adjoint()){
         heatSolver = new CDiscAdjSolver(geometry, config, solver[HEAT_SOL], RUNTIME_HEAT_SYS, iMGLevel);
-      } else {
+      }
+      else {
         SU2_MPI::Error("No continuous adjoint heat solver available.", CURRENT_FUNCTION);
       }
-    } else {
+    }
+    else {
       heatSolver = new CHeatSolver(geometry, config, iMGLevel);
     }
   }
@@ -482,32 +470,16 @@ CSolver* CSolverFactory::CreateFlowSolver(SUB_SOLVER_TYPE kindFlowSolver, CSolve
     case SUB_SOLVER_TYPE::INC_NAVIER_STOKES:
       flowSolver = new CIncNSSolver(geometry, config, iMGLevel);
       break;
+    case SUB_SOLVER_TYPE::NEMO_EULER:
+      flowSolver = new CNEMOEulerSolver(geometry, config, iMGLevel);
+      break;
+    case SUB_SOLVER_TYPE::NEMO_NAVIER_STOKES:
+      flowSolver = new CNEMONSSolver(geometry, config, iMGLevel);
+      break;
     default:
       SU2_MPI::Error("Flow solver not found", CURRENT_FUNCTION);
       break;
   }
 
   return flowSolver;
-
-}
-
-CSolver* CSolverFactory::CreateNEMOSolver(SUB_SOLVER_TYPE kindNEMO_Solver, CSolver **solver,  CGeometry *geometry, CConfig *config, int iMGLevel){
-
-  CSolver *NEMOSolver = nullptr;
-
-  switch (kindNEMO_Solver) {
-    case SUB_SOLVER_TYPE::NEMO_EULER:
-      NEMOSolver = new CNEMOEulerSolver(geometry, config, iMGLevel);
-      NEMOSolver->Preprocessing(geometry, solver, config, iMGLevel, NO_RK_ITER, RUNTIME_FLOW_SYS, false);
-      break;
-    case SUB_SOLVER_TYPE::NEMO_NAVIER_STOKES:
-      NEMOSolver = new CNEMONSSolver(geometry, config, iMGLevel);    
-      break;
-    default:
-      SU2_MPI::Error("NEMO flow solver not found", CURRENT_FUNCTION);
-      break;
-  }
-
-  return NEMOSolver;
-
 }

@@ -1,15 +1,15 @@
 /*!
- * \file output_adj_flow_inc.cpp
+ * \file CAdjFlowIncOutput.cpp
  * \brief Main subroutines for flow discrete adjoint output
  * \author R. Sanchez
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -114,7 +114,8 @@ void CAdjFlowIncOutput::SetHistoryOutputFields(CConfig *config){
   /// DESCRIPTION: Root-mean square residual of the adjoint Velocity z-component.
   AddHistoryOutput("RMS_ADJ_VELOCITY-Z", "rms[A_W]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint Velocity z-component.", HistoryFieldType::RESIDUAL);
   /// DESCRIPTION: Maximum residual of the temperature.
-  AddHistoryOutput("RMS_ADJ_TEMPERATURE", "rms[A_T]", ScreenOutputFormat::FIXED, "RMS_RES", " Root-mean square residual of the adjoint temperature.", HistoryFieldType::RESIDUAL);
+  AddHistoryOutput("RMS_ADJ_TEMPERATURE", "rms[A_T]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint temperature.", HistoryFieldType::RESIDUAL);
+ 
   if (!config->GetFrozen_Visc_Disc() || !config->GetFrozen_Visc_Cont()){
     switch(turb_model){
     case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
@@ -137,6 +138,9 @@ void CAdjFlowIncOutput::SetHistoryOutputFields(CConfig *config){
   }
   
   switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      AddHistoryOutput("RMS_ADJ_PASSIVE_SCALAR", "rms[A_c]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean squared residual of the adjoint passive scalar equation.", HistoryFieldType::RESIDUAL);
+      break;
     case PROGRESS_VARIABLE:
       // DESCRIPTION: Root-mean square residual of the adjoint progress variable.
       AddHistoryOutput("RMS_ADJ_PROGRESS_VARIABLE", "rms[A_prog]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint progress variable.", HistoryFieldType::RESIDUAL);   
@@ -145,7 +149,7 @@ void CAdjFlowIncOutput::SetHistoryOutputFields(CConfig *config){
       // DESCRIPTION: Root-mean square residual of the adjoint CO mass fraction.
       AddHistoryOutput("RMS_ADJ_CO",                "rms[A_CO]",   ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint CO.", HistoryFieldType::RESIDUAL);
       // DESCRIPTION: Root-mean square residual of the adjoint NOx mass fraction.
-      AddHistoryOutput("RMS_ADJ_NOX",                "rms[A_NOX]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint NOx.", HistoryFieldType::RESIDUAL);
+      AddHistoryOutput("RMS_ADJ_NOX",               "rms[A_NOX]",  ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the adjoint NOx.", HistoryFieldType::RESIDUAL);
       break;
     case NO_SCALAR_MODEL:
       break;
@@ -275,6 +279,9 @@ void CAdjFlowIncOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CS
   }
 
   switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      SetHistoryOutputValue("RMS_ADJ_PASSIVE_SCALAR", log10(adjscalar_solver->GetRes_RMS(0)));
+      break;
     case PROGRESS_VARIABLE:
       // DESCRIPTION: Root-mean square residual of the adjoint progress variable.
       SetHistoryOutputValue("RMS_ADJ_PROGRESS_VARIABLE", log10(adjscalar_solver->GetRes_RMS(I_PROG_VAR)));
@@ -408,6 +415,9 @@ void CAdjFlowIncOutput::SetVolumeOutputFields(CConfig *config){
 
   // Scalars
   switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      AddVolumeOutput("ADJ_PASSIVE_SCALAR", "Adjoint_Scalar", "SOLUTION", "Adjoint scalar");
+      break;
     case PROGRESS_VARIABLE:
       // DESCRIPTION: Adjoint progress variable.
       AddVolumeOutput("ADJ_PROGRESS_VARIABLE", "Adjoint_Progress_Variable", "SOLUTION", "Adjoint progress variable");
@@ -423,7 +433,7 @@ void CAdjFlowIncOutput::SetVolumeOutputFields(CConfig *config){
   }
 
   // Grid velocity
-  if (config->GetGrid_Movement()){
+  if (config->GetDynamic_Grid()){
     AddVolumeOutput("GRID_VELOCITY-X", "Grid_Velocity_x", "GRID_VELOCITY", "x-component of the grid velocity vector");
     AddVolumeOutput("GRID_VELOCITY-Y", "Grid_Velocity_y", "GRID_VELOCITY", "y-component of the grid velocity vector");
     if (nDim == 3 )
@@ -462,6 +472,25 @@ void CAdjFlowIncOutput::SetVolumeOutputFields(CConfig *config){
   }
   /// END_GROUP
 
+ // Scalars
+  switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      AddVolumeOutput("RES_ADJ_PASSIVE_SCALAR", "Residual_Adjoint_Scalar", "RESIDUAL", "Residual of adjoint scalar");
+      break;
+    case PROGRESS_VARIABLE:
+      // DESCRIPTION: Adjoint progress variable.
+      AddVolumeOutput("RES_ADJ_PROGRESS_VARIABLE", "Residual_Adjoint_Progress_Variable", "RESIDUAL", "Residual of adjoint progress variable");
+      // DESCRIPTION: Adjoint enthalpy.
+      AddVolumeOutput("RES_ADJ_ENTHALPY", "Residual_djoint_Enthalpy", "RESIDUAL", "Residual of adjoint enthalpy");
+      // DESCRIPTION: Adjoint CO mass fraction.
+      AddVolumeOutput("RES_ADJ_CO", "Residual_Adjoint_CO", "RESIDUAL", "Residual of adjoint CO");
+      // DESCRIPTION: Adjoint NOx mass fraction.
+      AddVolumeOutput("RES_ADJ_NOX", "Residual_Adjoint_NOx", "RESIDUAL", "Residual of adjoint NOx");
+      break;
+    case NO_SCALAR_MODEL:
+      break;
+  }
+
   /// BEGIN_GROUP: SENSITIVITY, DESCRIPTION: Geometrical sensitivities of the current objective function.
   /// DESCRIPTION: Sensitivity x-component.
   AddVolumeOutput("SENSITIVITY-X", "Sensitivity_x", "SENSITIVITY", "x-component of the sensitivity vector");
@@ -479,24 +508,27 @@ void CAdjFlowIncOutput::SetVolumeOutputFields(CConfig *config){
 void CAdjFlowIncOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolver **solver, unsigned long iPoint){
 
   CVariable* Node_AdjFlow = solver[ADJFLOW_SOL]->GetNodes();
-  CVariable* Node_AdjHeat   = nullptr;
-  CVariable* Node_AdjTurb   = nullptr;
-  CVariable* Node_AdjRad    = nullptr;
+  CVariable* Node_AdjHeat = nullptr;
+  CVariable* Node_AdjTurb = nullptr;
+  CVariable* Node_AdjRad  = nullptr;
   CVariable* Node_AdjScalar = nullptr;
-  CPoint*    Node_Geo       = geometry->nodes;
-  
+  CPoint*    Node_Geo     = geometry->nodes;
+
   if (config->GetKind_Turb_Model() != NONE && !config->GetFrozen_Visc_Disc()){
     Node_AdjTurb = solver[ADJTURB_SOL]->GetNodes();
   }
   if (weakly_coupled_heat){
     Node_AdjHeat = solver[ADJHEAT_SOL]->GetNodes();
   }
-  if (config->GetKind_RadiationModel() != NONE){
+  if (config->GetKind_RadiationModel() != RADIATION_MODEL::NONE){
     Node_AdjRad = solver[ADJRAD_SOL]->GetNodes();
   }
 
   // Scalars
   switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      Node_AdjScalar = solver[ADJSCALAR_SOL]->GetNodes();
+      break;
     case PROGRESS_VARIABLE:
       Node_AdjScalar = solver[ADJSCALAR_SOL]->GetNodes();
       break;
@@ -545,6 +577,10 @@ void CAdjFlowIncOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSo
 
   // Scalars
   switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      /// DESCRIPTION: Adjoint transported scalar
+      SetVolumeOutputValue("ADJ_PASSIVE_SCALAR", iPoint, Node_AdjScalar->GetSolution(iPoint, 0));
+      break;
     case PROGRESS_VARIABLE:
       /// DESCRIPTION: Adjoint progress variable.
       SetVolumeOutputValue("ADJ_PROGRESS_VARIABLE", iPoint, Node_AdjScalar->GetSolution(iPoint, I_PROG_VAR));
@@ -587,6 +623,26 @@ void CAdjFlowIncOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSo
     SetVolumeOutputValue("RES_P1_ENERGY", iPoint, Node_AdjRad->GetSolution(iPoint, 0) - Node_AdjRad->GetSolution_Old(iPoint, 0));
   }
 
+ // Scalars
+  switch (scalar_model) {
+    case PASSIVE_SCALAR:
+      /// DESCRIPTION: Adjoint transported scalar
+      SetVolumeOutputValue("RES_ADJ_PASSIVE_SCALAR", iPoint, Node_AdjScalar->GetSolution(iPoint, 0)- Node_AdjScalar->GetSolution_Old(iPoint, 0));
+      break;
+    case PROGRESS_VARIABLE:
+      /// DESCRIPTION: Adjoint progress variable.
+      SetVolumeOutputValue("RES_ADJ_PROGRESS_VARIABLE", iPoint, Node_AdjScalar->GetSolution(iPoint, I_PROG_VAR) - Node_AdjScalar->GetSolution_Old(iPoint, I_PROG_VAR));
+      /// DESCRIPTION: Adjoint enthalpy.
+      SetVolumeOutputValue("RES_ADJ_ENTHALPY", iPoint, Node_AdjScalar->GetSolution(iPoint, I_ENTHALPY)- Node_AdjScalar->GetSolution_Old(iPoint, I_ENTHALPY));      
+      /// DESCRIPTION: Adjoint CO mass fraction.
+      SetVolumeOutputValue("RES_ADJ_CO", iPoint, Node_AdjScalar->GetSolution(iPoint, I_CO)- Node_AdjScalar->GetSolution_Old(iPoint, I_CO));
+      /// DESCRIPTION: Adjoint NO mass fraction.
+      SetVolumeOutputValue("RES_ADJ_NOX", iPoint, Node_AdjScalar->GetSolution(iPoint, I_NOX)- Node_AdjScalar->GetSolution_Old(iPoint, I_NOX));      
+      break;
+    case NO_SCALAR_MODEL:
+      break;
+  }
+  
   SetVolumeOutputValue("SENSITIVITY-X", iPoint, Node_AdjFlow->GetSensitivity(iPoint, 0));
   SetVolumeOutputValue("SENSITIVITY-Y", iPoint, Node_AdjFlow->GetSensitivity(iPoint, 1));
   if (nDim == 3)
@@ -601,17 +657,9 @@ void CAdjFlowIncOutput::LoadSurfaceData(CConfig *config, CGeometry *geometry, CS
 }
 
 
-bool CAdjFlowIncOutput::SetInit_Residuals(CConfig *config){
+bool CAdjFlowIncOutput::SetInit_Residuals(const CConfig *config){
 
-  return (config->GetTime_Marching() != STEADY && (curInnerIter == 0))||
-        (config->GetTime_Marching() == STEADY && (curTimeIter < 2));
-
-}
-
-bool CAdjFlowIncOutput::SetUpdate_Averages(CConfig *config){
-  return false;
-
-//  return (config->GetUnsteady_Simulation() != STEADY && !dualtime);
+  return (config->GetTime_Marching() != TIME_MARCHING::STEADY && (curInnerIter == 0))||
+         (config->GetTime_Marching() == TIME_MARCHING::STEADY && (curTimeIter < 2));
 
 }
-

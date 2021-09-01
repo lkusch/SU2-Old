@@ -2,14 +2,14 @@
  * \file ausm.hpp
  * \brief Declaration of numerics classes for the AUSM family of schemes in NEMO.
  * \author F. Palacios, S.R. Copeland, W. Maier, C. Garbacz
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,16 +34,17 @@
  * \brief Class for solving an approximate Riemann AUSM.
  * \ingroup ConvDiscr
  * \author F. Palacios, S.R. Copeland, W. Maier, C. Garbacz
- * \version 7.0.6 'Falcon'
  */
 class CUpwAUSM_NEMO : public CNEMONumerics {
 private:
-  su2double *FcL, *FcR, *FcLR;
-  su2double *dmLP, *dmRM, *dpLP, *dpRM;
-  su2double *daL, *daR;
+  su2double *FcL, *FcR;
+  //su2double *FcLR;
+  //su2double *dmLP, *dmRM, *dpLP, *dpRM;
+  //su2double *daL, *daR;
   su2double ProjVel_i, ProjVel_j;
-  su2double sq_vel, Proj_ModJac_Tensor_ij;
- 
+  su2double sq_vel;
+  //su2double  Proj_ModJac_Tensor_ij;
+
 public:
 
   /*!

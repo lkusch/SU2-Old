@@ -3,14 +3,14 @@
  * \brief Declarations of classes for Flux-Difference-Spliting schemes,
  *        the implementations are in fds.cpp
  * \author F. Palacios, T. Economon
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,8 +41,8 @@ private:
   bool implicit,     /*!< \brief Implicit calculation. */
   dynamic_grid,      /*!< \brief Modification for grid movement. */
   variable_density,  /*!< \brief Variable density incompressible flows. */
-  energy,            /*!< \brief computation with the energy equation. */
-  flamelet_thermo_system;
+  flame,             /*!< \brief reacting incompressible flows. */
+  energy;            /*!< \brief computation with the energy equation. */
   su2double *Diff_V;
   su2double *Velocity_i, *Velocity_j, *MeanVelocity;
   su2double *ProjFlux_i, *ProjFlux_j;

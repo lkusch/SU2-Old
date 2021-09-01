@@ -1,25 +1,15 @@
 /*!
  * \file CFlameletVariable.hpp
- * \brief Declaration of the variables of the flamelet model.
+ * \brief Definition of the variable fields for the flamelet class.
  * \author D. Mayer, T. Economon
- * \version 6.2.0 "Falcon"
+ * \version 7.1.0 "Blackbird"
  *
- * The current SU2 release has been coordinated by the
- * SU2 International Developers Society <www.su2devsociety.org>
- * with selected contributions from the open-source community.
+ * SU2 Project Website: https://su2code.github.io
  *
- * The main research teams contributing to the current release are:
- *  - Prof. Juan J. Alonso's group at Stanford University.
- *  - Prof. Piero Colonna's group at Delft University of Technology.
- *  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
- *  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
- *  - Prof. Rafael Palacios' group at Imperial College London.
- *  - Prof. Vincent Terrapon's group at the University of Liege.
- *  - Prof. Edwin van der Weide's group at the University of Twente.
- *  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
+ * The SU2 Project is maintained by the SU2 Foundation
+ * (http://su2foundation.org)
  *
- * Copyright 2012-2019, Francisco D. Palacios, Thomas D. Economon,
- *                      Tim Albring, and the SU2 contributors.
+ * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -100,7 +90,7 @@ public:
    * \param[in] val_ivar - eqn. index to the transported scalar source term
    * \return Value of the progress variable source term
    */
-  inline su2double GetSourceScalar(unsigned long  iPoint,
+  inline su2double GetScalarSources(unsigned long  iPoint,
                                  unsigned short val_ivar) override {
     return source_scalar(iPoint,val_ivar);
   }
@@ -110,7 +100,7 @@ public:
    * \param[in] val_ivar - eqn. index to the looked up scalar field
    * \return Value of the looked up scalar field
    */
-  inline su2double GetLookupScalar(unsigned long  iPoint,
+  inline su2double GetScalarLookups(unsigned long  iPoint,
                                  unsigned short val_ivar) override {
     return lookup_scalar(iPoint,val_ivar);
   }
@@ -120,7 +110,7 @@ public:
    * \brief Get the value of the transported scalars source term
    * \return Pointer to the transported scalars source term
    */
-  inline su2double *GetSourceScalar(unsigned long iPoint) override {
+  inline su2double *GetScalarSources(unsigned long iPoint) override {
     return source_scalar[iPoint];
   }
 
@@ -128,7 +118,7 @@ public:
    * \brief Get the value of the looked up table based on the transported scalar
    * \return Pointer to the transported scalars source term
    */
-  inline su2double *GetLookupScalar(unsigned long iPoint) override {
+  inline su2double *GetScalarLookups(unsigned long iPoint) override {
     return lookup_scalar[iPoint];
   }
   

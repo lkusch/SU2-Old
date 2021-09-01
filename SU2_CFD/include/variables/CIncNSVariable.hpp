@@ -3,14 +3,14 @@
  * \brief Class for defining the variables of the incompressible
           Navier-Stokes solver.
  * \author F. Palacios, T. Economon
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
- * The SU2 Project is maintained by the SU2 Foundation 
+ * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,11 +38,7 @@
  */
 class CIncNSVariable final : public CIncEulerVariable {
 private:
-  MatrixType Vorticity;    /*!< \brief Vorticity of the fluid. */
-  VectorType StrainMag;    /*!< \brief Magnitude of rate of strain tensor. */
-
   VectorType DES_LengthScale;
-  VectorType source_energy;
 
 public:
   /*!
@@ -69,11 +65,6 @@ public:
   inline void SetLaminarViscosity(unsigned long iPoint, su2double laminarViscosity) override {
     Primitive(iPoint,nDim+4) = laminarViscosity;
   }
-
-  /*!
-   * \brief Set the vorticity value.
-   */
-  bool SetVorticity_StrainMag() override;
 
   /*!
    * \overload
@@ -109,21 +100,9 @@ public:
   inline su2double GetThermalConductivity(unsigned long iPoint) const override { return Primitive(iPoint,nDim+6); }
 
   /*!
-   * \brief Get the value of the vorticity.
-   * \return Value of the vorticity.
-   */
-  inline su2double *GetVorticity(unsigned long iPoint) override { return Vorticity[iPoint]; }
-
-  /*!
-   * \brief Get the value of the magnitude of rate of strain.
-   * \return Value of the rate of strain magnitude.
-   */
-  inline su2double GetStrainMag(unsigned long iPoint) const override { return StrainMag(iPoint); }
-
-  /*!
    * \brief Set all the primitive variables for incompressible flows
    */
-  bool SetPrimVar(unsigned long iPoint, su2double eddy_visc, su2double turb_ke, su2double *scalar, CFluidModel *FluidModel) override;
+  bool SetPrimVar(unsigned long iPoint, su2double eddy_visc, su2double turb_ke, CFluidModel *FluidModel, su2double *scalar = nullptr) override;
   using CVariable::SetPrimVar;
 
   /*!
@@ -138,22 +117,5 @@ public:
    * \return Value of the DES length Scale.
    */
   inline su2double GetDES_LengthScale(unsigned long iPoint) const override { return DES_LengthScale(iPoint); }
-
-    /*!
-   * \brief Set the value of the energy source term
-   * \param[in] val_source_energy - the .
-   * \param[in] val_ivar          - eqn. index to the .
-   */
-  inline void SetSourceEnergy(unsigned long iPoint, su2double val_source_energy) override {
-    source_energy(iPoint) = val_source_energy;
-  }
-  
-  /*!
-   * \brief Get the value of the progress variable source term
-   * \return Pointer to the progress variable source term 
-   */
-  inline su2double GetSourceEnergy(unsigned long iPoint) override {
-    return source_energy(iPoint);
-  }
 
 };

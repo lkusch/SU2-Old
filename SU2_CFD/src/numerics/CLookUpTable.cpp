@@ -60,7 +60,6 @@ CLookUpTable::CLookUpTable(string var_file_name_lut, string name_prog, string na
 void CLookUpTable::LoadTableRaw(string var_file_name_lut) {
 
   CFileReaderLUT file_reader;
-  int iVar;
 
   if (rank == MASTER_NODE)
   cout << "Loading look-up-table-file " << var_file_name_lut << " ..." << endl;
@@ -439,7 +438,7 @@ unsigned long CLookUpTable::LookUp_ProgEnth(string    val_name_var,
                                             su2double val_prog,
                                             su2double val_enth, string name_prog, string name_enth){
 
-  unsigned long exit_code;
+  unsigned long exit_code=0;
   
   if (val_name_var.compare("NULL") == 0) {
     //cout << "variable is null, returning nothing" << endl;
@@ -448,9 +447,11 @@ unsigned long CLookUpTable::LookUp_ProgEnth(string    val_name_var,
     return exit_code;
   }
 
-  /* check if progress variable value is in table range */
+  /* check if progress variable and enthalpy value is in table range */
   if ( val_prog >= limits_table_prog[0] && val_prog <= limits_table_prog[1]){
-  
+       //&&
+       //val_enth >= limits_table_enth[0] && val_enth <= limits_table_enth[1] ){
+
     /* find the triangle that holds the (prog, enth) point */
     unsigned long id_triangle = trap_map_prog_enth.GetTriangle(val_prog, val_enth);
 
@@ -474,11 +475,13 @@ unsigned long CLookUpTable::LookUp_ProgEnth(string    val_name_var,
                            interp_coeffs);
       exit_code = 0;
     } else {
+      //cout << "lookupprogenth: in bounding box but outside of table!, (c,h)="<<val_prog<<", "<<val_enth << endl;
       unsigned long nearest_neighbor = FindNearestNeighborOnHull(val_prog, val_enth,name_prog, name_enth);
       *val_var = GetData(val_name_var).at(nearest_neighbor);
       exit_code = 1;
     }
   } else {
+    //if (rank == MASTER_NODE) cout << "WARNING: LookUp_ProgEnth: lookup is outside of table bounding box, c,h = "<< val_prog<< " "<<val_enth<<endl;
     unsigned long nearest_neighbor = FindNearestNeighborOnHull(val_prog, val_enth,name_prog,name_enth);
     *val_var = GetData(val_name_var).at(nearest_neighbor);
     exit_code = 1;
@@ -486,11 +489,28 @@ unsigned long CLookUpTable::LookUp_ProgEnth(string    val_name_var,
   return exit_code;
 }
 
+
+unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
+                                            vector<su2double>  &val_vars,
+                                            su2double           val_prog,
+                                            su2double           val_enth, string name_prog,string name_enth) {
+
+  vector<su2double*> look_up_data;
+
+  for (long unsigned int i_var=0; i_var < val_vars.size(); ++i_var) {
+    look_up_data.push_back(&val_vars[i_var]);
+  }
+
+  unsigned long exit_code = LookUp_ProgEnth(val_names_var, look_up_data, val_prog, val_enth, name_prog, name_enth);
+
+  return exit_code;
+}
+
 unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
                                             vector<su2double*> &val_vars,
                                             su2double           val_prog,
                                             su2double           val_enth, string name_prog,string name_enth) {
-  unsigned long exit_code;
+  unsigned long exit_code=0;
   unsigned long id_triangle;
   unsigned long nearest_neighbor;
   vector<su2double> interp_coeffs(3);
@@ -514,7 +534,7 @@ unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
       exit_code = 0;
 
     } else {
-
+      //cout << "lookup_progenth: outside table range, c,h = "<< val_prog<< " "<<val_enth<<endl;
       /* if point is not inside a triangle (outside table domain) search nearest neighbor */
       nearest_neighbor = FindNearestNeighborOnHull(val_prog, val_enth, name_prog,name_enth);
       exit_code = 1;
@@ -522,6 +542,7 @@ unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
     }
 
   } else {
+    //if (rank == MASTER_NODE) cout << "WARNING: LookUp_ProgEnth: lookup is outside of table bounding box, c,h = "<< val_prog<< " "<<val_enth<<endl;
 
     /* if point is outside of table range, search nearest neighbor */
     nearest_neighbor = FindNearestNeighborOnHull(val_prog, val_enth,name_prog,name_enth);
@@ -530,7 +551,7 @@ unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
   }
 
   /* loop over variable names and interpolate / get values */
-  for (int i_var = 0; i_var < val_names_var.size(); ++i_var) {
+  for (long unsigned int i_var = 0; i_var < val_names_var.size(); ++i_var) {
 
     if (val_names_var.at(i_var).compare("NULL")==0) {
 
@@ -595,7 +616,7 @@ unsigned long CLookUpTable::FindNearestNeighborOnHull(su2double val_prog,
   su2double next_distance = 1.e99;
   su2double next_prog_norm;
   su2double next_enth_norm;
-  unsigned long neighbor_id;
+  unsigned long neighbor_id = 0;
 
   const vector<su2double> &prog_table = GetData(name_prog);
   const vector<su2double> &enth_table = GetData(name_enth);
@@ -634,6 +655,14 @@ bool CLookUpTable::IsInTriangle(su2double val_prog, su2double val_enth, unsigned
   su2double area_0   = TriArea(val_prog,   val_enth,   tri_prog_1, tri_enth_1, tri_prog_2, tri_enth_2);
   su2double area_1   = TriArea(tri_prog_0, tri_enth_0, val_prog,   val_enth,   tri_prog_2, tri_enth_2);
   su2double area_2   = TriArea(tri_prog_0, tri_enth_0, tri_prog_1, tri_enth_1, val_prog,   val_enth  );
+
+  //if ( abs(area_tri - (area_0 + area_1 + area_2)) >= area_tri * 1e-10 ){
+  //  cout << "id triangle = "<<val_id_triangle<<endl;
+  //  cout << "p="<<val_prog<<", "<<val_enth << endl;
+  //  cout << "p1="<<tri_prog_0<<", "<<tri_enth_0 << endl;
+  //  cout << "p2="<<tri_prog_1<<", "<<tri_enth_1 << endl;
+  //  cout << "p3="<<tri_prog_2<<", "<<tri_enth_2 << endl;
+  //}
 
   return ( abs(area_tri - (area_0 + area_1 + area_2)) < area_tri * 1e-10 );
 

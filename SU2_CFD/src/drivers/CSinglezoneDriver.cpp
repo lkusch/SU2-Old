@@ -2,14 +2,14 @@
  * \file driver_direct_singlezone.cpp
  * \brief The main subroutines for driving single-zone problems.
  * \author R. Sanchez
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,7 +39,6 @@ CSinglezoneDriver::CSinglezoneDriver(char* confFile,
 
   /*--- Initialize the counter for TimeIter ---*/
   TimeIter = 0;
-
 }
 
 CSinglezoneDriver::~CSinglezoneDriver(void) {
@@ -94,6 +93,12 @@ void CSinglezoneDriver::StartSolver() {
     /*--- Output the solution in files. ---*/
 
     Output(TimeIter);
+    
+    /*--- Save iteration solution for libROM ---*/
+    if (config_container[MESH_0]->GetSave_libROM()) {
+      solver_container[ZONE_0][INST_0][MESH_0][FLOW_SOL]->SavelibROM(geometry_container[ZONE_0][INST_0][MESH_0],
+                                                                     config_container[ZONE_0], StopCalc);
+    }
 
     /*--- If the convergence criteria has been met, terminate the simulation. ---*/
 
@@ -119,7 +124,7 @@ void CSinglezoneDriver::Preprocess(unsigned long TimeIter) {
    this can be used for verification / MMS. This should also be more
    general once the drivers are more stable. ---*/
 
-  if (config_container[ZONE_0]->GetTime_Marching())
+  if (config_container[ZONE_0]->GetTime_Marching() != TIME_MARCHING::STEADY)
     config_container[ZONE_0]->SetPhysicalTime(static_cast<su2double>(TimeIter)*config_container[ZONE_0]->GetDelta_UnstTimeND());
   else
     config_container[ZONE_0]->SetPhysicalTime(0.0);
@@ -129,15 +134,19 @@ void CSinglezoneDriver::Preprocess(unsigned long TimeIter) {
     solver_container[ZONE_0][INST_0][MESH_0][FLOW_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],
                                                                             solver_container[ZONE_0][INST_0],
                                                                             config_container[ZONE_0], TimeIter);
-    if (config_container[ZONE_0]->GetKind_Scalar_Model() != NO_SCALAR_MODEL)
-      solver_container[ZONE_0][INST_0][MESH_0][SCALAR_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],
+  if (config_container[ZONE_0]->GetKind_Scalar_Model() != NO_SCALAR_MODEL)
+    solver_container[ZONE_0][INST_0][MESH_0][SCALAR_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],
                                                                                 solver_container[ZONE_0][INST_0],
                                                                                 config_container[ZONE_0], TimeIter);
   }
+  else if (config_container[ZONE_0]->GetHeatProblem()) {
+    /*--- Set the initial condition for HEAT equation ---------------------------------------------*/
+    solver_container[ZONE_0][INST_0][MESH_0][HEAT_SOL]->SetInitialCondition(geometry_container[ZONE_0][INST_0],
+                                                                            solver_container[ZONE_0][INST_0],
+                                                                            config_container[ZONE_0], TimeIter);
+  }
 
-#ifdef HAVE_MPI
-  SU2_MPI::Barrier(MPI_COMM_WORLD);
-#endif
+  SU2_MPI::Barrier(SU2_MPI::GetComm());
 
   /*--- Run a predictor step ---*/
   if (config_container[ZONE_0]->GetPredictor())
@@ -165,14 +174,14 @@ void CSinglezoneDriver::Run() {
 
 void CSinglezoneDriver::Postprocess() {
 
-    iteration_container[ZONE_0][INST_0]->Postprocess(output_container[ZONE_0], integration_container, geometry_container, solver_container,
+  iteration_container[ZONE_0][INST_0]->Postprocess(output_container[ZONE_0], integration_container, geometry_container, solver_container,
+      numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, INST_0);
+
+  /*--- A corrector step can help preventing numerical instabilities ---*/
+
+  if (config_container[ZONE_0]->GetRelaxation())
+    iteration_container[ZONE_0][INST_0]->Relaxation(output_container[ZONE_0], integration_container, geometry_container, solver_container,
         numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, INST_0);
-
-    /*--- A corrector step can help preventing numerical instabilities ---*/
-
-    if (config_container[ZONE_0]->GetRelaxation())
-      iteration_container[ZONE_0][INST_0]->Relaxation(output_container[ZONE_0], integration_container, geometry_container, solver_container,
-          numerics_container, config_container, surface_movement, grid_movement, FFDBox, ZONE_0, INST_0);
 
 }
 
@@ -229,7 +238,7 @@ void CSinglezoneDriver::DynamicMeshUpdate(unsigned long TimeIter) {
   iteration->SetMesh_Deformation(geometry_container[ZONE_0][INST_0],
                                  solver_container[ZONE_0][INST_0][MESH_0],
                                  numerics_container[ZONE_0][INST_0][MESH_0],
-                                 config_container[ZONE_0], NONE);
+                                 config_container[ZONE_0], RECORDING::CLEAR_INDICES);
 
   /*--- Update the wall distances if the mesh was deformed. ---*/
   if (config_container[ZONE_0]->GetGrid_Movement() ||
@@ -278,6 +287,7 @@ bool CSinglezoneDriver::Monitor(unsigned long TimeIter){
     /*--- Check whether the outer time integration has reached the final time ---*/
 
     TimeConvergence = GetTimeConvergence();
+
     FinalTimeReached     = CurTime >= MaxTime;
     MaxIterationsReached = TimeIter+1 >= nTimeIter;
 
@@ -320,5 +330,5 @@ void CSinglezoneDriver::Runtime_Options(){
 }
 
 bool CSinglezoneDriver::GetTimeConvergence() const{
-  return output_container[ZONE_0]->GetTimeConvergence();
+  return output_container[ZONE_0]->GetCauchyCorrectedTimeConvergence(config_container[ZONE_0]);
 }

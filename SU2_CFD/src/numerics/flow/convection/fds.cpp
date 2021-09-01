@@ -2,14 +2,14 @@
  * \file fds.cpp
  * \brief Implementation of Flux-Difference-Splitting schemes.
  * \author F. Palacios, T. Economon
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,17 +26,16 @@
  */
 
 #include "../../../../include/numerics/flow/convection/fds.hpp"
+#include "../../../../../Common/include/toolboxes/geometry_toolbox.hpp"
 
 CUpwFDSInc_Flow::CUpwFDSInc_Flow(unsigned short val_nDim, unsigned short val_nVar, const CConfig *config) : CNumerics(val_nDim, val_nVar, config) {
 
-  implicit               = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
-  variable_density       = (config->GetKind_DensityModel() == VARIABLE);
-  energy                 = config->GetEnergy_Equation();
-  flamelet_thermo_system = config->GetKind_FlameletThermoSystem();
-
+  implicit         = (config->GetKind_TimeIntScheme_Flow() == EULER_IMPLICIT);
+  variable_density = (config->GetKind_DensityModel() == INC_DENSITYMODEL::VARIABLE);
+  energy           = config->GetEnergy_Equation();
+  flame            = (config->GetKind_Scalar_Model() == PROGRESS_VARIABLE);
   /* A grid is defined as dynamic if there's rigid grid movement or grid deformation AND the problem is time domain */
   dynamic_grid = config->GetDynamic_Grid();
-
 
   Flux         = new su2double[nVar];
   Diff_V       = new su2double[nVar];
@@ -104,10 +103,7 @@ CNumerics::ResidualType<> CUpwFDSInc_Flow::ComputeResidual(const CConfig *config
 
   /*--- Face area (norm or the normal vector) ---*/
 
-  Area = 0.0;
-  for (iDim = 0; iDim < nDim; iDim++)
-    Area += Normal[iDim]*Normal[iDim];
-  Area = sqrt(Area);
+  Area = GeometryToolbox::Norm(nDim, Normal);
 
   /*--- Compute and unitary normal vector ---*/
 
@@ -269,7 +265,7 @@ CNumerics::ResidualType<> CUpwFDSInc_Flow::ComputeResidual(const CConfig *config
     }
   }
 
-  if (!energy || flamelet_thermo_system == ADIABATIC) {
+  if (!energy || flame) {
     Flux[nDim+1] = 0.0;
     if (implicit) {
       for (iVar = 0; iVar < nVar; iVar++) {

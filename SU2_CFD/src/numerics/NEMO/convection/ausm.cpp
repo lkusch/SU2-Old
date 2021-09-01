@@ -2,14 +2,14 @@
  * \file ausm.cpp
  * \brief Implementations of the AUSM-family of schemes in NEMO.
  * \author F. Palacios, S.R. Copeland, W. Maier, C. Garbacz
- * \version 7.0.7 "Blackbird"
+ * \version 7.2.0 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,19 +26,20 @@
  */
 
 #include "../../../../include/numerics/NEMO/convection/ausm.hpp"
+#include "../../../../../Common/include/toolboxes/geometry_toolbox.hpp"
 
-CUpwAUSM_NEMO::CUpwAUSM_NEMO(unsigned short val_nDim, unsigned short val_nVar, 
+CUpwAUSM_NEMO::CUpwAUSM_NEMO(unsigned short val_nDim, unsigned short val_nVar,
                              unsigned short val_nPrimVar,
-                             unsigned short val_nPrimVarGrad, 
+                             unsigned short val_nPrimVarGrad,
                              CConfig *config) : CNEMONumerics(val_nDim, val_nVar, val_nPrimVar, val_nPrimVarGrad,
                                                           config) {
 
   FcL    = new su2double [nVar];
   FcR    = new su2double [nVar];
-  dmLP   = new su2double [nVar];
-  dmRM   = new su2double [nVar];
-  dpLP   = new su2double [nVar];
-  dpRM   = new su2double [nVar];
+  //dmLP   = new su2double [nVar];
+  //dmRM   = new su2double [nVar];
+  //dpLP   = new su2double [nVar];
+  //dpRM   = new su2double [nVar];
   rhos_i = new su2double [nSpecies];
   rhos_j = new su2double [nSpecies];
   u_i    = new su2double [nDim];
@@ -49,13 +50,13 @@ CUpwAUSM_NEMO::CUpwAUSM_NEMO(unsigned short val_nDim, unsigned short val_nVar,
 }
 
 CUpwAUSM_NEMO::~CUpwAUSM_NEMO(void) {
-  
+
   delete [] FcL;
   delete [] FcR;
-  delete [] dmLP;
-  delete [] dmRM;
-  delete [] dpLP;
-  delete [] dpRM;
+  //delete [] dmLP;
+  //delete [] dmRM;
+  //delete [] dpLP;
+  //delete [] dpRM;
   delete [] rhos_i;
   delete [] rhos_j;
   delete [] u_i;
@@ -66,14 +67,11 @@ CUpwAUSM_NEMO::~CUpwAUSM_NEMO(void) {
 CNumerics::ResidualType<> CUpwAUSM_NEMO::ComputeResidual(const CConfig *config) {
 
   unsigned short iDim, iVar, iSpecies;
-  su2double rho_i, rho_j, 
+  su2double rho_i, rho_j,
   e_ve_i, e_ve_j, mL, mR, mLP, mRM, mF, pLP, pRM, pF, Phi;
 
   /*--- Compute geometric quantities ---*/
-  Area = 0;
-  for (iDim = 0; iDim < nDim; iDim++)
-    Area += Normal[iDim]*Normal[iDim];
-  Area = sqrt(Area);
+  Area = GeometryToolbox::Norm(nDim, Normal);
 
   for (iDim = 0; iDim < nDim; iDim++)
     UnitNormal[iDim] = Normal[iDim]/Area;
@@ -89,16 +87,16 @@ CNumerics::ResidualType<> CUpwAUSM_NEMO::ComputeResidual(const CConfig *config) 
     u_j[iDim] = V_j[VEL_INDEX+iDim];
   }
 
-  P_i       = V_i[P_INDEX];
-  P_j       = V_j[P_INDEX];
-  h_i       = V_i[H_INDEX];
-  h_j       = V_j[H_INDEX];
-  a_i       = V_i[A_INDEX];
-  a_j       = V_j[A_INDEX];
-  rho_i     = V_i[RHO_INDEX];
-  rho_j     = V_j[RHO_INDEX];
-  e_ve_i    = U_i[nSpecies+nDim+1] / rho_i;
-  e_ve_j    = U_j[nSpecies+nDim+1] / rho_j;
+  P_i   = V_i[P_INDEX];   P_j   = V_j[P_INDEX];
+  h_i   = V_i[H_INDEX];   h_j   = V_j[H_INDEX];
+  a_i   = V_i[A_INDEX];   a_j   = V_j[A_INDEX];
+  rho_i = V_i[RHO_INDEX]; rho_j = V_j[RHO_INDEX];
+
+  e_ve_i  = 0; e_ve_j  = 0;
+  for (iSpecies = 0; iSpecies < nSpecies; iSpecies++) {
+    e_ve_i += (V_i[RHOS_INDEX+iSpecies]*eve_i[iSpecies])/rho_i;
+    e_ve_j += (V_j[RHOS_INDEX+iSpecies]*eve_j[iSpecies])/rho_j;
+  }
 
   /*--- Projected velocities ---*/
   ProjVel_i = 0.0; ProjVel_j = 0.0;
