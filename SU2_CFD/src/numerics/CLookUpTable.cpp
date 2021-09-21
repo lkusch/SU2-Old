@@ -580,7 +580,7 @@ unsigned long CLookUpTable::LookUp_ProgEnth(vector<string>     &val_names_var,
       *val_vars.at(i_var) = Interpolate(GetData(val_names_var.at(i_var)), (triangles.at(id_triangle)), interp_coeffs);
     else
       //lisa: use this to keep derivative information for values outside of domain (!does not agree with finite differences)
-      //*val_vars.at(i_var) = Interpolate(GetData(val_names_var.at(i_var)).at(nearest_neighbor), (triangles.at(id_triangle)), interp_coeffs); 
+      //*val_vars.at(i_var) = Interpolate(GetData(val_names_var.at(i_var)), (triangles.at(id_triangle)), interp_coeffs);  //at nearest neigbor
       *val_vars.at(i_var) = GetData(val_names_var.at(i_var)).at(nearest_neighbor);
 
     }
