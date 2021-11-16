@@ -3,30 +3,20 @@
 ## \file data.py
 #  \brief python package for data utility functions 
 #  \author T. Lukaczyk, F. Palacios
-#  \version 6.1.0 "Falcon"
+#  \version 7.1.1 "Blackbird"
 #
-# The current SU2 release has been coordinated by the
-# SU2 International Developers Society <www.su2devsociety.org>
-# with selected contributions from the open-source community.
+# SU2 Project Website: https://su2code.github.io
+# 
+# The SU2 Project is maintained by the SU2 Foundation 
+# (http://su2foundation.org)
 #
-# The main research teams contributing to the current release are:
-#  - Prof. Juan J. Alonso's group at Stanford University.
-#  - Prof. Piero Colonna's group at Delft University of Technology.
-#  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
-#  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
-#  - Prof. Rafael Palacios' group at Imperial College London.
-#  - Prof. Vincent Terrapon's group at the University of Liege.
-#  - Prof. Edwin van der Weide's group at the University of Twente.
-#  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
-#
-# Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
-#                      Tim Albring, and the SU2 contributors.
+# Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
-#
+# 
 # SU2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -104,7 +94,7 @@ def load_data( file_name, var_names=None   ,
                                            chars_as_strings = True      ,
                                            struct_as_record = True       )
             # pull core variable
-            assert input_data.has_key(core_name) , 'core data not found'
+            assert (core_name in input_data) , 'core data not found'
             input_data = input_data[core_name]
             
             # convert recarray to dictionary
@@ -114,7 +104,7 @@ def load_data( file_name, var_names=None   ,
         elif file_format == 'pickle':
             input_data = load_pickle(file_name)
             # pull core variable
-            assert input_data.has_key(core_name) , 'core data not found'
+            assert (core_name in input_data) , 'core data not found'
             input_data = input_data[core_name]
             
         #: if file_format
@@ -198,7 +188,7 @@ def save_data( file_name, data_dict, append=False ,
                                   core_name   = core_name    )
             # check for keys not in new data
             for key,value in data_dict_old.iteritems():
-                if not data_dict.has_key(key):
+                if not(key in data_dict):
                     data_dict[key] = value
             #: for each dict item
         #: if append

@@ -3,30 +3,20 @@
 ## \file package_tests.py
 #  \brief _____________.
 #  \author T. Lukaczyk
-#  \version 6.1.0 "Falcon"
+#  \version 7.1.1 "Blackbird"
 #
-# The current SU2 release has been coordinated by the
-# SU2 International Developers Society <www.su2devsociety.org>
-# with selected contributions from the open-source community.
+# SU2 Project Website: https://su2code.github.io
+# 
+# The SU2 Project is maintained by the SU2 Foundation 
+# (http://su2foundation.org)
 #
-# The main research teams contributing to the current release are:
-#  - Prof. Juan J. Alonso's group at Stanford University.
-#  - Prof. Piero Colonna's group at Delft University of Technology.
-#  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
-#  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
-#  - Prof. Rafael Palacios' group at Imperial College London.
-#  - Prof. Vincent Terrapon's group at the University of Liege.
-#  - Prof. Edwin van der Weide's group at the University of Twente.
-#  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
-#
-# Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
-#                      Tim Albring, and the SU2 contributors.
+# Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
-#
+# 
 # SU2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -52,7 +42,6 @@ from collections import OrderedDict
 # plotting
 # verbose redirection
 # pyopt optimizers
-# verify server.py
 
 
 # needed config options
@@ -77,8 +66,6 @@ def main():
     #level3()    # working
     #level4()    # working
     #level5()    # working
-    
-    mesh0()
     
     print('DONE!')
     
@@ -316,25 +303,6 @@ def level5():
         SU2.opt.SLSQP(project,x0,xb,its)
     
     wait = 0
-    
-def mesh0():
-    
-    folder='mesh_level0'; pull='config_NACA0012.cfg'; link='mesh_NACA0012.su2'
-    with SU2.io.redirect_folder(folder,pull,link):
-        
-        # Setup
-        config_name = 'config_NACA0012.cfg'
-        config = SU2.io.Config(config_name)
-        config.EXT_ITER = 9
-        config.NUMBER_PART = 2
-                
-        SU2.run.CFD(config)    
-        
-        SU2.io.restart2solution(config)
-        
-        SU2.run.MSH(config)
-        
-        
 
 if __name__ == '__main__':
     main()

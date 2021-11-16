@@ -3,30 +3,20 @@
 ## \file direct_differentiation.py
 #  \brief Python script for doing the direct differentiation computation using the SU2 suite.
 #  \author F. Palacios
-#  \version 6.1.0 "Falcon"
+#  \version 7.1.1 "Blackbird"
 #
-# The current SU2 release has been coordinated by the
-# SU2 International Developers Society <www.su2devsociety.org>
-# with selected contributions from the open-source community.
+# SU2 Project Website: https://su2code.github.io
+# 
+# The SU2 Project is maintained by the SU2 Foundation 
+# (http://su2foundation.org)
 #
-# The main research teams contributing to the current release are:
-#  - Prof. Juan J. Alonso's group at Stanford University.
-#  - Prof. Piero Colonna's group at Delft University of Technology.
-#  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
-#  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
-#  - Prof. Rafael Palacios' group at Imperial College London.
-#  - Prof. Vincent Terrapon's group at the University of Liege.
-#  - Prof. Edwin van der Weide's group at the University of Twente.
-#  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
-#
-# Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
-#                      Tim Albring, and the SU2 contributors.
+# Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
-#
+# 
 # SU2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -36,7 +26,7 @@
 # License along with SU2. If not, see <http://www.gnu.org/licenses/>.
 
 from __future__ import division, print_function, absolute_import
-import os, sys
+import os, sys, shutil
 from optparse import OptionParser
 sys.path.append(os.environ['SU2_RUN'])
 import SU2
@@ -89,7 +79,42 @@ def direct_differentiation( filename           ,
     # State
     state = SU2.io.State()
     state.find_files(config)
+
+    foundDerivativeField = False
+    for fields in SU2.io.historyOutFields:
+        group = SU2.io.historyOutFields[fields]['GROUP']
+        if group in config.HISTORY_OUTPUT:
+            if SU2.io.historyOutFields[fields]['TYPE'] == 'D_COEFFICIENT':
+                foundDerivativeField = True
     
+    if not foundDerivativeField:
+        sys.exit('No derivative field found in HISTORY_OUTPUT')
+
+    # link restart files to subfolder DIRECTDIFF, if restart solution is selected
+    if config.get('TIME_DOMAIN', 'NO') == 'YES' and config.get('RESTART_SOL', 'NO') == 'YES':
+        # check if directory DIRECTDIFF/DIRECT exists, if not, create
+        if not os.path.isdir('DIRECTDIFF/DIRECT'):
+            if not os.path.isdir('DIRECTDIFF'):
+                os.mkdir('DIRECTDIFF')
+            os.mkdir('DIRECTDIFF/DIRECT')
+
+        restart_name = config['RESTART_FILENAME'].split('.')[0]
+        restart_filename = restart_name + '_' + str(int(config['RESTART_ITER']) - 1).zfill(5) + '.dat'
+        if not os.path.isfile('DIRECTDIFF/DIRECT/' + restart_filename):
+            #throw, if restart file does not exist
+            if not os.path.isfile(restart_filename):
+                sys.exit("Error: Restart file <" + restart_filename + "> not found." )
+            shutil.copyfile(restart_filename, 'DIRECTDIFF/DIRECT/' + restart_filename)
+
+        # use only, if time integration is second order
+        if config.get('TIME_MARCHING', 'NO') == 'DUAL_TIME_STEPPING-2ND_ORDER':
+            restart_filename = restart_name + '_' + str(int(config['RESTART_ITER']) - 2).zfill(5) + '.dat'
+            if not os.path.isfile('DIRECTDIFF/DIRECT/' + restart_filename):
+                # throw, if restart file does not exist
+                if not os.path.isfile(restart_filename):
+                    sys.exit("Error: Restart file <" + restart_filename + "> not found.")
+                shutil.copyfile(restart_filename, 'DIRECTDIFF/DIRECT/' + restart_filename)
+
     # Direct Differentiation Gradients
     SU2.eval.gradients.directdiff(config,state)
     

@@ -3,30 +3,20 @@
 ## \file finite_differences.py
 #  \brief Python script for doing the finite differences computation using the SU2 suite.
 #  \author F. Palacios
-#  \version 6.1.0 "Falcon"
+#  \version 7.1.1 "Blackbird"
 #
-# The current SU2 release has been coordinated by the
-# SU2 International Developers Society <www.su2devsociety.org>
-# with selected contributions from the open-source community.
+# SU2 Project Website: https://su2code.github.io
+# 
+# The SU2 Project is maintained by the SU2 Foundation 
+# (http://su2foundation.org)
 #
-# The main research teams contributing to the current release are:
-#  - Prof. Juan J. Alonso's group at Stanford University.
-#  - Prof. Piero Colonna's group at Delft University of Technology.
-#  - Prof. Nicolas R. Gauger's group at Kaiserslautern University of Technology.
-#  - Prof. Alberto Guardone's group at Polytechnic University of Milan.
-#  - Prof. Rafael Palacios' group at Imperial College London.
-#  - Prof. Vincent Terrapon's group at the University of Liege.
-#  - Prof. Edwin van der Weide's group at the University of Twente.
-#  - Lab. of New Concepts in Aeronautics at Tech. Institute of Aeronautics.
-#
-# Copyright 2012-2018, Francisco D. Palacios, Thomas D. Economon,
-#                      Tim Albring, and the SU2 contributors.
+# Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
 #
 # SU2 is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
 # version 2.1 of the License, or (at your option) any later version.
-#
+# 
 # SU2 is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
@@ -87,6 +77,21 @@ def finite_differences( filename           ,
     # State
     state = SU2.io.State()
     state.find_files(config)
+
+    # add restart files to state.FILES
+    if config.get('TIME_DOMAIN', 'NO') == 'YES' and config.get('RESTART_SOL', 'NO') == 'YES':
+        restart_name = config['RESTART_FILENAME'].split('.')[0]
+        restart_filename = restart_name + '_' + str(int(config['RESTART_ITER'])-1).zfill(5) + '.dat'
+        if not os.path.isfile(restart_filename): # throw, if restart files does not exist
+            sys.exit("Error: Restart file <" + restart_filename + "> not found.")
+        state['FILES']['RESTART_FILE_1'] = restart_filename
+
+        # use only, if time integration is second order
+        if config.get('TIME_MARCHING', 'NO') == 'DUAL_TIME_STEPPING-2ND_ORDER':
+            restart_filename = restart_name + '_' + str(int(config['RESTART_ITER'])-2).zfill(5) + '.dat'
+            if not os.path.isfile(restart_filename): # throw, if restart files does not exist
+                sys.exit("Error: Restart file <" + restart_filename + "> not found.")
+            state['FILES']['RESTART_FILE_2'] =restart_filename
     
     # Finite Difference Gradients
     SU2.eval.gradients.findiff(config,state)
