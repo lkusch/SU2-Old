@@ -1,14 +1,14 @@
 /*!
  * \file CFVMFlowSolverBase.inl
  * \brief Base class template for all FVM flow solvers.
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -84,27 +84,18 @@ void CFVMFlowSolverBase<V, R>::AeroCoeffsArray::setZero(int i) {
 
 template <class V, ENUM_REGIME R>
 void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
-  unsigned short iVar;
-  unsigned long iMarker;
-
   /*--- Define some auxiliar vector related with the residual ---*/
 
-  Residual_RMS = new su2double[nVar]();
-  Residual_Max = new su2double[nVar]();
-
-  /*--- Define some structures for locating max residuals ---*/
-
-  Point_Max = new unsigned long[nVar]();
-  Point_Max_Coord = new su2double*[nVar];
-  for (iVar = 0; iVar < nVar; iVar++) {
-    Point_Max_Coord[iVar] = new su2double[nDim]();
-  }
+  Residual_RMS.resize(nVar,0.0);
+  Residual_Max.resize(nVar,0.0);
+  Point_Max.resize(nVar,0);
+  Point_Max_Coord.resize(nVar,nDim) = su2double(0.0);
 
   /*--- Define some auxiliar vector related with the undivided lapalacian computation ---*/
 
   if ((config.GetKind_ConvNumScheme_Flow() == SPACE_CENTERED) && (MGLevel == MESH_0)) {
-    iPoint_UndLapl = new su2double[nPointDomain];
-    jPoint_UndLapl = new su2double[nPointDomain];
+    iPoint_UndLapl.resize(nPointDomain);
+    jPoint_UndLapl.resize(nPointDomain);
   }
 
   /*--- Initialize the solution and right hand side vectors for storing
@@ -117,40 +108,26 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
   /*--- LinSysSol will always be init to 0. ---*/
   System.SetxIsZero(true);
 
-  /*--- Allocates a 2D array with variable "outer" sizes and init to 0. ---*/
-
-  auto Alloc2D = [](unsigned long M, const unsigned long* N, vector<vector<su2double> >& X) {
-    X.resize(M);
-    for (unsigned long i = 0; i < M; ++i) X[i].resize(N[i],0.0);
-  };
-
-  /*--- Allocates a 3D array with variable "middle" sizes and init to 0. ---*/
-
-  auto Alloc3D = [](unsigned long M, const unsigned long* N, unsigned long P, vector<su2activematrix>& X) {
-    X.resize(M);
-    for (unsigned long i = 0; i < M; ++i) X[i].resize(N[i],P) = su2double(0.0);
-  };
-
   /*--- Store the value of the characteristic primitive variables at the boundaries ---*/
 
-  Alloc3D(nMarker, nVertex, nPrimVar, CharacPrimVar);
+  AllocVectorOfMatrices(nVertex, nPrimVar, CharacPrimVar);
 
   /*--- Store the value of the Total Pressure at the inlet BC ---*/
 
-  Alloc2D(nMarker, nVertex, Inlet_Ttotal);
+  AllocVectorOfVectors(nVertex, Inlet_Ttotal);
 
   /*--- Store the value of the Total Temperature at the inlet BC ---*/
 
-  Alloc2D(nMarker, nVertex, Inlet_Ptotal);
+  AllocVectorOfVectors(nVertex, Inlet_Ptotal);
 
   /*--- Store the value of the Flow direction at the inlet BC ---*/
 
-  Alloc3D(nMarker, nVertex, nDim, Inlet_FlowDir);
+  AllocVectorOfMatrices(nVertex, nDim, Inlet_FlowDir);
 
   /*--- Force definition and coefficient arrays for all of the markers ---*/
 
-  Alloc2D(nMarker, nVertex, CPressure);
-  Alloc2D(nMarker, nVertex, CPressureTarget);
+  AllocVectorOfVectors(nVertex, CPressure);
+  AllocVectorOfVectors(nVertex, CPressureTarget);
 
   /*--- Non dimensional aerodynamic coefficients ---*/
 
@@ -182,7 +159,7 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
   SlidingState.resize(nMarker);
   SlidingStateNodes.resize(nMarker);
 
-  for (iMarker = 0; iMarker < nMarker; iMarker++) {
+  for (unsigned long iMarker = 0; iMarker < nMarker; iMarker++) {
     if (config.GetMarker_All_KindBC(iMarker) == FLUID_INTERFACE) {
       SlidingState[iMarker].resize(nVertex[iMarker], nPrimVar+1) = nullptr;
       SlidingStateNodes[iMarker].resize(nVertex[iMarker],0);
@@ -191,59 +168,51 @@ void CFVMFlowSolverBase<V, R>::Allocate(const CConfig& config) {
 
   /*--- Heat flux in all the markers ---*/
 
-  Alloc2D(nMarker, nVertex, HeatFlux);
-  Alloc2D(nMarker, nVertex, HeatFluxTarget);
+  AllocVectorOfVectors(nVertex, HeatFlux);
+  AllocVectorOfVectors(nVertex, HeatFluxTarget);
 
   /*--- Y plus in all the markers ---*/
 
-  Alloc2D(nMarker, nVertex, YPlus);
+  AllocVectorOfVectors(nVertex, YPlus);
+
+  /*--- U Tau in all the markers ---*/
+
+  AllocVectorOfVectors(nVertex, UTau);
+
+  /*--- wall eddy viscosity in all the markers ---*/
+
+  AllocVectorOfVectors(nVertex, EddyViscWall);
 
   /*--- Skin friction in all the markers ---*/
 
-  Alloc3D(nMarker, nVertex, nDim, CSkinFriction);
+  AllocVectorOfMatrices(nVertex, nDim, CSkinFriction);
 
   /*--- Wall Shear Stress in all the markers ---*/
 
-  Alloc2D(nMarker, nVertex, WallShearStress);
+  AllocVectorOfVectors(nVertex, WallShearStress);
 
   /*--- Store the values of the temperature and the heat flux density at the boundaries,
    used for coupling with a solid donor cell ---*/
   constexpr auto nHeatConjugateVar = 4u;
-
-  Alloc3D(nMarker, nVertex, nHeatConjugateVar, HeatConjugateVar);
-  for (auto& x : HeatConjugateVar) x = config.GetTemperature_FreeStreamND();
+  AllocVectorOfMatrices(nVertex, nHeatConjugateVar, HeatConjugateVar, config.GetTemperature_FreeStreamND());
 
   if (MGLevel == MESH_0) {
-    VertexTraction.resize(nMarker);
-    for (iMarker = 0; iMarker < nMarker; iMarker++) {
-      if (config.GetSolid_Wall(iMarker))
-        VertexTraction[iMarker].resize(nVertex[iMarker], nDim) = su2double(0.0);
-    }
+    auto nSolidVertex = nVertex;
+    for (unsigned long iMarker = 0; iMarker < nMarker; iMarker++)
+      if (!config.GetSolid_Wall(iMarker))
+        nSolidVertex[iMarker] = 0;
 
-    if (config.GetDiscrete_Adjoint()) {
-      VertexTractionAdjoint.resize(nMarker);
-      for (iMarker = 0; iMarker < nMarker; iMarker++) {
-        if (config.GetSolid_Wall(iMarker))
-          VertexTractionAdjoint[iMarker].resize(nVertex[iMarker], nDim) = su2double(0.0);
-      }
-    }
+    AllocVectorOfMatrices(nSolidVertex, nDim, VertexTraction);
+
+    if (config.GetDiscrete_Adjoint()) AllocVectorOfMatrices(nSolidVertex, nDim, VertexTractionAdjoint);
   }
 
   /*--- Initialize the BGS residuals in FSI problems. ---*/
   if (config.GetMultizone_Residual()) {
-    Residual_BGS = new su2double[nVar];
-    for (iVar = 0; iVar < nVar; iVar++) Residual_BGS[iVar] = 1.0;
-
-    Residual_Max_BGS = new su2double[nVar];
-    for (iVar = 0; iVar < nVar; iVar++) Residual_Max_BGS[iVar] = 1.0;
-
-    /*--- Define some structures for locating max residuals ---*/
-
-    Point_Max_BGS = new unsigned long[nVar]();
-    Point_Max_Coord_BGS = new su2double*[nVar];
-    for (iVar = 0; iVar < nVar; iVar++) {
-      Point_Max_Coord_BGS[iVar] = new su2double[nDim]();
-    }
+    Residual_BGS.resize(nVar,1.0);
+    Residual_Max_BGS.resize(nVar,1.0);
+    Point_Max_BGS.resize(nVar,0);
+    Point_Max_Coord_BGS.resize(nVar,nDim) = su2double(0.0);
   }
 }
 
@@ -353,7 +322,11 @@ void CFVMFlowSolverBase<V, R>::HybridParallelInitialization(const CConfig& confi
       cout << "WARNING: On " << numRanksUsingReducer << " MPI ranks the coloring efficiency was less than "
            << COLORING_EFF_THRESH << " (min value was " << minEff << ").\n"
            << "         Those ranks will now use a fallback strategy, better performance may be possible\n"
-           << "         with a different value of config option EDGE_COLORING_GROUP_SIZE (default 512)." << endl;
+           << "         with a different value of config option EDGE_COLORING_GROUP_SIZE (default 512)."
+#ifdef HAVE_OPDI
+           << "\n         The memory usage of the discrete adjoint solver is higher when using the fallback."
+#endif
+           << endl;
     }
 
     if (config.GetUseVectorization() && (omp_get_max_threads() > 1) &&
@@ -387,9 +360,10 @@ void CFVMFlowSolverBase<V, R>::SetPrimitive_Gradient_GG(CGeometry* geometry, con
                                                         bool reconstruction) {
   const auto& primitives = nodes->GetPrimitive();
   auto& gradient = reconstruction ? nodes->GetGradient_Reconstruction() : nodes->GetGradient_Primitive();
+  const auto comm = reconstruction? PRIMITIVE_GRAD_REC : PRIMITIVE_GRADIENT;
+  const auto commPer = reconstruction? PERIODIC_PRIM_GG_R : PERIODIC_PRIM_GG;
 
-  computeGradientsGreenGauss(this, PRIMITIVE_GRADIENT, PERIODIC_PRIM_GG, *geometry, *config, primitives, 0,
-                             nPrimVarGrad, gradient);
+  computeGradientsGreenGauss(this, comm, commPer, *geometry, *config, primitives, 0, nPrimVarGrad, gradient);
 }
 
 template <class V, ENUM_REGIME R>
@@ -397,19 +371,24 @@ void CFVMFlowSolverBase<V, R>::SetPrimitive_Gradient_LS(CGeometry* geometry, con
                                                         bool reconstruction) {
   /*--- Set a flag for unweighted or weighted least-squares. ---*/
   bool weighted;
+  PERIODIC_QUANTITIES commPer;
 
-  if (reconstruction)
+  if (reconstruction) {
     weighted = (config->GetKind_Gradient_Method_Recon() == WEIGHTED_LEAST_SQUARES);
-  else
+    commPer = weighted? PERIODIC_PRIM_LS_R : PERIODIC_PRIM_ULS_R;
+  }
+  else {
     weighted = (config->GetKind_Gradient_Method() == WEIGHTED_LEAST_SQUARES);
+    commPer = weighted? PERIODIC_PRIM_LS : PERIODIC_PRIM_ULS;
+  }
 
   const auto& primitives = nodes->GetPrimitive();
   auto& rmatrix = nodes->GetRmatrix();
   auto& gradient = reconstruction ? nodes->GetGradient_Reconstruction() : nodes->GetGradient_Primitive();
-  PERIODIC_QUANTITIES kindPeriodicComm = weighted ? PERIODIC_PRIM_LS : PERIODIC_PRIM_ULS;
+  const auto comm = reconstruction? PRIMITIVE_GRAD_REC : PRIMITIVE_GRADIENT;
 
-  computeGradientsLeastSquares(this, PRIMITIVE_GRADIENT, kindPeriodicComm, *geometry, *config, weighted, primitives, 0,
-                               nPrimVarGrad, gradient, rmatrix);
+  computeGradientsLeastSquares(this, comm, commPer, *geometry, *config, weighted,
+                               primitives, 0, nPrimVarGrad, gradient, rmatrix);
 }
 
 template <class V, ENUM_REGIME R>
@@ -430,8 +409,8 @@ void CFVMFlowSolverBase<V, R>::Viscous_Residual_impl(unsigned long iEdge, CGeome
                                                      CNumerics *numerics, CConfig *config) {
 
   const bool implicit  = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
-  const bool tkeNeeded = (config->GetKind_Turb_Model() == SST) ||
-                         (config->GetKind_Turb_Model() == SST_SUST);
+  const bool tkeNeeded = (config->GetKind_Turb_Model() == TURB_MODEL::SST) ||
+                         (config->GetKind_Turb_Model() == TURB_MODEL::SST_SUST);
 
   CVariable* turbNodes = nullptr;
   if (tkeNeeded) turbNodes = solver_container[TURB_SOL]->GetNodes();
@@ -465,6 +444,11 @@ void CFVMFlowSolverBase<V, R>::Viscous_Residual_impl(unsigned long iEdge, CGeome
     numerics->SetTurbKineticEnergy(turbNodes->GetSolution(iPoint,0),
                                    turbNodes->GetSolution(jPoint,0));
 
+  /*--- Wall shear stress values (wall functions) ---*/
+
+  numerics->SetTau_Wall(nodes->GetTau_Wall(iPoint),
+                        nodes->GetTau_Wall(jPoint));
+
   /*--- Compute and update residual ---*/
 
   auto residual = numerics->ComputeResidual(config);
@@ -486,6 +470,7 @@ void CFVMFlowSolverBase<V, R>::Viscous_Residual_impl(unsigned long iEdge, CGeome
 
 template <class V, ENUM_REGIME R>
 void CFVMFlowSolverBase<V, R>::ComputeVerificationError(CGeometry* geometry, CConfig* config) {
+
   /*--- The errors only need to be computed on the finest grid. ---*/
   if (MGLevel != MESH_0) return;
 
@@ -500,12 +485,14 @@ void CFVMFlowSolverBase<V, R>::ComputeVerificationError(CGeometry* geometry, CCo
        (config->GetInnerIter() == 1));
   if (!write_heads) return;
 
+  SU2_OMP_MASTER {
+
   /*--- Check if there actually is an exact solution for this
         verification case, if computed at all. ---*/
   if (VerificationSolution && VerificationSolution->ExactSolutionKnown()) {
     /*--- Get the physical time if necessary. ---*/
     su2double time = 0.0;
-    if (config->GetTime_Marching()) time = config->GetPhysicalTime();
+    if (config->GetTime_Marching() != TIME_MARCHING::STEADY) time = config->GetPhysicalTime();
 
     /*--- Reset the global error measures to zero. ---*/
     for (unsigned short iVar = 0; iVar < nVar; iVar++) {
@@ -539,6 +526,10 @@ void CFVMFlowSolverBase<V, R>::ComputeVerificationError(CGeometry* geometry, CCo
 
     PrintVerificationError(config);
   }
+
+  }
+  END_SU2_OMP_MASTER
+  SU2_OMP_BARRIER
 }
 
 template <class V, ENUM_REGIME R>
@@ -575,6 +566,7 @@ void CFVMFlowSolverBase<V, R>::ComputeUnderRelaxationFactor(const CConfig* confi
 
     nodes->SetUnderRelaxation(iPoint, localUnderRelaxation);
   }
+  END_SU2_OMP_FOR
 }
 
 template <class V, ENUM_REGIME R>
@@ -584,11 +576,12 @@ void CFVMFlowSolverBase<V, R>::ImplicitEuler_Iteration(CGeometry *geometry, CSol
 
   /*--- Solve or smooth the linear system. ---*/
 
-  SU2_OMP(for schedule(static,OMP_MIN_SIZE) nowait)
+  SU2_OMP_FOR_(schedule(static,OMP_MIN_SIZE) SU2_NOWAIT)
   for (unsigned long iPoint = nPointDomain; iPoint < nPoint; iPoint++) {
     LinSysRes.SetBlock_Zero(iPoint);
     LinSysSol.SetBlock_Zero(iPoint);
   }
+  END_SU2_OMP_FOR
 
   auto iter = System.Solve(Jacobian, LinSysRes, LinSysSol, geometry, config);
 
@@ -596,6 +589,7 @@ void CFVMFlowSolverBase<V, R>::ImplicitEuler_Iteration(CGeometry *geometry, CSol
     SetIterLinSolver(iter);
     SetResLinSolver(System.GetResidual());
   }
+  END_SU2_OMP_MASTER
   SU2_OMP_BARRIER
 
   CompleteImplicitIteration(geometry, nullptr, config);
@@ -733,17 +727,17 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
 
   /*--- Restart the solution from file information ---*/
 
-  unsigned short iDim, iVar, iMesh, iMeshFine;
+  unsigned short iDim, iVar, iMesh;
   unsigned long iPoint, index, iChildren, Point_Fine;
-  unsigned short turb_model = config->GetKind_Turb_Model();
+  TURB_MODEL turb_model = config->GetKind_Turb_Model();
   su2double Area_Children, Area_Parent;
   const su2double* Solution_Fine = nullptr;
   const passivedouble* Coord = nullptr;
-  bool dual_time = ((config->GetTime_Marching() == DT_STEPPING_1ST) ||
-                    (config->GetTime_Marching() == DT_STEPPING_2ND));
-  bool static_fsi = ((config->GetTime_Marching() == STEADY) && config->GetFSI_Simulation());
+  bool dual_time = ((config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_1ST) ||
+                    (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_2ND));
+  bool static_fsi = ((config->GetTime_Marching() == TIME_MARCHING::STEADY) && config->GetFSI_Simulation());
   bool steady_restart = config->GetSteadyRestart();
-  bool turbulent = (config->GetKind_Turb_Model() != NONE);
+  bool turbulent = (config->GetKind_Turb_Model() != TURB_MODEL::NONE);
 
   string restart_filename = config->GetFilename(config->GetSolution_FileName(), "", iter);
 
@@ -760,7 +754,7 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
    (that could appear in the restart file before the grid velocities). ---*/
   unsigned short turbVars = 0;
   if (turbulent){
-    if ((turb_model == SST) || (turb_model == SST_SUST)) turbVars = 2;
+    if ((turb_model == TURB_MODEL::SST) || (turb_model == TURB_MODEL::SST_SUST)) turbVars = 2;
     else turbVars = 1;
   }
 
@@ -770,6 +764,15 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
     Read_SU2_Restart_Binary(geometry[MESH_0], config, restart_filename);
   } else {
     Read_SU2_Restart_ASCII(geometry[MESH_0], config, restart_filename);
+  }
+
+  if (update_geo && dynamic_grid) {
+    auto notFound = fields.end();
+    if (find(fields.begin(), notFound, string("\"Grid_Velocity_x\"")) == notFound) {
+      if (rank == MASTER_NODE)
+        cout << "\nWARNING: The restart file does not contain grid velocities, these will be set to zero.\n" << endl;
+      steady_restart = true;
+    }
   }
 
   /*--- Load data from the restart into correct containers. ---*/
@@ -851,42 +854,26 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
     SU2_MPI::Error(string("The solution file ") + restart_filename + string(" doesn't match with the mesh file!\n") +
                    string("It could be empty lines at the end of the file."), CURRENT_FUNCTION);
   }
-  } // end SU2_OMP_MASTER
+  }
+  END_SU2_OMP_MASTER
   SU2_OMP_BARRIER
 
-  /*--- Update the geometry for flows on deforming meshes ---*/
+  /*--- Update the geometry for flows on deforming meshes. ---*/
 
   if ((dynamic_grid || static_fsi) && update_geo) {
 
-    /*--- Communicate the new coordinates and grid velocities at the halos ---*/
-
-    geometry[MESH_0]->InitiateComms(geometry[MESH_0], config, COORDINATES);
-    geometry[MESH_0]->CompleteComms(geometry[MESH_0], config, COORDINATES);
+    CGeometry::UpdateGeometry(geometry, config);
 
     if (dynamic_grid) {
-      geometry[MESH_0]->InitiateComms(geometry[MESH_0], config, GRID_VELOCITY);
-      geometry[MESH_0]->CompleteComms(geometry[MESH_0], config, GRID_VELOCITY);
-    }
+      for (iMesh = 0; iMesh <= config->GetnMGLevels(); iMesh++) {
 
-    /*--- Recompute the edges and dual mesh control volumes in the
-     domain and on the boundaries. ---*/
-
-    geometry[MESH_0]->SetControlVolume(config, UPDATE);
-    geometry[MESH_0]->SetBoundControlVolume(config, UPDATE);
-    geometry[MESH_0]->SetMaxLength(config);
-
-    /*--- Update the multigrid structure after setting up the finest grid,
-     including computing the grid velocities on the coarser levels. ---*/
-
-    for (iMesh = 1; iMesh <= config->GetnMGLevels(); iMesh++) {
-      iMeshFine = iMesh-1;
-      geometry[iMesh]->SetControlVolume(config, geometry[iMeshFine], UPDATE);
-      geometry[iMesh]->SetBoundControlVolume(config, geometry[iMeshFine],UPDATE);
-      geometry[iMesh]->SetCoord(geometry[iMeshFine]);
-      if (dynamic_grid) {
-        geometry[iMesh]->SetRestricted_GridVelocity(geometry[iMeshFine], config);
+        /*--- Compute the grid velocities on the coarser levels. ---*/
+        if (iMesh) geometry[iMesh]->SetRestricted_GridVelocity(geometry[iMesh-1]);
+        else {
+          geometry[MESH_0]->InitiateComms(geometry[MESH_0], config, GRID_VELOCITY);
+          geometry[MESH_0]->CompleteComms(geometry[MESH_0], config, GRID_VELOCITY);
+        }
       }
-      geometry[iMesh]->SetMaxLength(config);
     }
   }
 
@@ -921,6 +908,7 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
       }
       solver[iMesh][FLOW_SOL]->GetNodes()->SetSolution(iPoint,Solution_Coarse);
     }
+    END_SU2_OMP_FOR
 
     solver[iMesh][FLOW_SOL]->InitiateComms(geometry[iMesh], config, SOLUTION);
     solver[iMesh][FLOW_SOL]->CompleteComms(geometry[iMesh], config, SOLUTION);
@@ -944,7 +932,8 @@ void CFVMFlowSolverBase<V, R>::LoadRestart_impl(CGeometry **geometry, CSolver **
   delete [] Restart_Vars; Restart_Vars = nullptr;
   delete [] Restart_Data; Restart_Data = nullptr;
 
-  } // end SU2_OMP_MASTER
+  }
+  END_SU2_OMP_MASTER
   SU2_OMP_BARRIER
 
 }
@@ -960,9 +949,9 @@ void CFVMFlowSolverBase<V, R>::SetInitialCondition(CGeometry **geometry, CSolver
                                                    CConfig *config, unsigned long TimeIter) {
 
   const bool restart = (config->GetRestart() || config->GetRestart_Flow());
-  const bool rans = (config->GetKind_Turb_Model() != NONE);
-  const bool dual_time = ((config->GetTime_Marching() == DT_STEPPING_1ST) ||
-                          (config->GetTime_Marching() == DT_STEPPING_2ND));
+  const bool rans = (config->GetKind_Turb_Model() != TURB_MODEL::NONE);
+  const bool dual_time = ((config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_1ST) ||
+                          (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_2ND));
 
   /*--- Start OpenMP parallel region. ---*/
 
@@ -990,16 +979,18 @@ void CFVMFlowSolverBase<V, R>::SetInitialCondition(CGeometry **geometry, CSolver
            but this is not necessary. */
         VerificationSolution->GetInitialCondition(coor, solDOF);
       }
+      END_SU2_OMP_FOR
     }
   }
 
   /*--- The value of the solution for the first iteration of the dual time ---*/
 
-  if (dual_time && (TimeIter == 0 || (restart && TimeIter == config->GetRestart_Iter()))) {
+  if (dual_time && TimeIter == config->GetRestart_Iter()) {
     PushSolutionBackInTime(TimeIter, restart, rans, solver_container, geometry, config);
   }
 
-  } // end SU2_OMP_PARALLEL
+  }
+  END_SU2_OMP_PARALLEL
 
 }
 
@@ -1017,26 +1008,36 @@ void CFVMFlowSolverBase<V, R>::PushSolutionBackInTime(unsigned long TimeIter, bo
       solver_container[iMesh][TURB_SOL]->GetNodes()->Set_Solution_time_n();
       solver_container[iMesh][TURB_SOL]->GetNodes()->Set_Solution_time_n1();
     }
+
+    if (dynamic_grid) {
+      geometry[iMesh]->nodes->SetVolume_n();
+      geometry[iMesh]->nodes->SetVolume_nM1();
+    }
+
+    if (config->GetGrid_Movement()) {
+      geometry[iMesh]->nodes->SetCoord_n();
+      geometry[iMesh]->nodes->SetCoord_n1();
+    }
   }
 
-  if (restart && (TimeIter == config->GetRestart_Iter()) && (config->GetTime_Marching() == DT_STEPPING_2ND)) {
-    /*--- Load an additional restart file for a 2nd-order restart ---*/
+  if (restart && (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_2ND)) {
 
-    solver_container[MESH_0][FLOW_SOL]->LoadRestart(geometry, solver_container, config, config->GetRestart_Iter() - 1,
-                                                    true);
+    /*--- Load an additional restart file for a 2nd-order restart. ---*/
 
-    /*--- Load an additional restart file for the turbulence model ---*/
+    solver_container[MESH_0][FLOW_SOL]->LoadRestart(geometry, solver_container, config, TimeIter-1, true);
+
+    /*--- Load an additional restart file for the turbulence model. ---*/
     if (rans)
-      solver_container[MESH_0][TURB_SOL]->LoadRestart(geometry, solver_container, config, config->GetRestart_Iter() - 1,
-                                                      false);
+      solver_container[MESH_0][TURB_SOL]->LoadRestart(geometry, solver_container, config, TimeIter-1, false);
 
     /*--- Push back this new solution to time level N. ---*/
 
     for (unsigned short iMesh = 0; iMesh <= config->GetnMGLevels(); iMesh++) {
       solver_container[iMesh][FLOW_SOL]->GetNodes()->Set_Solution_time_n();
-      if (rans) {
-        solver_container[iMesh][TURB_SOL]->GetNodes()->Set_Solution_time_n();
-      }
+      if (rans) solver_container[iMesh][TURB_SOL]->GetNodes()->Set_Solution_time_n();
+
+      geometry[iMesh]->nodes->SetVolume_n();
+      if (config->GetGrid_Movement()) geometry[iMesh]->nodes->SetCoord_n();
     }
   }
 }
@@ -1059,8 +1060,7 @@ void CFVMFlowSolverBase<V, R>::BC_Sym_Plane(CGeometry* geometry, CSolver** solve
       Tangential[MAXNDIM] = {0.0}, GradNormVel[MAXNDIM] = {0.0}, GradTangVel[MAXNDIM] = {0.0};
 
   /*--- Allocation of primitive gradient arrays for viscous fluxes. ---*/
-  su2double** Grad_Reflected = new su2double*[nPrimVarGrad];
-  for (iVar = 0; iVar < nPrimVarGrad; iVar++) Grad_Reflected[iVar] = new su2double[nDim];
+  su2activematrix Grad_Reflected(nPrimVarGrad, nDim);
 
   /*--- Loop over all the vertices on this boundary marker. ---*/
 
@@ -1266,10 +1266,10 @@ void CFVMFlowSolverBase<V, R>::BC_Sym_Plane(CGeometry* geometry, CSolver** solve
                 GradNormVel[iDim] * UnitNormal[iVar] + GradTangVel[iDim] * Tangential[iVar];
 
         /*--- Set the primitive gradients of the boundary and reflected state. ---*/
-        visc_numerics->SetPrimVarGradient(nodes->GetGradient_Primitive(iPoint), Grad_Reflected);
+        visc_numerics->SetPrimVarGradient(nodes->GetGradient_Primitive(iPoint), CMatrixView<su2double>(Grad_Reflected));
 
         /*--- Turbulent kinetic energy. ---*/
-        if ((config->GetKind_Turb_Model() == SST) || (config->GetKind_Turb_Model() == SST_SUST))
+        if ((config->GetKind_Turb_Model() == TURB_MODEL::SST) || (config->GetKind_Turb_Model() == TURB_MODEL::SST_SUST))
           visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->GetNodes()->GetSolution(iPoint, 0),
                                               solver_container[TURB_SOL]->GetNodes()->GetSolution(iPoint, 0));
 
@@ -1284,10 +1284,8 @@ void CFVMFlowSolverBase<V, R>::BC_Sym_Plane(CGeometry* geometry, CSolver** solve
       }  // if viscous
     }    // if GetDomain
   }      // for iVertex
+  END_SU2_OMP_FOR
 
-  /*--- Free locally allocated memory ---*/
-  for (iVar = 0; iVar < nPrimVarGrad; iVar++) delete[] Grad_Reflected[iVar];
-  delete[] Grad_Reflected;
 }
 
 template <class V, ENUM_REGIME R>
@@ -1360,7 +1358,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::BC_Fluid_Interface(CGeometry* geometry, 
 
             conv_numerics->SetPrimitive(PrimVar_i, PrimVar_j);
 
-            if (FlowRegime == COMPRESSIBLE) {
+            if (FlowRegime == ENUM_REGIME::COMPRESSIBLE) {
               if (!(config->GetKind_FluidModel() == STANDARD_AIR || config->GetKind_FluidModel() == IDEAL_GAS)) {
                 auto Secondary_i = nodes->GetSecondary(iPoint);
 
@@ -1437,13 +1435,9 @@ void CFVMFlowSolverBase<V, FlowRegime>::BC_Fluid_Interface(CGeometry* geometry, 
 
               /*--- Turbulent kinetic energy ---*/
 
-              if ((config->GetKind_Turb_Model() == SST) || (config->GetKind_Turb_Model() == SST_SUST))
+              if ((config->GetKind_Turb_Model() == TURB_MODEL::SST) || (config->GetKind_Turb_Model() == TURB_MODEL::SST_SUST))
                 visc_numerics->SetTurbKineticEnergy(solver_container[TURB_SOL]->GetNodes()->GetSolution(iPoint, 0),
                                                     solver_container[TURB_SOL]->GetNodes()->GetSolution(iPoint, 0));
-
-              /*--- Set the wall shear stress values (wall functions) to -1 (no evaluation using wall functions) ---*/
-
-              visc_numerics->SetTauWall(-1.0, -1.0);
 
               /*--- Compute and update residual ---*/
 
@@ -1465,6 +1459,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::BC_Fluid_Interface(CGeometry* geometry, 
           }
         }
       }
+      END_SU2_OMP_FOR
     }
   }
 
@@ -1486,7 +1481,7 @@ void CFVMFlowSolverBase<V, R>::BC_Custom(CGeometry* geometry, CSolver** solver_c
     /*--- Get the physical time. ---*/
 
     su2double time = 0.0;
-    if (config->GetTime_Marching()) time = config->GetPhysicalTime();
+    if (config->GetTime_Marching() != TIME_MARCHING::STEADY) time = config->GetPhysicalTime();
 
     /*--- Loop over all the vertices on this boundary marker ---*/
 
@@ -1527,6 +1522,7 @@ void CFVMFlowSolverBase<V, R>::BC_Custom(CGeometry* geometry, CSolver** solver_c
         }
       }
     }
+    END_SU2_OMP_FOR
 
   } else {
     /* The user must specify the custom BC's here. */
@@ -1541,6 +1537,12 @@ void CFVMFlowSolverBase<V, R>::EdgeFluxResidual(const CGeometry *geometry,
   if (!edgeNumerics) {
     InstantiateEdgeNumerics(solvers, config);
   }
+
+  /*--- For hybrid parallel AD, pause preaccumulation if there is shared reading of
+  * variables, otherwise switch to the faster adjoint evaluation mode. ---*/
+  bool pausePreacc = false;
+  if (ReducerStrategy) pausePreacc = AD::PausePreaccumulation();
+  else AD::StartNoSharedReading();
 
   /*--- Loop over edge colors. ---*/
   for (auto color : EdgeColoring) {
@@ -1561,7 +1563,12 @@ void CFVMFlowSolverBase<V, R>::EdgeFluxResidual(const CGeometry *geometry,
         edgeNumerics->ComputeFlux(iEdge, *config, *geometry, *nodes, UpdateType::COLORING, mask, LinSysRes, Jacobian);
       }
     }
+    END_SU2_OMP_FOR
   }
+
+  /*--- Restore preaccumulation and adjoint evaluation state. ---*/
+  AD::ResumePreaccumulation(pausePreacc);
+  if (!ReducerStrategy) AD::EndNoSharedReading();
 
   if (ReducerStrategy) {
     SumEdgeFluxes(geometry);
@@ -1586,6 +1593,7 @@ void CFVMFlowSolverBase<V, R>::SumEdgeFluxes(const CGeometry* geometry) {
         LinSysRes.SubtractBlock(iPoint, EdgeFluxes.GetBlock(iEdge));
     }
   }
+  END_SU2_OMP_FOR
 }
 
 template <class V, ENUM_REGIME FlowRegime>
@@ -1603,8 +1611,8 @@ void CFVMFlowSolverBase<V, FlowRegime>::SetResidual_DualTime(CGeometry *geometry
   su2double Residual_GCL;
 
   const bool implicit = (config->GetKind_TimeIntScheme() == EULER_IMPLICIT);
-  const bool first_order = (config->GetTime_Marching() == DT_STEPPING_1ST);
-  const bool second_order = (config->GetTime_Marching() == DT_STEPPING_2ND);
+  const bool first_order = (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_1ST);
+  const bool second_order = (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_2ND);
 
   /*--- Store the physical time step ---*/
 
@@ -1615,6 +1623,8 @@ void CFVMFlowSolverBase<V, FlowRegime>::SetResidual_DualTime(CGeometry *geometry
   if (!dynamic_grid) {
 
     /*--- Loop over all nodes (excluding halos) ---*/
+
+    AD::StartNoSharedReading();
 
     SU2_OMP_FOR_STAT(omp_chunk_size)
     for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
@@ -1649,6 +1659,9 @@ void CFVMFlowSolverBase<V, FlowRegime>::SetResidual_DualTime(CGeometry *geometry
         if (second_order) Jacobian.AddVal2Diag(iPoint, (Volume_nP1*3.0)/(2.0*TimeStep));
       }
     }
+    END_SU2_OMP_FOR
+
+    AD::EndNoSharedReading();
 
   }
 
@@ -1687,11 +1700,13 @@ void CFVMFlowSolverBase<V, FlowRegime>::SetResidual_DualTime(CGeometry *geometry
           LinSysRes(iPoint,iVar) += U_time_n[iVar]*Residual_GCL;
       }
     }
+    END_SU2_OMP_FOR
 
     /*--- Loop over the boundary edges ---*/
 
     for (iMarker = 0; iMarker < geometry->GetnMarker(); iMarker++) {
-      if ((config->GetMarker_All_KindBC(iMarker) != INTERNAL_BOUNDARY)  &&
+      if ((config->GetMarker_All_KindBC(iMarker) != INTERNAL_BOUNDARY) &&
+          (config->GetMarker_All_KindBC(iMarker) != NEARFIELD_BOUNDARY) &&
           (config->GetMarker_All_KindBC(iMarker) != PERIODIC_BOUNDARY)) {
 
         SU2_OMP_FOR_STAT(OMP_MIN_SIZE)
@@ -1719,11 +1734,14 @@ void CFVMFlowSolverBase<V, FlowRegime>::SetResidual_DualTime(CGeometry *geometry
           for (iVar = 0; iVar < nVar; iVar++)
             LinSysRes(iPoint,iVar) += U_time_n[iVar]*Residual_GCL;
         }
+        END_SU2_OMP_FOR
       }
     }
 
     /*--- Loop over all nodes (excluding halos) to compute the remainder
      of the dual time-stepping source term. ---*/
+
+    AD::StartNoSharedReading();
 
     SU2_OMP_FOR_STAT(omp_chunk_size)
     for (iPoint = 0; iPoint < nPointDomain; iPoint++) {
@@ -1761,6 +1779,9 @@ void CFVMFlowSolverBase<V, FlowRegime>::SetResidual_DualTime(CGeometry *geometry
         if (second_order) Jacobian.AddVal2Diag(iPoint, (Volume_nP1*3.0)/(2.0*TimeStep));
       }
     }
+    END_SU2_OMP_FOR
+
+    AD::EndNoSharedReading();
   }
 
 }
@@ -1769,8 +1790,7 @@ template <class V, ENUM_REGIME FlowRegime>
 void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometry, const CConfig* config) {
   unsigned long iVertex, iPoint;
   unsigned short iDim, iMarker, Boundary, Monitoring, iMarker_Monitoring;
-  su2double Pressure = 0.0, factor, NFPressOF, RefVel2 = 0.0, RefTemp, RefDensity = 0.0, RefPressure, Mach2Vel,
-            Mach_Motion;
+  su2double Pressure = 0.0, NFPressOF, RefPressure;
   const su2double *Normal = nullptr, *Coord = nullptr;
   string Marker_Tag, Monitoring_Tag;
   su2double AxiFactor;
@@ -1779,49 +1799,12 @@ void CFVMFlowSolverBase<V, FlowRegime>::Pressure_Forces(const CGeometry* geometr
   su2double Beta = config->GetAoS() * PI_NUMBER / 180.0;
   su2double RefArea = config->GetRefArea();
   su2double RefLength = config->GetRefLength();
-  su2double Gas_Constant = config->GetGas_ConstantND();
   auto Origin = config->GetRefOriginMoment(0);
   bool axisymmetric = config->GetAxisymmetric();
 
-  /// TODO: Move these ifs to specialized functions.
+  SetReferenceValues(*config);
 
-  if (FlowRegime == COMPRESSIBLE) {
-    /*--- Evaluate reference values for non-dimensionalization.
-     For dynamic meshes, use the motion Mach number as a reference value
-     for computing the force coefficients. Otherwise, use the freestream values,
-     which is the standard convention. ---*/
-
-    RefTemp = Temperature_Inf;
-    RefDensity = Density_Inf;
-    if (dynamic_grid) {
-      Mach2Vel = sqrt(Gamma * Gas_Constant * RefTemp);
-      Mach_Motion = config->GetMach_Motion();
-      RefVel2 = (Mach_Motion * Mach2Vel) * (Mach_Motion * Mach2Vel);
-    } else {
-      RefVel2 = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++) RefVel2 += Velocity_Inf[iDim] * Velocity_Inf[iDim];
-    }
-  }
-
-  if (FlowRegime == INCOMPRESSIBLE) {
-    /*--- Evaluate reference values for non-dimensionalization.
-     For dimensional or non-dim based on initial values, use
-     the far-field state (inf). For a custom non-dim based
-     on user-provided reference values, use the ref values
-     to compute the forces. ---*/
-
-    if ((config->GetRef_Inc_NonDim() == DIMENSIONAL) || (config->GetRef_Inc_NonDim() == INITIAL_VALUES)) {
-      RefDensity = Density_Inf;
-      RefVel2 = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++) RefVel2 += Velocity_Inf[iDim] * Velocity_Inf[iDim];
-    } else if (config->GetRef_Inc_NonDim() == REFERENCE_VALUES) {
-      RefDensity = config->GetInc_Density_Ref();
-      RefVel2 = config->GetInc_Velocity_Ref() * config->GetInc_Velocity_Ref();
-    }
-  }
-
-  AeroCoeffForceRef = 0.5 * RefDensity * RefArea * RefVel2;
-  factor = 1.0 / AeroCoeffForceRef;
+  const su2double factor = 1.0 / AeroCoeffForceRef;
 
   /*--- Reference pressure is always the far-field value. ---*/
 
@@ -2413,11 +2396,11 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
   unsigned long iVertex, iPoint, iPointNormal;
   unsigned short iMarker, iMarker_Monitoring, iDim, jDim;
   unsigned short T_INDEX = 0, TVE_INDEX = 0, VEL_INDEX = 0;
-  su2double Viscosity = 0.0, WallDist[3] = {0.0}, Area, TauNormal, dTn, dTven,
-            GradTemperature, Density = 0.0, WallDistMod, FrictionVel,
-            UnitNormal[3] = {0.0}, TauElem[3] = {0.0}, TauTangent[3] = {0.0}, Tau[3][3] = {{0.0}}, Cp,
+  su2double Viscosity = 0.0, Area, Density = 0.0, GradTemperature = 0.0, WallDistMod, FrictionVel,
+            UnitNormal[3] = {0.0}, TauElem[3] = {0.0}, Tau[3][3] = {{0.0}}, Cp,
             thermal_conductivity, MaxNorm = 8.0, Grad_Vel[3][3] = {{0.0}}, Grad_Temp[3] = {0.0}, AxiFactor;
   const su2double *Coord = nullptr, *Coord_Normal = nullptr, *Normal = nullptr;
+  const su2double minYPlus = config->GetwallModel_MinYPlus();
 
   string Marker_Tag, Monitoring_Tag;
 
@@ -2463,6 +2446,7 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
 
   for (iMarker = 0; iMarker < nMarker; iMarker++) {
 
+    Marker_Tag = config->GetMarker_All_TagBound(iMarker);
     if (!config->GetViscous_Wall(iMarker)) continue;
 
     /*--- Obtain the origin for the moment computation for a particular marker ---*/
@@ -2471,7 +2455,6 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
     if (Monitoring == YES) {
       for (iMarker_Monitoring = 0; iMarker_Monitoring < config->GetnMarker_Monitoring(); iMarker_Monitoring++) {
         Monitoring_Tag = config->GetMarker_Monitoring_TagBound(iMarker_Monitoring);
-        Marker_Tag = config->GetMarker_All_TagBound(iMarker);
         if (Marker_Tag == Monitoring_Tag) Origin = config->GetRefOriginMoment(iMarker_Monitoring);
       }
     }
@@ -2485,6 +2468,10 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
 
     su2double ForceViscous[MAXNDIM] = {0.0}, MomentViscous[MAXNDIM] = {0.0};
     su2double MomentX_Force[MAXNDIM] = {0.0}, MomentY_Force[MAXNDIM] = {0.0}, MomentZ_Force[MAXNDIM] = {0.0};
+
+    /* --- check if wall functions are used --- */
+
+    const bool wallfunctions = (config->GetWallFunction_Treatment(Marker_Tag) != WALL_FUNCTIONS::NONE);
 
     /*--- Loop over the vertices to compute the forces ---*/
 
@@ -2505,16 +2492,17 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
 
         /// TODO: Move the temperature index logic to a function.
 
-        if (FlowRegime == COMPRESSIBLE) Grad_Temp[iDim] = nodes->GetGradient_Primitive(iPoint, 0, iDim);
+        if (FlowRegime == ENUM_REGIME::COMPRESSIBLE) Grad_Temp[iDim] = nodes->GetGradient_Primitive(iPoint, 0, iDim);
 
-        if (FlowRegime == INCOMPRESSIBLE) Grad_Temp[iDim] = nodes->GetGradient_Primitive(iPoint, nDim + 1, iDim);
+        if (FlowRegime == ENUM_REGIME::INCOMPRESSIBLE) Grad_Temp[iDim] = nodes->GetGradient_Primitive(iPoint, nDim + 1, iDim);
       }
 
       Viscosity = nodes->GetLaminarViscosity(iPoint);
       if (roughwall) {
-        unsigned short WallType; su2double Roughness_Height;
+        WALL_TYPE WallType;
+        su2double Roughness_Height;
         tie(WallType, Roughness_Height) = config->GetWallRoughnessProperties(Marker_Tag);
-        if (WallType == ROUGH) Viscosity += nodes->GetEddyViscosity(iPoint);
+        if (WallType == WALL_TYPE::ROUGH) Viscosity += nodes->GetEddyViscosity(iPoint);
       }
       Density = nodes->GetDensity(iPoint);
 
@@ -2542,60 +2530,68 @@ void CFVMFlowSolverBase<V, FlowRegime>::Friction_Forces(const CGeometry* geometr
       /*--- Compute wall shear stress (using the stress tensor). Compute wall skin friction coefficient, and heat flux
        * on the wall ---*/
 
-      TauNormal = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++) TauNormal += TauElem[iDim] * UnitNormal[iDim];
+      su2double TauTangent[MAXNDIM] = {0.0};
+      GeometryToolbox::TangentProjection(nDim, Tau, UnitNormal, TauTangent);
 
-      WallShearStress[iMarker][iVertex] = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++) {
-        TauTangent[iDim] = TauElem[iDim] - TauNormal * UnitNormal[iDim];
-        CSkinFriction[iMarker](iVertex,iDim) = TauTangent[iDim] * factorFric;
-        WallShearStress[iMarker][iVertex] += TauTangent[iDim] * TauTangent[iDim];
+      WallShearStress[iMarker][iVertex] = GeometryToolbox::Norm(int(MAXNDIM), TauTangent);
+
+      /*--- For wall functions, the wall stresses need to be scaled by the wallfunction stress Tau_Wall---*/
+      su2double Tau_Wall, scale;
+      if (wallfunctions && (YPlus[iMarker][iVertex] > minYPlus)){
+        Tau_Wall = nodes->GetTau_Wall(iPoint);
+        scale = Tau_Wall / WallShearStress[iMarker][iVertex];
+        for (iDim = 0; iDim < nDim; iDim++) {
+          TauTangent[iDim] *= scale;
+          TauElem[iDim] *= scale;
+        }
+
+        WallShearStress[iMarker][iVertex] = Tau_Wall;
       }
-      WallShearStress[iMarker][iVertex] = sqrt(WallShearStress[iMarker][iVertex]);
 
-      for (iDim = 0; iDim < nDim; iDim++) WallDist[iDim] = (Coord[iDim] - Coord_Normal[iDim]);
-      WallDistMod = 0.0;
-      for (iDim = 0; iDim < nDim; iDim++) WallDistMod += WallDist[iDim] * WallDist[iDim];
-      WallDistMod = sqrt(WallDistMod);
+      for (iDim = 0; iDim < nDim; iDim++) {
+        CSkinFriction[iMarker](iVertex,iDim) = TauTangent[iDim] * factorFric;
+      }
 
-      /*--- Compute y+ and non-dimensional velocity ---*/
+      WallDistMod = GeometryToolbox::Distance(nDim, Coord, Coord_Normal);
+
+      /*--- Compute non-dimensional velocity and y+ ---*/
 
       FrictionVel = sqrt(fabs(WallShearStress[iMarker][iVertex]) / Density);
-      YPlus[iMarker][iVertex] = WallDistMod * FrictionVel / (Viscosity / Density);
+      
+      if (!wallfunctions) {
+        YPlus[iMarker][iVertex] = WallDistMod * FrictionVel / (Viscosity / Density);
+      }
 
       /*--- Compute total and maximum heat flux on the wall ---*/
 
       /// TODO: Move these ifs to specialized functions.
       if (!nemo){
 
-        GradTemperature = 0.0;
-
-        if (FlowRegime == COMPRESSIBLE) {
-          for (iDim = 0; iDim < nDim; iDim++) GradTemperature -= Grad_Temp[iDim] * UnitNormal[iDim];
+        if (FlowRegime == ENUM_REGIME::COMPRESSIBLE) {
+          GradTemperature = -GeometryToolbox::DotProduct(nDim, Grad_Temp, UnitNormal);
 
           Cp = (Gamma / Gamma_Minus_One) * Gas_Constant;
           thermal_conductivity = Cp * Viscosity / Prandtl_Lam;
         }
-        if (FlowRegime == INCOMPRESSIBLE) {
+        if (FlowRegime == ENUM_REGIME::INCOMPRESSIBLE) {
           if (energy)
-            for (iDim = 0; iDim < nDim; iDim++) GradTemperature -= Grad_Temp[iDim] * UnitNormal[iDim];
+            GradTemperature = -GeometryToolbox::DotProduct(nDim, Grad_Temp, UnitNormal);
 
           thermal_conductivity = nodes->GetThermalConductivity(iPoint);
         }
-
         HeatFlux[iMarker][iVertex] = -thermal_conductivity * GradTemperature * RefHeatFlux;
 
       } else {
 
-        const auto thermal_conductivity_tr = nodes->GetThermalConductivity(iPoint);
-        const auto thermal_conductivity_ve = nodes->GetThermalConductivity_ve(iPoint);
-        const auto Grad_PrimVar            = nodes->GetGradient_Primitive(iPoint);
-
-        dTn = 0.0; dTven = 0.0;
-        for (iDim = 0; iDim < nDim; iDim++) {
-          dTn   += Grad_PrimVar[T_INDEX][iDim]*UnitNormal[iDim];
-          dTven += Grad_PrimVar[TVE_INDEX][iDim]*UnitNormal[iDim];
-        }
+        const auto& thermal_conductivity_tr = nodes->GetThermalConductivity(iPoint);
+        const auto& thermal_conductivity_ve = nodes->GetThermalConductivity_ve(iPoint);
+        const auto& Grad_PrimVar            = nodes->GetGradient_Primitive(iPoint);
+        
+        su2double dTn   = GeometryToolbox::DotProduct(nDim, Grad_PrimVar[T_INDEX], UnitNormal);
+        su2double dTven = GeometryToolbox::DotProduct(nDim, Grad_PrimVar[TVE_INDEX], UnitNormal);
+        
+        /*--- Surface energy balance: trans-rot heat flux, vib-el heat flux,
+        enthalpy transport due to mass diffusion ---*/ 
         HeatFlux[iMarker][iVertex] = thermal_conductivity_tr*dTn + thermal_conductivity_ve*dTven;
       }
 
@@ -2907,6 +2903,9 @@ su2double CFVMFlowSolverBase<V,R>::EvaluateCommonObjFunc(const CConfig& config) 
     case INVERSE_DESIGN_HEATFLUX:
       objFun += weight * Total_HeatFluxDiff;
       break;
+    case EQUIVALENT_AREA:
+      objFun += weight*Total_CEquivArea;
+      break;
     case THRUST_COEFFICIENT:
       objFun += weight * TotalCoeff.CT;
       break;
@@ -2921,6 +2920,9 @@ su2double CFVMFlowSolverBase<V,R>::EvaluateCommonObjFunc(const CConfig& config) 
       break;
     case SURFACE_STATIC_PRESSURE:
       objFun += weight * config.GetSurface_Pressure(0);
+      break;
+    case SURFACE_STATIC_TEMPERATURE:
+      objFun += weight * config.GetSurface_Temperature(0);
       break;
     case SURFACE_MASSFLOW:
       objFun += weight * config.GetSurface_MassFlow(0);
@@ -3013,21 +3015,26 @@ su2double CFVMFlowSolverBase<V,R>::EvaluateCommonConstrFunc(const CConfig& confi
     case INVERSE_DESIGN_HEATFLUX:
       objFun += Total_HeatFluxDiff;
       break;
+    case EQUIVALENT_AREA:
+      objFun += weight*Total_CEquivArea;
+      break;
     case THRUST_COEFFICIENT:
-      objFun += TotalCoeff.CT;
+      objFun += weight * TotalCoeff.CT;
       break;
     case TORQUE_COEFFICIENT:
-      objFun += TotalCoeff.CQ;
+      objFun += weight * TotalCoeff.CQ;
       break;
     case FIGURE_OF_MERIT:
-      objFun += TotalCoeff.CMerit;
+      objFun += weight * TotalCoeff.CMerit;
       break;
     case SURFACE_TOTAL_PRESSURE:
-      objFun += config.GetSurface_TotalPressure(0);
+      objFun += weight * config.GetSurface_TotalPressure(0);
       break;
     case SURFACE_STATIC_PRESSURE:
-      objFun += config.GetSurface_Pressure(0);
+      objFun += weight * config.GetSurface_Pressure(0);
       break;
+    case SURFACE_STATIC_TEMPERATURE:
+      objFun += weight * config.GetSurface_Temperature(0);
     case SURFACE_MASSFLOW:
       objFun += config.GetSurface_MassFlow(0);
       break;
@@ -3054,4 +3061,33 @@ su2double CFVMFlowSolverBase<V,R>::EvaluateCommonConstrFunc(const CConfig& confi
   }
 
   return objFun;
+}
+
+template <class V, ENUM_REGIME FlowRegime>
+void CFVMFlowSolverBase<V, FlowRegime>::ComputeAxisymmetricAuxGradients(CGeometry *geometry, const CConfig* config) {
+
+  /*--- Loop through all points to set the auxvargrad --*/
+  SU2_OMP_FOR_STAT(omp_chunk_size)
+  for (auto iPoint = 0ul; iPoint < nPoint; iPoint++) {
+    su2double yCoord          = geometry->nodes->GetCoord(iPoint, 1);
+    su2double yVelocity       = nodes->GetVelocity(iPoint,1);
+    su2double xVelocity       = nodes->GetVelocity(iPoint,0);
+    su2double Total_Viscosity = nodes->GetLaminarViscosity(iPoint) + nodes->GetEddyViscosity(iPoint);
+
+    if (yCoord > EPS){
+      su2double nu_v_on_y = Total_Viscosity*yVelocity/yCoord;
+      nodes->SetAuxVar(iPoint, 0, nu_v_on_y);
+      nodes->SetAuxVar(iPoint, 1, nu_v_on_y*yVelocity);
+      nodes->SetAuxVar(iPoint, 2, nu_v_on_y*xVelocity);
+    }
+  }
+  END_SU2_OMP_FOR
+
+  /*--- Compute the auxiliary variable gradient with GG or WLS. ---*/
+  if (config->GetKind_Gradient_Method() == GREEN_GAUSS) {
+    SetAuxVar_Gradient_GG(geometry, config);
+  }
+  if (config->GetKind_Gradient_Method() == WEIGHTED_LEAST_SQUARES) {
+    SetAuxVar_Gradient_LS(geometry, config);
+  }
 }

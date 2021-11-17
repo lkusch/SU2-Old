@@ -2,14 +2,14 @@
  * \file CDiscAdjVariable.hpp
  * \brief Main class for defining the variables of the adjoint solver.
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,20 +35,14 @@
  * \ingroup Discrete_Adjoint
  * \author T. Albring.
  */
-class CDiscAdjVariable final : public CVariable {
+class CDiscAdjVariable : public CVariable {
 private:
-  MatrixType Sensitivity; /* Vector holding the derivative of target functional with respect to the coordinates at this node*/
-  MatrixType Sensitivity_ShiftedLagrangian;
-  MatrixType Sensitivity_AugmentedLagrangian;
-  MatrixType Solution_Direct;
-  MatrixType DualTime_Derivative;
-  MatrixType DualTime_Derivative_n;
-
-  MatrixType Solution_Geometry;
-  MatrixType Solution_Geometry_Old;
-  MatrixType Geometry_Direct;
-
-  MatrixType Solution_Geometry_BGS_k;
+  MatrixType Sensitivity; /*!< \brief Vector holding the derivative of target functional with respect to the coordinates at this node. */
+  MatrixType Solution_Direct; /*!< \brief Stores the primal solution of the current timestep in order to be able to reset. */
+  MatrixType DualTime_Derivative; /*!< \brief Container holding all/sum-of dual time contributions to the adjoint variable. */
+  MatrixType DualTime_Derivative_n; /*!< \brief Container holding dual time contributions to the adjoint variable used in the next timestep. */
+  MatrixType Sensitivity_ShiftedLagrangian; \brief Vector holding the derivative of shifted Lagrangian with respect to the coordinates at this node. */
+  MatrixType Sensitivity_AugmentedLagrangian; \brief Vector holding the derivative of augmented Lagrangian with respect to the coordinates at this node. */
 
 public:
   /*!
@@ -71,7 +65,9 @@ public:
    * \param[in] iDim - spacial component
    * \param[in] val - value of the Sensitivity
    */
-  inline void SetSensitivity(unsigned long iPoint, unsigned long iDim, su2double val) override { Sensitivity(iPoint,iDim) = val;}
+  inline void SetSensitivity(unsigned long iPoint, unsigned long iDim, su2double val) final {
+    Sensitivity(iPoint,iDim) = val;
+  }
 
   /*!
    * \brief Get the Sensitivity at the node
@@ -80,7 +76,7 @@ public:
    */
   inline su2double GetSensitivity(unsigned long iPoint, unsigned long iDim) const override { return Sensitivity(iPoint,iDim); }
 
-  /*!
+   /*!
    * \brief Set the sensitivity of the shifted Lagrangian at the node
    * \param[in] iDim - spacial component
    * \param[in] val - value of the Sensitivity (Shifted Lagrangian)
@@ -108,14 +104,6 @@ public:
    */
   inline su2double GetSensitivity_AugmentedLagrangian(unsigned long iPoint, unsigned long iDim) const override { return Sensitivity_AugmentedLagrangian(iPoint,iDim); }
 
-  inline void SetDual_Time_Derivative(unsigned long iPoint, unsigned long iVar, su2double der) override { DualTime_Derivative(iPoint,iVar) = der; }
-
-  inline void SetDual_Time_Derivative_n(unsigned long iPoint, unsigned long iVar, su2double der) override { DualTime_Derivative_n(iPoint,iVar) = der; }
-
-  inline su2double GetDual_Time_Derivative(unsigned long iPoint, unsigned long iVar) const override { return DualTime_Derivative(iPoint,iVar); }
-
-  inline su2double GetDual_Time_Derivative_n(unsigned long iPoint, unsigned long iVar) const override { return DualTime_Derivative_n(iPoint,iVar); }
-
   inline void SetSolution_Direct(unsigned long iPoint, const su2double *val_solution_direct) override {
     for (unsigned long iVar = 0; iVar < nVar; iVar++)
       Solution_Direct(iPoint,iVar) = val_solution_direct[iVar];
@@ -124,61 +112,53 @@ public:
   inline su2double* GetSolution_Direct(unsigned long iPoint) override { return Solution_Direct[iPoint]; }
 
   /*!
-   * \brief Set the restart geometry (coordinate of the converged solution)
-   * \param[in] val_geometry_direct - Value of the restart coordinate.
+   * \brief Set/store the dual time contributions to the adjoint variable.
+   *        Contains sum of contributions from 2 timesteps for dual time 2nd order.
    */
-  inline void SetGeometry_Direct(unsigned long iPoint, const su2double *val_geometry_direct) override {
-    for (unsigned long iDim = 0; iDim < nDim; iDim++)
-      Geometry_Direct(iPoint,iDim) = val_geometry_direct[iDim];
+  inline void SetDual_Time_Derivative(unsigned long iPoint, unsigned long iVar, su2double der) {
+    DualTime_Derivative(iPoint,iVar) = der;
   }
 
   /*!
-   * \brief Get the restart geometry (coordinate of the converged solution).
-   * \return Pointer to the restart coordinate vector.
+   * \brief Set/store the dual time contributions to the adjoint variable for upcoming timestep.
    */
-  inline su2double *GetGeometry_Direct(unsigned long iPoint) override { return Geometry_Direct[iPoint]; }
-
-  /*!
-   * \brief Get the restart geometry (coordinate of the converged solution).
-   * \return Coordinate iDim of the geometry_direct vector.
-   */
-  inline su2double GetGeometry_Direct(unsigned long iPoint, unsigned long iDim) const override { return Geometry_Direct(iPoint,iDim); }
-
-  /*!
-   * \brief Get the geometry solution.
-   * \param[in] iDim - Index of the coordinate.
-   * \return Value of the solution for the index <i>iDim</i>.
-   */
-  inline su2double GetSolution_Geometry(unsigned long iPoint, unsigned long iDim) const override { return Solution_Geometry(iPoint,iDim); }
-
-  /*!
-   * \brief Set the value of the mesh solution (adjoint).
-   * \param[in] val_solution_geometry - Solution of the problem (acceleration).
-   */
-  inline void SetSolution_Geometry(unsigned long iPoint, const su2double *val_solution_geometry) override {
-    for (unsigned long iDim = 0; iDim < nDim; iDim++)
-      Solution_Geometry(iPoint,iDim) = val_solution_geometry[iDim];
+  inline void SetDual_Time_Derivative_n(unsigned long iPoint, unsigned long iVar, su2double der) {
+    DualTime_Derivative_n(iPoint,iVar) = der;
   }
 
   /*!
-   * \brief A virtual member. Set the value of the mesh solution (adjoint).
-   * \param[in] val_solution_geometry - Solution of the problem (acceleration).
+   * \brief Return the dual time contributions to the adjoint variable.
+   *        Contains sum of contributions from 2 timesteps for dual time 2nd order.
    */
-  inline void SetSolution_Geometry(unsigned long iPoint, unsigned long iVar, su2double val_solution_geometry) override {
-    Solution_Geometry(iPoint,iVar) = val_solution_geometry;
+  inline su2double GetDual_Time_Derivative(unsigned long iPoint, unsigned long iVar) const {
+    return DualTime_Derivative(iPoint,iVar);
   }
 
   /*!
-   * \brief Set the value of the mesh solution (adjoint).
+   * \brief Return the dual time contributions to the adjoint variable for upcoming timestep.
    */
-  void Set_OldSolution_Geometry() override;
+  inline su2double GetDual_Time_Derivative_n(unsigned long iPoint, unsigned long iVar) const {
+    return DualTime_Derivative_n(iPoint,iVar);
+  }
 
   /*!
-   * \brief Get the value of the old geometry solution (adjoint).
-   * \param[out] val_solution - old adjoint solution for coordinate iDim
+   * \brief Set/store the primal solution for all variables of one point.
    */
-  inline su2double Get_OldSolution_Geometry(unsigned long iPoint, unsigned long iDim) const override {
-    return Solution_Geometry_Old(iPoint,iDim);
+  inline void SetSolution_Direct(unsigned long iPoint, const su2double *val_solution_direct) final {
+    for (unsigned long iVar = 0; iVar < nVar; iVar++)
+      Solution_Direct(iPoint,iVar) = val_solution_direct[iVar];
   }
+
+  /*!
+   * \brief Returns the primal solution for all variables of one point.
+   */
+  inline su2double* GetSolution_Direct(unsigned long iPoint) final {
+    return Solution_Direct[iPoint];
+  }
+
+  /*!
+   * \brief Set Dual-time derivative contributions to the external.
+   */
+  void Set_External_To_DualTimeDer() final;
 
 };

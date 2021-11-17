@@ -2,14 +2,14 @@
  * \file CPhysicalGeometry.hpp
  * \brief Headers of the physical geometry class used to read meshes from file.
  * \author F. Palacios, T. Economon
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -103,9 +103,6 @@ class CPhysicalGeometry final : public CGeometry {
   unsigned long *Elem_ID_Line_Linear{nullptr};
   unsigned long *Elem_ID_BoundTria_Linear{nullptr};
   unsigned long *Elem_ID_BoundQuad_Linear{nullptr};
-
-  vector<int> GlobalMarkerStorageDispl;
-  vector<su2double> GlobalRoughness_Height;
 
   su2double Streamwise_Periodic_RefNode[MAXNDIM] = {0}; /*!< \brief Coordinates of the reference node [m] on the receiving periodic marker, for recovered pressure/temperature computation only.*/
 
@@ -403,7 +400,7 @@ public:
    * \brief Set boundary vertex.
    * \param[in] config - Definition of the particular problem.
    */
-  void SetVertex(CConfig *config) override;
+  void SetVertex(const CConfig *config) override;
 
   /*!
    * \brief Set number of span wise level for turbomachinery computation.
@@ -452,20 +449,14 @@ public:
    * \brief Mach the near field boundary condition.
    * \param[in] config - Definition of the particular problem.
    */
-  void MatchNearField(CConfig *config) override;
-
-  /*!
-   * \brief Mach the near field boundary condition.
-   * \param[in] config - Definition of the particular problem.
-   */
-  void MatchActuator_Disk(CConfig *config) override;
+  void MatchActuator_Disk(const CConfig *config) override;
 
   /*!
    * \brief Mach the periodic boundary conditions.
    * \param[in] config - Definition of the particular problem.
    * \param[in] val_periodic - Index of the first periodic face in a pair.
    */
-  void MatchPeriodic(CConfig *config, unsigned short val_periodic) override;
+  void MatchPeriodic(const CConfig *config, unsigned short val_periodic) override;
 
   /*!
    * \brief Set boundary vertex structure of the control volume.
@@ -589,7 +580,7 @@ public:
    * \brief Find and store the closest neighbor to a vertex.
    * \param[in] config - Definition of the particular problem.
    */
-  void FindNormal_Neighbor(CConfig *config) override;
+  void FindNormal_Neighbor(const CConfig *config) override;
 
   /*!
    * \brief Read the sensitivity from an input file.
@@ -773,10 +764,14 @@ public:
   std::unique_ptr<CADTElemClass> ComputeViscousWallADT(const CConfig *config) const override;
 
   /*!
-   * \brief Set the wall distance based on an previously constructed ADT
-   * \param[in] WallADT - The ADT to compute the wall distance
+   * \brief Reduce the wall distance based on an previously constructed ADT.
+   * \details The ADT might belong to another zone, giving rise to lower wall distances
+   * than those already stored.
+   * \param[in] WallADT - The ADT to reduce the wall distance
+   * \param[in] config - ignored
+   * \param[in] iZone - zone whose markers made the ADT
    */
-  void SetWallDistance(const CConfig *config, CADTElemClass* WallADT) override;
+  void SetWallDistance(CADTElemClass* WallADT, const CConfig* config, unsigned short iZone) override;
 
   /*!
    * \brief Set wall distances a specific value
@@ -786,11 +781,6 @@ public:
       nodes->SetWall_Distance(iPoint, val);
     }
   }
-
-  /*!
-   * \brief Set roughness values for markers in a global array.
-   */
-  void SetGlobalMarkerRoughness(const CConfig* config);
 
   /*!
    * \brief For streamwise periodicity, find & store a unique reference node on the designated periodic inlet.

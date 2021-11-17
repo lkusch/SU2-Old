@@ -1,15 +1,15 @@
 /*!
- * \file output_flow_comp.cpp
+ * \file CFlowCompOutput.cpp
  * \brief Main subroutines for compressible flow output
  * \author R. Sanchez
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
  * The SU2 Project is maintained by the SU2 Foundation
  * (http://su2foundation.org)
  *
- * Copyright 2012-2020, SU2 Contributors (cf. AUTHORS.md)
+ * Copyright 2012-2021, SU2 Contributors (cf. AUTHORS.md)
  *
  * SU2 is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,17 +25,14 @@
  * License along with SU2. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 #include "../../include/output/CFlowCompOutput.hpp"
 
 #include "../../../Common/include/geometry/CGeometry.hpp"
 #include "../../include/solvers/CSolver.hpp"
 
-CFlowCompOutput::CFlowCompOutput(CConfig *config, unsigned short nDim) : CFlowOutput(config, nDim, false) {
+CFlowCompOutput::CFlowCompOutput(const CConfig *config, unsigned short nDim) : CFlowOutput(config, nDim, false) {
 
   turb_model = config->GetKind_Turb_Model();
-  lastInnerIter = curInnerIter;
-  gridMovement = config->GetGrid_Movement();
 
   /*--- Set the default history fields if nothing is set in the config file ---*/
 
@@ -58,8 +55,15 @@ CFlowCompOutput::CFlowCompOutput(CConfig *config, unsigned short nDim) : CFlowOu
     requestedVolumeFields.emplace_back("COORDINATES");
     requestedVolumeFields.emplace_back("SOLUTION");
     requestedVolumeFields.emplace_back("PRIMITIVE");
-    if (config->GetDynamic_Grid()) requestedVolumeFields.emplace_back("GRID_VELOCITY");
     nRequestedVolumeFields = requestedVolumeFields.size();
+  }
+
+  if (gridMovement) {
+    auto notFound = requestedVolumeFields.end();
+    if (find(requestedVolumeFields.begin(), notFound, string("GRID_VELOCITY")) == notFound) {
+      requestedVolumeFields.emplace_back("GRID_VELOCITY");
+      nRequestedVolumeFields ++;
+    }
   }
 
   stringstream ss;
@@ -98,10 +102,6 @@ CFlowCompOutput::CFlowCompOutput(CConfig *config, unsigned short nDim) : CFlowOu
   }
 }
 
-CFlowCompOutput::~CFlowCompOutput(void) {}
-
-
-
 void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
 
 
@@ -118,17 +118,17 @@ void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
   AddHistoryOutput("RMS_ENERGY",     "rms[RhoE]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of the energy.", HistoryFieldType::RESIDUAL);
 
   switch(turb_model){
-  case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
     /// DESCRIPTION: Root-mean square residual of nu tilde (SA model).
     AddHistoryOutput("RMS_NU_TILDE", "rms[nu]", ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of nu tilde (SA model).", HistoryFieldType::RESIDUAL);
     break;
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     /// DESCRIPTION: Root-mean square residual of kinetic energy (SST model).
     AddHistoryOutput("RMS_TKE", "rms[k]",  ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of kinetic energy (SST model).", HistoryFieldType::RESIDUAL);
     /// DESCRIPTION: Root-mean square residual of the dissipation (SST model).
     AddHistoryOutput("RMS_DISSIPATION", "rms[w]",  ScreenOutputFormat::FIXED, "RMS_RES", "Root-mean square residual of dissipation (SST model).", HistoryFieldType::RESIDUAL);
     break;
-  default: break;
+  case TURB_MODEL::NONE: break;
   }
   /// END_GROUP
 
@@ -145,17 +145,17 @@ void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
   AddHistoryOutput("MAX_ENERGY",     "max[RhoE]", ScreenOutputFormat::FIXED,   "MAX_RES", "Maximum residual of the energy.", HistoryFieldType::RESIDUAL);
 
   switch(turb_model){
-  case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
     /// DESCRIPTION: Maximum residual of nu tilde (SA model).
     AddHistoryOutput("MAX_NU_TILDE",       "max[nu]", ScreenOutputFormat::FIXED, "MAX_RES", "Maximum residual of nu tilde (SA model).", HistoryFieldType::RESIDUAL);
     break;
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     /// DESCRIPTION: Maximum residual of kinetic energy (SST model).
     AddHistoryOutput("MAX_TKE", "max[k]",  ScreenOutputFormat::FIXED, "MAX_RES", "Maximum residual of kinetic energy (SST model).", HistoryFieldType::RESIDUAL);
     /// DESCRIPTION: Maximum residual of the dissipation (SST model).
     AddHistoryOutput("MAX_DISSIPATION",    "max[w]",  ScreenOutputFormat::FIXED, "MAX_RES", "Maximum residual of dissipation (SST model).", HistoryFieldType::RESIDUAL);
     break;
-  default: break;
+  case TURB_MODEL::NONE: break;
   }
   /// END_GROUP
 
@@ -172,17 +172,17 @@ void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
   AddHistoryOutput("BGS_ENERGY",     "bgs[RhoE]", ScreenOutputFormat::FIXED,   "BGS_RES", "BGS residual of the energy.",  HistoryFieldType::RESIDUAL);
 
   switch(turb_model){
-  case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
     /// DESCRIPTION: Maximum residual of nu tilde (SA model).
     AddHistoryOutput("BGS_NU_TILDE",       "bgs[nu]", ScreenOutputFormat::FIXED, "BGS_RES", "BGS residual of nu tilde (SA model).",  HistoryFieldType::RESIDUAL);
     break;
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     /// DESCRIPTION: Maximum residual of kinetic energy (SST model).
     AddHistoryOutput("BGS_TKE", "bgs[k]",  ScreenOutputFormat::FIXED, "BGS_RES", "BGS residual of kinetic energy (SST model).",  HistoryFieldType::RESIDUAL);
     /// DESCRIPTION: Maximum residual of the dissipation (SST model).
     AddHistoryOutput("BGS_DISSIPATION",    "bgs[w]",  ScreenOutputFormat::FIXED, "BGS_RES", "BGS residual of dissipation (SST model).", HistoryFieldType::RESIDUAL);
     break;
-  default: break;
+  case TURB_MODEL::NONE: break;
   }
   /// END_GROUP
 
@@ -201,6 +201,10 @@ void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
   /// DESCRIPTION: Linear solver iterations
   AddHistoryOutput("LINSOL_ITER", "Linear_Solver_Iterations", ScreenOutputFormat::INTEGER, "LINSOL", "Number of iterations of the linear solver.");
   AddHistoryOutput("LINSOL_RESIDUAL", "LinSolRes", ScreenOutputFormat::FIXED, "LINSOL", "Residual of the linear solver.");
+  if (turb_model != TURB_MODEL::NONE) {
+    AddHistoryOutput("LINSOL_ITER_TURB", "LinSolIterTurb", ScreenOutputFormat::INTEGER, "LINSOL", "Number of iterations of the linear solver for turbulence solver.");
+    AddHistoryOutput("LINSOL_RESIDUAL_TURB", "LinSolResTurb", ScreenOutputFormat::FIXED, "LINSOL", "Residual of the linear solver for turbulence solver.");
+  }
 
   /// BEGIN_GROUP: ENGINE_OUTPUT, DESCRIPTION: Engine output
   /// DESCRIPTION: Aero CD drag
@@ -223,8 +227,6 @@ void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
   /// END_GROUP
 
   /// BEGIN_GROUP: EQUIVALENT_AREA, DESCRIPTION: Equivalent area.
-  /// DESCRIPTION: Equivalent area
-  AddHistoryOutput("EQUIV_AREA",   "CEquiv_Area",  ScreenOutputFormat::SCIENTIFIC, "EQUIVALENT_AREA", "Equivalent area", HistoryFieldType::COEFFICIENT);
   /// DESCRIPTION: Nearfield obj. function
   AddHistoryOutput("NEARFIELD_OF", "CNearFieldOF", ScreenOutputFormat::SCIENTIFIC, "EQUIVALENT_AREA", "Nearfield obj. function", HistoryFieldType::COEFFICIENT);
   /// END_GROUP
@@ -277,17 +279,18 @@ void CFlowCompOutput::SetHistoryOutputFields(CConfig *config){
 
   /*--- Add Cp diff fields ---*/
 
-  Add_CpInverseDesignOutput(config);
+  Add_CpInverseDesignOutput();
+
+  /*--- Add nearfield diff fields ---*/
+
+  Add_NearfieldInverseDesignOutput();
 
 }
 
 void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
 
   // Grid coordinates
-  AddVolumeOutput("COORD-X", "x", "COORDINATES", "x-component of the coordinate vector");
-  AddVolumeOutput("COORD-Y", "y", "COORDINATES", "y-component of the coordinate vector");
-  if (nDim == 3)
-    AddVolumeOutput("COORD-Z", "z", "COORDINATES", "z-component of the coordinate vector");
+  AddCoordinates();
 
   // Solution variables
   AddVolumeOutput("DENSITY",    "Density",    "SOLUTION", "Density");
@@ -299,20 +302,20 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
 
   // Turbulent Residuals
   switch(config->GetKind_Turb_Model()){
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     AddVolumeOutput("TKE", "Turb_Kin_Energy", "SOLUTION", "Turbulent kinetic energy");
     AddVolumeOutput("DISSIPATION", "Omega", "SOLUTION", "Rate of dissipation");
     break;
-  case SA: case SA_COMP: case SA_E:
-  case SA_E_COMP: case SA_NEG:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E:
+  case TURB_MODEL::SA_E_COMP: case TURB_MODEL::SA_NEG:
     AddVolumeOutput("NU_TILDE", "Nu_Tilde", "SOLUTION", "Spalart-Allmaras variable");
     break;
-  case NONE:
+  case TURB_MODEL::NONE:
     break;
   }
 
   // Grid velocity
-  if (config->GetDynamic_Grid()){
+  if (gridMovement){
     AddVolumeOutput("GRID_VELOCITY-X", "Grid_Velocity_x", "GRID_VELOCITY", "x-component of the grid velocity vector");
     AddVolumeOutput("GRID_VELOCITY-Y", "Grid_Velocity_y", "GRID_VELOCITY", "y-component of the grid velocity vector");
     if (nDim == 3 )
@@ -355,15 +358,15 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
   AddVolumeOutput("RES_ENERGY", "Residual_Energy", "RESIDUAL", "Residual of the energy");
 
   switch(config->GetKind_Turb_Model()){
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     AddVolumeOutput("RES_TKE", "Residual_TKE", "RESIDUAL", "Residual of turbulent kinetic energy");
     AddVolumeOutput("RES_DISSIPATION", "Residual_Omega", "RESIDUAL", "Residual of the rate of dissipation");
     break;
-  case SA: case SA_COMP: case SA_E:
-  case SA_E_COMP: case SA_NEG:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E:
+  case TURB_MODEL::SA_E_COMP: case TURB_MODEL::SA_NEG:
     AddVolumeOutput("RES_NU_TILDE", "Residual_Nu_Tilde", "RESIDUAL", "Residual of the Spalart-Allmaras variable");
     break;
-  case NONE:
+  case TURB_MODEL::NONE:
     break;
   }
 
@@ -380,15 +383,15 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
 
   if (config->GetKind_SlopeLimit_Turb() != NO_LIMITER) {
     switch(config->GetKind_Turb_Model()){
-    case SST: case SST_SUST:
+    case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
       AddVolumeOutput("LIMITER_TKE", "Limiter_TKE", "LIMITER", "Limiter value of turb. kinetic energy");
       AddVolumeOutput("LIMITER_DISSIPATION", "Limiter_Omega", "LIMITER", "Limiter value of dissipation rate");
       break;
-    case SA: case SA_COMP: case SA_E:
-    case SA_E_COMP: case SA_NEG:
+    case TURB_MODEL::SA: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E:
+    case TURB_MODEL::SA_E_COMP: case TURB_MODEL::SA_NEG:
       AddVolumeOutput("LIMITER_NU_TILDE", "Limiter_Nu_Tilde", "LIMITER", "Limiter value of the Spalart-Allmaras variable");
       break;
-    case NONE:
+    case TURB_MODEL::NONE:
       break;
     }
   }
@@ -415,13 +418,7 @@ void CFlowCompOutput::SetVolumeOutputFields(CConfig *config){
     AddVolumeOutput("Q_CRITERION", "Q_Criterion", "VORTEX_IDENTIFICATION", "Value of the Q-Criterion");
   }
 
-  // Mesh quality metrics, computed in CPhysicalGeometry::ComputeMeshQualityStatistics.
-  AddVolumeOutput("ORTHOGONALITY", "Orthogonality", "MESH_QUALITY", "Orthogonality Angle (deg.)");
-  AddVolumeOutput("ASPECT_RATIO",  "Aspect_Ratio",  "MESH_QUALITY", "CV Face Area Aspect Ratio");
-  AddVolumeOutput("VOLUME_RATIO",  "Volume_Ratio",  "MESH_QUALITY", "CV Sub-Volume Ratio");
-
-  // MPI-Rank
-  AddVolumeOutput("RANK", "rank", "MPI", "Rank of the MPI-partition");
+  AddCommonFVMOutputs(config);
 
   if (config->GetTime_Domain()){
     SetTimeAveragedFields();
@@ -432,17 +429,13 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
 
   CVariable* Node_Flow = solver[FLOW_SOL]->GetNodes();
   CVariable* Node_Turb = nullptr;
+  const auto Node_Geo  = geometry->nodes;
 
-  if (config->GetKind_Turb_Model() != NONE){
+  if (config->GetKind_Turb_Model() != TURB_MODEL::NONE){
     Node_Turb = solver[TURB_SOL]->GetNodes();
   }
 
-  CPoint*    Node_Geo  = geometry->nodes;
-
-  SetVolumeOutputValue("COORD-X", iPoint,  Node_Geo->GetCoord(iPoint, 0));
-  SetVolumeOutputValue("COORD-Y", iPoint,  Node_Geo->GetCoord(iPoint, 1));
-  if (nDim == 3)
-    SetVolumeOutputValue("COORD-Z", iPoint, Node_Geo->GetCoord(iPoint, 2));
+  LoadCoordinates(Node_Geo->GetCoord(iPoint), iPoint);
 
   SetVolumeOutputValue("DENSITY",    iPoint, Node_Flow->GetSolution(iPoint, 0));
   SetVolumeOutputValue("MOMENTUM-X", iPoint, Node_Flow->GetSolution(iPoint, 1));
@@ -456,19 +449,19 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
 
   // Turbulent Residuals
   switch(config->GetKind_Turb_Model()){
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     SetVolumeOutputValue("TKE",         iPoint, Node_Turb->GetSolution(iPoint, 0));
     SetVolumeOutputValue("DISSIPATION", iPoint, Node_Turb->GetSolution(iPoint, 1));
     break;
-  case SA: case SA_COMP: case SA_E:
-  case SA_E_COMP: case SA_NEG:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E:
+  case TURB_MODEL::SA_E_COMP: case TURB_MODEL::SA_NEG:
     SetVolumeOutputValue("NU_TILDE", iPoint, Node_Turb->GetSolution(iPoint, 0));
     break;
-  case NONE:
+  case TURB_MODEL::NONE:
     break;
   }
 
-  if (config->GetDynamic_Grid()){
+  if (gridMovement){
     SetVolumeOutputValue("GRID_VELOCITY-X", iPoint, Node_Geo->GetGridVel(iPoint)[0]);
     SetVolumeOutputValue("GRID_VELOCITY-Y", iPoint, Node_Geo->GetGridVel(iPoint)[1]);
     if (nDim == 3)
@@ -509,15 +502,15 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
   }
 
   switch(config->GetKind_Turb_Model()){
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     SetVolumeOutputValue("RES_TKE", iPoint, solver[TURB_SOL]->LinSysRes(iPoint, 0));
     SetVolumeOutputValue("RES_DISSIPATION", iPoint, solver[TURB_SOL]->LinSysRes(iPoint, 1));
     break;
-  case SA: case SA_COMP: case SA_E:
-  case SA_E_COMP: case SA_NEG:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E:
+  case TURB_MODEL::SA_E_COMP: case TURB_MODEL::SA_NEG:
     SetVolumeOutputValue("RES_NU_TILDE", iPoint, solver[TURB_SOL]->LinSysRes(iPoint, 0));
     break;
-  case NONE:
+  case TURB_MODEL::NONE:
     break;
   }
 
@@ -534,15 +527,15 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
 
   if (config->GetKind_SlopeLimit_Turb() != NO_LIMITER) {
     switch(config->GetKind_Turb_Model()){
-    case SST: case SST_SUST:
+    case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
       SetVolumeOutputValue("LIMITER_TKE",         iPoint, Node_Turb->GetLimiter(iPoint, 0));
       SetVolumeOutputValue("LIMITER_DISSIPATION", iPoint, Node_Turb->GetLimiter(iPoint, 1));
       break;
-    case SA: case SA_COMP: case SA_E:
-    case SA_E_COMP: case SA_NEG:
+    case TURB_MODEL::SA: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E:
+    case TURB_MODEL::SA_E_COMP: case TURB_MODEL::SA_NEG:
       SetVolumeOutputValue("LIMITER_NU_TILDE", iPoint, Node_Turb->GetLimiter(iPoint, 0));
       break;
-    case NONE:
+    case TURB_MODEL::NONE:
       break;
     }
   }
@@ -564,18 +557,10 @@ void CFlowCompOutput::LoadVolumeData(CConfig *config, CGeometry *geometry, CSolv
     } else {
       SetVolumeOutputValue("VORTICITY", iPoint, Node_Flow->GetVorticity(iPoint)[2]);
     }
-    SetVolumeOutputValue("Q_CRITERION", iPoint, GetQ_Criterion(&(Node_Flow->GetGradient_Primitive(iPoint)[1])));
+    SetVolumeOutputValue("Q_CRITERION", iPoint, GetQ_Criterion(Node_Flow->GetVelocityGradient(iPoint)));
   }
 
-  // Mesh quality metrics
-  if (config->GetWrt_MeshQuality()) {
-    SetVolumeOutputValue("ORTHOGONALITY", iPoint, geometry->Orthogonality[iPoint]);
-    SetVolumeOutputValue("ASPECT_RATIO",  iPoint, geometry->Aspect_Ratio[iPoint]);
-    SetVolumeOutputValue("VOLUME_RATIO",  iPoint, geometry->Volume_Ratio[iPoint]);
-  }
-
-  // MPI-Rank
-  SetVolumeOutputValue("RANK", iPoint, rank);
+  LoadCommonFVMOutputs(config, geometry, iPoint);
 
   if (config->GetTime_Domain()){
     LoadTimeAveragedData(iPoint, Node_Flow);
@@ -612,14 +597,14 @@ void CFlowCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
   }
 
   switch(turb_model){
-  case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
     SetHistoryOutputValue("RMS_NU_TILDE", log10(turb_solver->GetRes_RMS(0)));
     break;
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     SetHistoryOutputValue("RMS_TKE", log10(turb_solver->GetRes_RMS(0)));
     SetHistoryOutputValue("RMS_DISSIPATION",    log10(turb_solver->GetRes_RMS(1)));
     break;
-  default: break;
+  case TURB_MODEL::NONE: break;
   }
 
   SetHistoryOutputValue("MAX_DENSITY", log10(flow_solver->GetRes_Max(0)));
@@ -633,14 +618,14 @@ void CFlowCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
   }
 
   switch(turb_model){
-  case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+  case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
     SetHistoryOutputValue("MAX_NU_TILDE", log10(turb_solver->GetRes_Max(0)));
     break;
-  case SST: case SST_SUST:
+  case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
     SetHistoryOutputValue("MAX_TKE", log10(turb_solver->GetRes_Max(0)));
     SetHistoryOutputValue("MAX_DISSIPATION",    log10(turb_solver->GetRes_Max(1)));
     break;
-  default: break;
+  case TURB_MODEL::NONE: break;
   }
 
   if (multiZone){
@@ -656,14 +641,14 @@ void CFlowCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
 
 
     switch(turb_model){
-    case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+    case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
       SetHistoryOutputValue("BGS_NU_TILDE", log10(turb_solver->GetRes_BGS(0)));
       break;
-    case SST:
+    case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
       SetHistoryOutputValue("BGS_TKE", log10(turb_solver->GetRes_BGS(0)));
       SetHistoryOutputValue("BGS_DISSIPATION",    log10(turb_solver->GetRes_BGS(1)));
       break;
-    default: break;
+    case TURB_MODEL::NONE: break;
     }
   }
 
@@ -679,6 +664,10 @@ void CFlowCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
 
   SetHistoryOutputValue("LINSOL_ITER", flow_solver->GetIterLinSolver());
   SetHistoryOutputValue("LINSOL_RESIDUAL", log10(flow_solver->GetResLinSolver()));
+  if (turb_model != TURB_MODEL::NONE) {
+    SetHistoryOutputValue("LINSOL_ITER_TURB", turb_solver->GetIterLinSolver());
+    SetHistoryOutputValue("LINSOL_RESIDUAL_TURB", log10(turb_solver->GetResLinSolver()));
+  }
 
   if (config->GetDeform_Mesh()){
     SetHistoryOutputValue("DEFORM_MIN_VOLUME", mesh_solver->GetMinimum_Volume());
@@ -715,69 +704,25 @@ void CFlowCompOutput::LoadHistoryData(CConfig *config, CGeometry *geometry, CSol
 
   Set_CpInverseDesign(flow_solver, geometry, config);
 
-}
-
-bool CFlowCompOutput::SetInit_Residuals(CConfig *config){
-
-  return (config->GetTime_Marching() != STEADY && (curInnerIter == 0))||
-        (config->GetTime_Marching() == STEADY && (curInnerIter < 2));
+  /*--- Set nearfield diff fields ---*/
+  if (config->GetEquivArea()) Set_NearfieldInverseDesign(flow_solver, geometry, config);
 
 }
 
-bool CFlowCompOutput::SetUpdate_Averages(CConfig *config){
+bool CFlowCompOutput::SetInit_Residuals(const CConfig *config){
 
-  return (config->GetTime_Marching() != STEADY && (curInnerIter == config->GetnInner_Iter() - 1 || convergence));
+  return (config->GetTime_Marching() != TIME_MARCHING::STEADY && (curInnerIter == 0))||
+         (config->GetTime_Marching() == TIME_MARCHING::STEADY && (curInnerIter < 2));
 
 }
 
-
-void CFlowCompOutput::SetAdditionalScreenOutput(CConfig *config){
+void CFlowCompOutput::SetAdditionalScreenOutput(const CConfig *config){
 
   if (config->GetFixed_CL_Mode()){
     SetFixedCLScreenOutput(config);
   }
 }
 
-void CFlowCompOutput::SetFixedCLScreenOutput(CConfig *config){
-  PrintingToolbox::CTablePrinter FixedCLSummary(&cout);
-
-  if (fabs(historyOutput_Map["CL_DRIVER_COMMAND"].value) > 1e-16){
-    FixedCLSummary.AddColumn("Fixed CL Mode", 40);
-    FixedCLSummary.AddColumn("Value", 30);
-    FixedCLSummary.SetAlign(PrintingToolbox::CTablePrinter::LEFT);
-    FixedCLSummary.PrintHeader();
-    FixedCLSummary << "Current CL" << historyOutput_Map["LIFT"].value;
-    FixedCLSummary << "Target CL" << config->GetTarget_CL();
-    FixedCLSummary << "Previous AOA" << historyOutput_Map["PREV_AOA"].value;
-    if (config->GetFinite_Difference_Mode()){
-      FixedCLSummary << "Changed AoA by (Finite Difference step)" << historyOutput_Map["CL_DRIVER_COMMAND"].value;
-      lastInnerIter = curInnerIter - 1;
-    }
-    else
-      FixedCLSummary << "Changed AoA by" << historyOutput_Map["CL_DRIVER_COMMAND"].value;
-    FixedCLSummary.PrintFooter();
-    SetScreen_Header(config);
-  }
-
-  else if (config->GetFinite_Difference_Mode() && historyOutput_Map["AOA"].value == historyOutput_Map["PREV_AOA"].value){
-    FixedCLSummary.AddColumn("Fixed CL Mode (Finite Difference)", 40);
-    FixedCLSummary.AddColumn("Value", 30);
-    FixedCLSummary.SetAlign(PrintingToolbox::CTablePrinter::LEFT);
-    FixedCLSummary.PrintHeader();
-    FixedCLSummary << "Delta CL / Delta AoA" << config->GetdCL_dAlpha();
-    FixedCLSummary << "Delta CD / Delta CL" << config->GetdCD_dCL();
-    if (nDim == 3){
-      FixedCLSummary << "Delta CMx / Delta CL" << config->GetdCMx_dCL();
-      FixedCLSummary << "Delta CMy / Delta CL" << config->GetdCMy_dCL();
-    }
-    FixedCLSummary << "Delta CMz / Delta CL" << config->GetdCMz_dCL();
-    FixedCLSummary.PrintFooter();
-    curInnerIter = lastInnerIter;
-    WriteMetaData(config);
-    curInnerIter = config->GetInnerIter();
-  }
-}
-
-bool CFlowCompOutput::WriteHistoryFile_Output(CConfig *config) {
+bool CFlowCompOutput::WriteHistoryFile_Output(const CConfig *config) {
   return !config->GetFinite_Difference_Mode() && COutput::WriteHistoryFile_Output(config);
 }

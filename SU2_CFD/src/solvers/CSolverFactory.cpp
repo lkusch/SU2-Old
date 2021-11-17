@@ -2,7 +2,7 @@
  * \file CSolverFactory.cpp
  * \brief Main subroutines for CSolverFactoryclass.
  * \author T. Albring
- * \version 7.1.1 "Blackbird"
+ * \version 7.2.1 "Blackbird"
  *
  * SU2 Project Website: https://su2code.github.io
  *
@@ -197,7 +197,7 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
 
   CSolver *genericSolver = nullptr;
 
-  ENUM_TURB_MODEL kindTurbModel = static_cast<ENUM_TURB_MODEL>(config->GetKind_Turb_Model());
+  TURB_MODEL kindTurbModel = static_cast<TURB_MODEL>(config->GetKind_Turb_Model());
 
   SolverMetaData metaData;
 
@@ -319,25 +319,25 @@ CSolver* CSolverFactory::CreateSubSolver(SUB_SOLVER_TYPE kindSolver, CSolver **s
 
 }
 
-CSolver* CSolverFactory::CreateTurbSolver(ENUM_TURB_MODEL kindTurbModel, CSolver **solver, CGeometry *geometry, CConfig *config, int iMGLevel, int adjoint){
+CSolver* CSolverFactory::CreateTurbSolver(TURB_MODEL kindTurbModel, CSolver **solver, CGeometry *geometry, CConfig *config, int iMGLevel, int adjoint){
 
   CSolver *turbSolver = nullptr;
 
   if (!adjoint){
     switch (kindTurbModel) {
-      case SA: case SA_NEG: case SA_E: case SA_COMP: case SA_E_COMP:
+      case TURB_MODEL::SA: case TURB_MODEL::SA_NEG: case TURB_MODEL::SA_E: case TURB_MODEL::SA_COMP: case TURB_MODEL::SA_E_COMP:
         turbSolver = new CTurbSASolver(geometry, config, iMGLevel, solver[FLOW_SOL]->GetFluidModel());
         solver[FLOW_SOL]->Preprocessing(geometry, solver, config, iMGLevel, NO_RK_ITER, RUNTIME_FLOW_SYS, false);
         turbSolver->Postprocessing(geometry, solver, config, iMGLevel);
         break;
-      case SST: case SST_SUST:
+      case TURB_MODEL::SST: case TURB_MODEL::SST_SUST:
         turbSolver = new CTurbSSTSolver(geometry, config, iMGLevel);
         solver[FLOW_SOL]->Preprocessing(geometry, solver, config, iMGLevel, NO_RK_ITER, RUNTIME_FLOW_SYS, false);
         turbSolver->Postprocessing(geometry, solver, config, iMGLevel);
         solver[FLOW_SOL]->Preprocessing(geometry, solver, config, iMGLevel, NO_RK_ITER, RUNTIME_FLOW_SYS, false);
         break;
-      default:
-        SU2_MPI::Error("Unknown turbulence model", CURRENT_FUNCTION);
+      case TURB_MODEL::NONE:
+        SU2_MPI::Error("Trying to create TurbSolver container but TURB_MODEL=NONE.", CURRENT_FUNCTION);
         break;
     }
   } else {
@@ -363,13 +363,10 @@ CSolver* CSolverFactory::CreateHeatSolver(CSolver **solver, CGeometry *geometry,
 
   CSolver *heatSolver = nullptr;
 
-  bool standalone = (config->GetKind_Solver() == HEAT_EQUATION) ||
-                    (config->GetKind_Solver() == DISC_ADJ_HEAT);
-
   /*--- Only allocate a heat solver if it should run standalone
    * or if the weakly coupled heat solver is enabled and no energy equation is included ---*/
 
-  if ((config->GetWeakly_Coupled_Heat() && !config->GetEnergy_Equation()) || standalone){
+  if ((config->GetWeakly_Coupled_Heat() && !config->GetEnergy_Equation()) || config->GetHeatProblem()){
     if (adjoint){
       if (config->GetDiscrete_Adjoint()){
         if(config->GetBoolOneShot()){
@@ -377,10 +374,12 @@ CSolver* CSolverFactory::CreateHeatSolver(CSolver **solver, CGeometry *geometry,
         } else {
           heatSolver = new CDiscAdjSolver(geometry, config, solver[HEAT_SOL], RUNTIME_HEAT_SYS, iMGLevel);
         }
-      } else {
+      }
+      else {
         SU2_MPI::Error("No continuous adjoint heat solver available.", CURRENT_FUNCTION);
       }
-    } else {
+    }
+    else {
       heatSolver = new CHeatSolver(geometry, config, iMGLevel);
     }
   }
@@ -448,7 +447,6 @@ CSolver* CSolverFactory::CreateFlowSolver(SUB_SOLVER_TYPE kindFlowSolver, CSolve
       break;
     case SUB_SOLVER_TYPE::NEMO_EULER:
       flowSolver = new CNEMOEulerSolver(geometry, config, iMGLevel);
-      flowSolver->Preprocessing(geometry, solver, config, iMGLevel, NO_RK_ITER, RUNTIME_FLOW_SYS, false);
       break;
     case SUB_SOLVER_TYPE::NEMO_NAVIER_STOKES:
       flowSolver = new CNEMONSSolver(geometry, config, iMGLevel);
