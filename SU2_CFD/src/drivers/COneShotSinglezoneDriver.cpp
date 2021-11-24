@@ -204,9 +204,9 @@ void COneShotSinglezoneDriver::RunOneShot(){
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
       if (whilecounter!=maxcounter || (!config->GetZeroStep())) ComputeDesignVarUpdate(stepsize);
       else ComputeDesignVarUpdate(0.0);
-      config->SetKind_SU2(2); // set SU2_DEF as the solver
+      config->SetKind_SU2(SU2_COMPONENT::SU2_DEF); // set SU2_DEF as the solver
       SurfaceDeformation(surface_movement[ZONE_0], grid_movement[ZONE_0][INST_0]);
-      config->SetKind_SU2(1); // set SU2_CFD as the solver
+      config->SetKind_SU2(SU2_COMPONENT::SU2_CFD); // set SU2_CFD as the solver
     }
     /*--- Do a primal and adjoint update ---*/
     if(!testLagrange || (TimeIter>config->GetOneShotStart()&&TimeIter<config->GetOneShotStop())){
@@ -344,9 +344,9 @@ void COneShotSinglezoneDriver::RunBFGS(){
     if(TimeIter>config->GetOneShotStart()){
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
       ComputeDesignVarUpdate(stepsize);
-      config->SetKind_SU2(2); // set SU2_DEF as the solver
+      config->SetKind_SU2(SU2_COMPONENT::SU2_DEF); // set SU2_DEF as the solver
       SurfaceDeformation(surface_movement[ZONE_0], grid_movement[ZONE_0][INST_0]);
-      config->SetKind_SU2(1); // set SU2_CFD as the solver
+      config->SetKind_SU2(SU2_COMPONENT::SU2_CFD); // set SU2_CFD as the solver
     }
     for(iterCount=0;iterCount<nConvIter;iterCount++){
       PrimalDualStep();
@@ -387,7 +387,7 @@ void COneShotSinglezoneDriver::PrimalDualStep(){
 
   /*--- Note: Unsteady cases not applicable to the one-shot method yet! ---*/
 
-  SetRecording(SOLUTION_AND_MESH);
+  SetRecording(RECORDING::SOLUTION_AND_MESH);
 
   /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
    *    of the previous iteration. The values are passed to the AD tool. ---*/
@@ -434,7 +434,7 @@ void COneShotSinglezoneDriver::RunPiggyBack() {
   }
 }
 
-void COneShotSinglezoneDriver::SetRecording(unsigned short kind_recording){
+void COneShotSinglezoneDriver::SetRecording(RECORDING kind_recording){
 
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -454,7 +454,7 @@ void COneShotSinglezoneDriver::SetRecording(unsigned short kind_recording){
 
   /*---Enable recording and register input of the flow iteration (conservative variables or node coordinates) --- */
 
-  if (kind_recording != NONE){
+  if (kind_recording != RECORDING::CLEAR_INDICES){
 
     AD::StartRecording();
     iteration->RegisterInput(solver_container, geometry_container, config_container, ZONE_0, INST_0, kind_recording);
@@ -469,7 +469,7 @@ void COneShotSinglezoneDriver::SetRecording(unsigned short kind_recording){
 
   RecordingState = kind_recording;
 
-  iteration->RegisterOutput(solver_container, geometry_container, config_container, output_container[ZONE_0], ZONE_0, INST_0);
+  iteration->RegisterOutput(solver_container, geometry_container, config_container, ZONE_0, INST_0);
 
   /*--- Extract the objective function and store it --- */
 
@@ -1329,7 +1329,7 @@ void COneShotSinglezoneDriver::ComputeBetaTerm(){
 
     /*--- Store the computational graph of one direct iteration with the conservative variables and the mesh coordinates as input. ---*/
 
-    SetRecording(SOLUTION_AND_MESH);
+    SetRecording(RECORDING::SOLUTION_AND_MESH);
 
       /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
      *    of the previous iteration. The values are passed to the AD tool. ---*/
@@ -1366,7 +1366,7 @@ void COneShotSinglezoneDriver::SetAdj_ObjFunction_Zero(){
 }
 
 void COneShotSinglezoneDriver::ProjectMeshSensitivities(){
-  config->SetKind_SU2(3); // set SU2_DOT as solver
+  config->SetKind_SU2(SU2_COMPONENT::SU2_DOT); // set SU2_DOT as solver
   // get the dependency of the volumetric grid movement
   grid_movement[ZONE_0][INST_0]->SetVolume_Deformation(geometry, config, false, true);
   
@@ -1378,7 +1378,7 @@ void COneShotSinglezoneDriver::ProjectMeshSensitivities(){
     SetProjection_FD(surface_movement[ZONE_0] , Gradient);
   }
 
-  config->SetKind_SU2(1); // set SU2_CFD as solver
+  config->SetKind_SU2(SU2_COMPONENT::SU2_CFD); // set SU2_CFD as solver
 }
 
 void COneShotSinglezoneDriver::SetAdj_ConstrFunction(su2double *seeding){

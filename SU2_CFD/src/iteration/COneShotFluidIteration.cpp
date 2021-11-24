@@ -29,15 +29,13 @@
 #include "../../include/output/COutput.hpp"
 
 void COneShotFluidIteration::RegisterInput(CSolver***** solver, CGeometry**** geometry, CConfig** config,
-                                           unsigned short iZone, unsigned short iInst, unsigned short kind_recording) {
+                                           unsigned short iZone, unsigned short iInst, RECORDING kind_recording) {
 
+  SU2_OMP_PARALLEL_(if(solver[iZone][iInst][MESH_0][ADJFLOW_SOL]->GetHasHybridParallel())) {
   /*--- For the one-shot strategy conservative variables as well as mesh coordinates are recorded. Furthermore, we need to record the mesh coordinates in every flow iteration,
    *  thus we make use of the COMBINED recording in each step ---*/
 
-  bool frozen_visc = config[iZone]->GetFrozen_Visc_Disc();
-  bool heat = config[iZone]->GetWeakly_Coupled_Heat();
-
-  if (kind_recording == SOLUTION_VARIABLES || kind_recording == SOLUTION_AND_MESH) {
+  if (kind_recording == RECORDING::SOLUTION_VARIABLES || kind_recording == RECORDING::SOLUTION_AND_MESH) {
     /*--- Register flow and turbulent variables as input ---*/
 
     if (config[iZone]->GetFluidProblem()) {
@@ -46,10 +44,10 @@ void COneShotFluidIteration::RegisterInput(CSolver***** solver, CGeometry**** ge
       solver[iZone][iInst][MESH_0][ADJFLOW_SOL]->RegisterVariables(geometry[iZone][iInst][MESH_0], config[iZone]);
     }
 
-    if (turbulent && !frozen_visc) {
+    if (turbulent && !config[iZone]->GetFrozen_Visc_Disc()) {
       solver[iZone][iInst][MESH_0][ADJTURB_SOL]->RegisterSolution(geometry[iZone][iInst][MESH_0], config[iZone]);
     }
-    if (heat) {
+    if (config[iZone]->GetWeakly_Coupled_Heat()) {
       solver[iZone][iInst][MESH_0][ADJHEAT_SOL]->RegisterSolution(geometry[iZone][iInst][MESH_0], config[iZone]);
     }
     if (config[iZone]->AddRadiation()) {
@@ -59,26 +57,27 @@ void COneShotFluidIteration::RegisterInput(CSolver***** solver, CGeometry**** ge
     }
   }
 
-  if (kind_recording == MESH_COORDS || kind_recording == SOLUTION_AND_MESH) {
+  if (kind_recording == RECORDING::MESH_COORDS || kind_recording == RECORDING::SOLUTION_AND_MESH) {
     /*--- Register node coordinates as input ---*/
 
-    geometry[iZone][iInst][MESH_0]->RegisterCoordinates(config[iZone]);
+    geometry[iZone][iInst][MESH_0]->RegisterCoordinates();
   }
 
-  /*--- Register the variables of the mesh deformation ---*/
   //TODO-ONE-SHOT Do I need this?
-  if (kind_recording == MESH_DEFORM) {
+  if (kind_recording == RECORDING::MESH_DEFORM) {
     /*--- Undeformed mesh coordinates ---*/
     solver[iZone][iInst][MESH_0][ADJMESH_SOL]->RegisterSolution(geometry[iZone][iInst][MESH_0], config[iZone]);
 
     /*--- Boundary displacements ---*/
     solver[iZone][iInst][MESH_0][ADJMESH_SOL]->RegisterVariables(geometry[iZone][iInst][MESH_0], config[iZone]);
   }
+  }
+  END_SU2_OMP_PARALLEL
 }
 
 void COneShotFluidIteration::SetDependencies(CSolver***** solver, CGeometry**** geometry, CNumerics****** numerics,
                                              CConfig** config, unsigned short iZone, unsigned short iInst,
-                                             unsigned short kind_recording) {
+                                             RECORDING kind_recording) {
 
   /*--- For the one-shot strategy conservative variables as well as mesh coordinates are recorded. Furthermore, we need to record the mesh coordinates in every flow iteration,
    *  thus we make use of the COMBINED recording in each step ---*/
@@ -86,7 +85,7 @@ void COneShotFluidIteration::SetDependencies(CSolver***** solver, CGeometry**** 
   bool frozen_visc = config[iZone]->GetFrozen_Visc_Disc();
   bool heat = config[iZone]->GetWeakly_Coupled_Heat();
 
-  if ((kind_recording == MESH_COORDS) || (kind_recording == NONE) || (kind_recording == SOLUTION_AND_MESH)) {
+  if ((kind_recording == RECORDING::MESH_COORDS) || (kind_recording == RECORDING::CLEAR_INDICES) || (kind_recording == RECORDING::SOLUTION_AND_MESH)) {
     /*--- Update geometry to get the influence on other geometry variables (normals, volume etc) ---*/
 
     geometry[iZone][iInst][MESH_0]->UpdateGeometry(geometry[iZone][iInst], config[iZone]);

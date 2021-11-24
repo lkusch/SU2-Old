@@ -41,8 +41,8 @@ private:
   MatrixType Solution_Direct; /*!< \brief Stores the primal solution of the current timestep in order to be able to reset. */
   MatrixType DualTime_Derivative; /*!< \brief Container holding all/sum-of dual time contributions to the adjoint variable. */
   MatrixType DualTime_Derivative_n; /*!< \brief Container holding dual time contributions to the adjoint variable used in the next timestep. */
-  MatrixType Sensitivity_ShiftedLagrangian; \brief Vector holding the derivative of shifted Lagrangian with respect to the coordinates at this node. */
-  MatrixType Sensitivity_AugmentedLagrangian; \brief Vector holding the derivative of augmented Lagrangian with respect to the coordinates at this node. */
+  MatrixType Sensitivity_ShiftedLagrangian; /* \brief Vector holding the derivative of shifted Lagrangian with respect to the coordinates at this node. */
+  MatrixType Sensitivity_AugmentedLagrangian; /* \brief Vector holding the derivative of augmented Lagrangian with respect to the coordinates at this node. */
 
 public:
   /*!
@@ -103,13 +103,6 @@ public:
    * \return value of the Sensitivity (Augmented Lagrangian)
    */
   inline su2double GetSensitivity_AugmentedLagrangian(unsigned long iPoint, unsigned long iDim) const override { return Sensitivity_AugmentedLagrangian(iPoint,iDim); }
-
-  inline void SetSolution_Direct(unsigned long iPoint, const su2double *val_solution_direct) override {
-    for (unsigned long iVar = 0; iVar < nVar; iVar++)
-      Solution_Direct(iPoint,iVar) = val_solution_direct[iVar];
-  }
-
-  inline su2double* GetSolution_Direct(unsigned long iPoint) override { return Solution_Direct[iPoint]; }
 
   /*!
    * \brief Set/store the dual time contributions to the adjoint variable.

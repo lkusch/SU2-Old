@@ -215,9 +215,9 @@ void COneShotMultizoneDriver::RunOneShot(){
       if (whilecounter!=maxcounter || (!config_container[ZONE_0]->GetZeroStep())) ComputeDesignVarUpdate(stepsize);
       else ComputeDesignVarUpdate(0.0);
       for (iZone = 0; iZone < nZone; iZone++){
-        config_container[iZone]->SetKind_SU2(2); // set SU2_DEF as the solver
+        config_container[iZone]->SetKind_SU2(SU2_COMPONENT::SU2_DEF); // set SU2_DEF as the solver
         SurfaceDeformation(geometry_container[iZone][INST_0][MESH_0], config_container[iZone], surface_movement[iZone], grid_movement[iZone][INST_0]);
-        config_container[iZone]->SetKind_SU2(1); // set SU2_CFD as the solver
+        config_container[iZone]->SetKind_SU2(SU2_COMPONENT::SU2_CFD); // set SU2_CFD as the solver
       }
     }
     /*--- Do a primal and adjoint update ---*/
@@ -385,9 +385,9 @@ void COneShotMultizoneDriver::RunBFGS(){
       /*--- Do a design update based on the search direction (mesh deformation with stepsize) ---*/
       ComputeDesignVarUpdate(stepsize);
       for (iZone = 0; iZone < nZone; iZone++){
-        config_container[iZone]->SetKind_SU2(2); // set SU2_DEF as the solver
+        config_container[iZone]->SetKind_SU2(SU2_COMPONENT::SU2_DEF); // set SU2_DEF as the solver
         SurfaceDeformation(geometry_container[iZone][INST_0][MESH_0], config_container[iZone], surface_movement[iZone], grid_movement[iZone][INST_0]);
-        config_container[iZone]->SetKind_SU2(1); // set SU2_CFD as the solver
+        config_container[iZone]->SetKind_SU2(SU2_COMPONENT::SU2_CFD); // set SU2_CFD as the solver
       }
     }
     for(iterCount=0;iterCount<nConvIter;iterCount++){
@@ -433,7 +433,7 @@ void COneShotMultizoneDriver::PrimalDualStep(){
 
   /*--- Note: Unsteady cases not applicable to the one-shot method yet! ---*/
 
-  SetRecording(SOLUTION_AND_MESH);
+  SetRecording(RECORDING::SOLUTION_AND_MESH);
 
   /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
    *    of the previous iteration. The values are passed to the AD tool. ---*/
@@ -492,7 +492,7 @@ void COneShotMultizoneDriver::RunPiggyBack() {
   }
 }
 
-void COneShotMultizoneDriver::SetRecording(unsigned short kind_recording){
+void COneShotMultizoneDriver::SetRecording(RECORDING kind_recording){
   unsigned short iZone, iMesh;
 
 #ifdef HAVE_MPI
@@ -516,7 +516,7 @@ void COneShotMultizoneDriver::SetRecording(unsigned short kind_recording){
 
   /*---Enable recording and register input of the flow iteration (conservative variables or node coordinates) --- */
 
-  if (kind_recording != NONE){
+  if (kind_recording != RECORDING::CLEAR_INDICES){
 
     AD::StartRecording();
     for (iZone = 0; iZone < nZone; iZone++) {
@@ -538,7 +538,7 @@ void COneShotMultizoneDriver::SetRecording(unsigned short kind_recording){
   RecordingState = kind_recording;
 
   for (iZone = 0; iZone < nZone; iZone++) {
-    iteration_container[iZone][INST_0]->RegisterOutput(solver_container, geometry_container, config_container, output_container[ZONE_0], iZone, INST_0);
+    iteration_container[iZone][INST_0]->RegisterOutput(solver_container, geometry_container, config_container, iZone, INST_0);
   }
 
   /*--- Extract the objective function and store it --- */
@@ -1421,7 +1421,7 @@ void COneShotMultizoneDriver::ComputeBetaTerm(){
 
     /*--- Store the computational graph of one direct iteration with the conservative variables and the mesh coordinates as input. ---*/
 
-    SetRecording(SOLUTION_AND_MESH);
+    SetRecording(RECORDING::SOLUTION_AND_MESH);
 
       /*--- Initialize the adjoint of the output variables of the iteration with the adjoint solution
      *    of the previous iteration. The values are passed to the AD tool. ---*/
@@ -1466,7 +1466,7 @@ void COneShotMultizoneDriver::SetAdj_ObjFunction_Zero(){
 
 void COneShotMultizoneDriver::ProjectMeshSensitivities(){
   for (iZone = 0; iZone < nZone; iZone++){
-    config_container[iZone]->SetKind_SU2(3); // set SU2_DOT as solver
+    config_container[iZone]->SetKind_SU2(SU2_COMPONENT::SU2_DOT); // set SU2_DOT as solver
     // get the dependency of the volumetric grid movement
     grid_movement[iZone][INST_0]->SetVolume_Deformation(geometry_container[iZone][INST_0][MESH_0], config_container[iZone], false, true);
   }
@@ -1479,7 +1479,7 @@ void COneShotMultizoneDriver::ProjectMeshSensitivities(){
       SetProjection_FD(geometry_container[iZone][INST_0][MESH_0], config_container[iZone], surface_movement[iZone] , Gradient);
     }
 
-    config_container[iZone]->SetKind_SU2(1); // set SU2_CFD as solver
+    config_container[iZone]->SetKind_SU2(SU2_COMPONENT::SU2_CFD); // set SU2_CFD as solver
   }
 }
 

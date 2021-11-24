@@ -3016,25 +3016,25 @@ su2double CFVMFlowSolverBase<V,R>::EvaluateCommonConstrFunc(const CConfig& confi
       objFun += Total_HeatFluxDiff;
       break;
     case EQUIVALENT_AREA:
-      objFun += weight*Total_CEquivArea;
+      objFun += Total_CEquivArea;
       break;
     case THRUST_COEFFICIENT:
-      objFun += weight * TotalCoeff.CT;
+      objFun += TotalCoeff.CT;
       break;
     case TORQUE_COEFFICIENT:
-      objFun += weight * TotalCoeff.CQ;
+      objFun += TotalCoeff.CQ;
       break;
     case FIGURE_OF_MERIT:
-      objFun += weight * TotalCoeff.CMerit;
+      objFun += TotalCoeff.CMerit;
       break;
     case SURFACE_TOTAL_PRESSURE:
-      objFun += weight * config.GetSurface_TotalPressure(0);
+      objFun += config.GetSurface_TotalPressure(0);
       break;
     case SURFACE_STATIC_PRESSURE:
-      objFun += weight * config.GetSurface_Pressure(0);
+      objFun += config.GetSurface_Pressure(0);
       break;
     case SURFACE_STATIC_TEMPERATURE:
-      objFun += weight * config.GetSurface_Temperature(0);
+      objFun += config.GetSurface_Temperature(0);
     case SURFACE_MASSFLOW:
       objFun += config.GetSurface_MassFlow(0);
       break;

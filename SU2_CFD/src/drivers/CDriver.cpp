@@ -1115,10 +1115,10 @@ void CDriver::Solver_Restart(CSolver ***solver, CGeometry **geometry,
 
   /*--- Check for restarts and use the LoadRestart() routines. ---*/
 
-  const bool restart = config->GetRestart();
-  const bool restart_flow = config->GetRestart_Flow();
+  bool restart = config->GetRestart();
+  bool restart_flow = config->GetRestart_Flow();
 
-  if ((config->GetKind_Solver() == ONE_SHOT_EULER) || (config->GetKind_Solver() == ONE_SHOT_NAVIER_STOKES)
+  if ((config->GetKind_Solver() == ONE_SHOT_EULER) || (config->GetKind_Solver() == ONE_SHOT_NAVIER_STOKES) || 
       (config->GetKind_Solver() == ONE_SHOT_RANS )) {
     restart = false;
     restart_flow = false;

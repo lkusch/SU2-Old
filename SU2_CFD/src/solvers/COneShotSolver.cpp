@@ -32,10 +32,6 @@ COneShotSolver::COneShotSolver(void) : CDiscAdjSolver () {
 
 }
 
-COneShotSolver::COneShotSolver(CGeometry *geometry, CConfig *config)  : CDiscAdjSolver(geometry, config) {
-
-}
-
 COneShotSolver::COneShotSolver(CGeometry *geometry, CConfig *config, CSolver *direct_solver, unsigned short Kind_Solver, unsigned short iMesh)  : CDiscAdjSolver(geometry, config, direct_solver, Kind_Solver, iMesh) {
  theta = 0.0;
  rho = 0.0;
@@ -65,27 +61,28 @@ COneShotSolver::~COneShotSolver(void) {
 
 void COneShotSolver::SetRecording(CGeometry* geometry, CConfig *config){
 
-  bool time_n1_needed = config->GetTime_Marching() == DT_STEPPING_2ND;
-  bool time_n_needed = (config->GetTime_Marching() == DT_STEPPING_1ST) || time_n1_needed;
-
-  unsigned long iPoint;
-  unsigned short iVar;
+  const bool time_n1_needed = config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_2ND;
+  const bool time_n_needed = (config->GetTime_Marching() == TIME_MARCHING::DT_STEPPING_1ST) || time_n1_needed;
 
   /*--- For the one-shot solver the solution is not reset in each iteration step to the initial solution ---*/
 
   if (time_n_needed) {
-    for (iPoint = 0; iPoint < nPoint; iPoint++) {
-      for (iVar = 0; iVar < nVar; iVar++) {
+    SU2_OMP_FOR_STAT(omp_chunk_size)
+    for (auto iPoint = 0ul; iPoint < nPoint; iPoint++) {
+      for (auto iVar = 0u; iVar < nVar; iVar++) {
         AD::ResetInput(direct_solver->GetNodes()->GetSolution_time_n(iPoint)[iVar]);
       }
     }
+    END_SU2_OMP_FOR
   }
   if (time_n1_needed) {
-    for (iPoint = 0; iPoint < nPoint; iPoint++) {
-      for (iVar = 0; iVar < nVar; iVar++) {
+    SU2_OMP_FOR_STAT(omp_chunk_size)
+    for (auto iPoint = 0ul; iPoint < nPoint; iPoint++) {
+      for (auto iVar = 0u; iVar < nVar; iVar++) {
         AD::ResetInput(direct_solver->GetNodes()->GetSolution_time_n1(iPoint)[iVar]);
       }
     }
+    END_SU2_OMP_FOR
   }
 
   /*--- Set the Jacobian to zero since this is not done inside the fluid iteration

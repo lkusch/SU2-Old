@@ -37,8 +37,8 @@ class CFluidIteration;
  * \brief Class for driving an iteration of the discrete adjoint fluid system.
  * \author T. Economon
  */
-class CDiscAdjFluidIteration final : public CIteration {
- private:
+class CDiscAdjFluidIteration : public CIteration {
+ protected:
   const bool turbulent;                      /*!< \brief Stores the turbulent flag. */
 
   /*!

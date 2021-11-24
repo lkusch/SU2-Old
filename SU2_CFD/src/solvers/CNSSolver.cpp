@@ -308,12 +308,13 @@ su2double CNSSolver::Evaluate_ConstrFunc(const CConfig *config, unsigned short i
 
     switch(Kind_ConstrFunc) {
       case BUFFET_SENSOR:
-          Total_ComboObj +=Surface_Buffet_Metric[iMarker_Monitoring];
+          ConstraintFunction[iConstr] +=Surface_Buffet_Metric[iMarker_Monitoring];
           break;
       default:
           break;
     }
   }
+  return ConstraintFunction[iConstr];
 
 }
 

@@ -4301,9 +4301,6 @@ su2double CEulerSolver::Evaluate_ConstrFunc(const CConfig *config, unsigned shor
   Kind_ConstrFunc   = config->GetKind_ConstrFunc(iConstr);
 
   switch(Kind_ConstrFunc) {
-    case EQUIVALENT_AREA:
-      ConstraintFunction[iConstr]+=Total_CEquivArea;
-      break;
     case NEARFIELD_PRESSURE:
       ConstraintFunction[iConstr]+=Total_CNearFieldOF;
       break;
